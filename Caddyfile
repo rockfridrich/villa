@@ -15,9 +15,21 @@
         Referrer-Policy "strict-origin-when-cross-origin"
         # Permissions policy (disable unused features)
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        # Content Security Policy for Porto SDK
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh; frame-src https://id.porto.sh; frame-ancestors 'none';"
         # Remove server header
         -Server
     }
+}
+
+# Production domain
+proofofretreat.me {
+    import security_headers
+    reverse_proxy app:3000
+}
+
+www.proofofretreat.me {
+    redir https://proofofretreat.me{uri} permanent
 }
 
 localhost {
