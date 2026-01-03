@@ -121,6 +121,47 @@ This will:
 
 Open the URL on your phone to test passkeys on real devices.
 
+### ngrok troubleshooting
+
+**Run diagnostics:**
+```bash
+npm run dev:debug
+```
+
+This checks:
+- Dev server status and health
+- ngrok process and tunnel status
+- Authentication config
+- Network connectivity
+- Recent error logs
+
+**Common issues:**
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Empty/blank page | Dev server crashed | `npm run dev:clean && npm run dev:share` |
+| "Tunnel not found" | ngrok session expired | Restart: `npm run dev:share` |
+| "ERR_NGROK_*" | Auth token issue | `ngrok config add-authtoken YOUR_TOKEN` |
+| Slow/timeout | Free tier limits | Wait or upgrade ngrok plan |
+| Can't connect | Firewall/network | Try different network |
+
+**Get an ngrok auth token (recommended):**
+1. Sign up at https://dashboard.ngrok.com
+2. Get token from https://dashboard.ngrok.com/get-started/your-authtoken
+3. Run: `ngrok config add-authtoken YOUR_TOKEN`
+
+**View ngrok dashboard:**
+```bash
+open http://127.0.0.1:4040
+```
+Shows request inspector, tunnel status, and errors.
+
+**Manual restart:**
+```bash
+pkill ngrok && pkill -f "next dev"
+npm run dev:share
+```
+
 ### E2E tests failing
 
 ```bash

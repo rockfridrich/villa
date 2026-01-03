@@ -947,4 +947,146 @@ Terminal 1              Terminal 2              Terminal 3
 
 ---
 
+## Session: 2026-01-04 — ngrok Debugging & In-App Browser Detection
+
+### What Happened
+
+1. **ngrok showing blank page** — Dev server crashed but ngrok stayed up
+2. **Created diagnostic tooling** — Health check endpoint + debug script
+3. **Added in-app browser detection** — Security feature for Telegram/Instagram/etc.
+4. **Added CSP headers** — Porto SDK requires specific frame-src and connect-src
+
+### Problems Identified
+
+| Problem | Root Cause | Solution |
+|---------|------------|----------|
+| Blank page via ngrok | Dev server crashed, ngrok still running | Health check endpoint + monitoring |
+| No way to diagnose | Silent failures | `npm run dev:debug` diagnostic script |
+| Passkeys fail in Telegram | In-app browsers lack WebAuthn support | Detect and guide to real browser |
+| CSP blocking Porto | Missing frame-src/connect-src | Added to Caddyfile + next.config.js |
+
+### In-App Browser Detection
+
+**Why it matters:**
+- In-app browsers (Telegram, Instagram, etc.) have broken/limited WebAuthn
+- Passkeys created there may not sync properly
+- Security concerns with credential handling
+
+**Detection covers:**
+- Telegram, Instagram, Facebook, Twitter/X
+- LinkedIn, Snapchat, TikTok, WeChat, LINE
+- Generic WebView fallback for unknown apps
+
+**UX pattern:**
+```
+┌─────────────────────────────────────┐
+│  Open in Browser                    │
+│                                     │
+│  You're in Telegram                 │
+│  Tap ⋮ menu → "Open in Browser"    │
+│                                     │
+│  [Copy Link]                        │
+│  Then paste in Safari or Chrome     │
+└─────────────────────────────────────┘
+```
+
+### ngrok Debugging Tools Created
+
+**Health check endpoint:** `/api/health`
+```json
+{ "status": "ok", "timestamp": "...", "version": "0.1.0" }
+```
+
+**Diagnostic script:** `npm run dev:debug`
+Checks:
+1. Dev server running + responding
+2. ngrok process + tunnel active
+3. Auth token configured
+4. Network connectivity
+5. Recent error logs
+
+**Improved share script:**
+- Uses health endpoint (not just port check)
+- Retry logic for ngrok (3 attempts)
+- Continuous health monitoring
+- Clear troubleshooting steps on failure
+
+### CSP Headers for Porto
+
+**Required directives:**
+```
+connect-src: 'self' https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh
+frame-src: https://id.porto.sh
+```
+
+Added to both:
+- `Caddyfile` (production with Caddy)
+- `next.config.js` (direct Next.js serving)
+
+### Files Created/Modified
+
+**New:**
+- `src/lib/browser.ts` — In-app browser detection utilities
+- `src/app/api/health/route.ts` — Health check endpoint
+- `scripts/ngrok-debug.sh` — Diagnostic script
+
+**Modified:**
+- `src/app/onboarding/page.tsx` — In-app browser step
+- `scripts/ngrok-share.sh` — Health monitoring, retry logic
+- `Caddyfile` — CSP headers, production domain
+- `next.config.js` — CSP headers
+- `DEVELOPMENT.md` — ngrok troubleshooting guide
+- `package.json` — Added dev:debug script
+
+### Patterns to Apply
+
+#### 1. Health Endpoints for Background Services
+
+Always add `/api/health` when running background services:
+```typescript
+export async function GET() {
+  return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() })
+}
+```
+
+Scripts can verify the app is truly running, not just the port.
+
+#### 2. Graceful Degradation for In-App Browsers
+
+```typescript
+const browserInfo = detectInAppBrowser()
+if (browserInfo.isInApp) {
+  // Show guidance, not error
+  // Provide copy link + instructions
+}
+```
+
+#### 3. Diagnostic Scripts Over Silent Failures
+
+When something can fail silently, create a diagnostic command:
+```bash
+npm run dev:debug  # Shows exactly what's wrong
+```
+
+#### 4. Retry Logic for External Services
+
+```bash
+for ((i=1; i<=MAX_RETRIES; i++)); do
+  start_service
+  if check_service; then break; fi
+  echo "Retry $i/$MAX_RETRIES..."
+done
+```
+
+### ngrok Free Tier Limitations
+
+- Sessions expire after ~2 hours
+- Rate limited requests
+- Random subdomain each restart
+- No custom domains
+
+**Recommendation:** Get free auth token for better stability.
+
+---
+
 *Last updated: 2026-01-04*

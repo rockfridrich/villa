@@ -13,6 +13,7 @@
     "dev:https": "next dev --experimental-https",
     "dev:clean": "rm -rf .next && next dev",
     "dev:share": "./scripts/ngrok-share.sh",
+    "dev:debug": "./scripts/ngrok-debug.sh",
     "qa": "./scripts/qa-start.sh",
     "qa:end": "./scripts/qa-end.sh",
     "build": "next build",

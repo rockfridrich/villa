@@ -10,26 +10,27 @@ set -e
 # Configuration
 # ═══════════════════════════════════════════════════════════════
 PORT=${PORT:-3000}
-NGROK_REGION=${NGROK_REGION:-us}
+HEALTH_ENDPOINT="http://localhost:$PORT/api/health"
+MAX_RETRIES=3
+RETRY_DELAY=2
 
 # ═══════════════════════════════════════════════════════════════
 # Colors (Claude Code style - minimal, functional)
 # ═══════════════════════════════════════════════════════════════
-R='\033[0;31m'    # Red - errors
-G='\033[0;32m'    # Green - success
-Y='\033[0;33m'    # Yellow - warnings/highlights
-B='\033[0;34m'    # Blue - info
-M='\033[0;35m'    # Magenta - URLs
-C='\033[0;36m'    # Cyan - labels
-W='\033[1;37m'    # White bold - headers
-D='\033[0;90m'    # Dim - secondary text
-N='\033[0m'       # Reset
+R='\033[0;31m'
+G='\033[0;32m'
+Y='\033[0;33m'
+B='\033[0;34m'
+M='\033[0;35m'
+C='\033[0;36m'
+W='\033[1;37m'
+D='\033[0;90m'
+N='\033[0m'
 
 # ═══════════════════════════════════════════════════════════════
 # Utility Functions
 # ═══════════════════════════════════════════════════════════════
 get_local_ip() {
-  # Get primary local IP (works on macOS and Linux)
   if [[ "$OSTYPE" == "darwin"* ]]; then
     ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "127.0.0.1"
   else
@@ -37,28 +38,23 @@ get_local_ip() {
   fi
 }
 
-check_port() {
-  lsof -i :$1 >/dev/null 2>&1
+check_health() {
+  curl -s -o /dev/null -w "%{http_code}" "$HEALTH_ENDPOINT" 2>/dev/null | grep -q "200"
 }
 
-wait_for_port() {
-  local port=$1
-  local timeout=${2:-30}
+wait_for_health() {
+  local timeout=${1:-30}
   local count=0
-  while ! check_port $port && [ $count -lt $timeout ]; do
+  while ! check_health && [ $count -lt $timeout ]; do
     sleep 1
     ((count++))
   done
-  check_port $port
+  check_health
 }
 
-# Simple ASCII QR-like display (works everywhere)
-print_qr_hint() {
-  local url=$1
-  echo -e "${D}┌─────────────────────────────────────┐${N}"
-  echo -e "${D}│${N} ${C}Scan:${N} ${W}http://127.0.0.1:4040${N}        ${D}│${N}"
-  echo -e "${D}│${N} ${D}(ngrok inspector has QR code)${N}      ${D}│${N}"
-  echo -e "${D}└─────────────────────────────────────┘${N}"
+get_ngrok_url() {
+  curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | \
+    python3 -c "import sys,json; d=json.load(sys.stdin); print(d['tunnels'][0]['public_url'] if d.get('tunnels') else '')" 2>/dev/null || echo ""
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -67,7 +63,8 @@ print_qr_hint() {
 cleanup() {
   echo ""
   echo -e "${Y}■${N} Shutting down..."
-  kill $DEV_PID 2>/dev/null || true
+  [ -n "$DEV_PID" ] && kill $DEV_PID 2>/dev/null || true
+  [ -n "$NGROK_PID" ] && kill $NGROK_PID 2>/dev/null || true
   pkill -f "ngrok http" 2>/dev/null || true
   echo -e "${G}■${N} Done"
 }
@@ -99,107 +96,134 @@ cd "$(dirname "$0")/.."
 npm run dev > /tmp/villa-dev.log 2>&1 &
 DEV_PID=$!
 
-if wait_for_port $PORT 30; then
-  echo -e "${G}■${N} Dev server ready"
+echo -ne "${D}   Waiting for health check"
+if wait_for_health 45; then
+  echo -e "${N}"
+  echo -e "${G}■${N} Dev server healthy"
 else
-  echo -e "${R}■${N} Dev server failed - check /tmp/villa-dev.log"
+  echo -e "${N}"
+  echo -e "${R}■${N} Dev server failed to start"
+  echo ""
+  echo -e "${W}Troubleshooting:${N}"
+  echo -e "  ${D}1.${N} Check logs: ${W}tail -50 /tmp/villa-dev.log${N}"
+  echo -e "  ${D}2.${N} Run diagnostics: ${W}./scripts/ngrok-debug.sh${N}"
+  echo -e "  ${D}3.${N} Clear cache: ${W}npm run dev:clean${N}"
+  echo ""
   exit 1
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Start ngrok
+# Start ngrok with retry
 # ═══════════════════════════════════════════════════════════════
 echo -e "${Y}■${N} Starting ngrok tunnel..."
-ngrok http $PORT --log=stdout > /tmp/villa-ngrok.log 2>&1 &
-NGROK_PID=$!
 
-# Wait for ngrok to establish tunnel
-sleep 3
+for ((i=1; i<=MAX_RETRIES; i++)); do
+  ngrok http $PORT --log=stdout > /tmp/villa-ngrok.log 2>&1 &
+  NGROK_PID=$!
 
-# Get ngrok URL from API
-NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['tunnels'][0]['public_url'] if d.get('tunnels') else '')" 2>/dev/null || echo "")
+  sleep 4
 
-if [ -z "$NGROK_URL" ]; then
-  echo -e "${R}■${N} ngrok failed to start"
-  echo -e "${D}  Check: ngrok config check${N}"
-  exit 1
-fi
+  NGROK_URL=$(get_ngrok_url)
+  if [ -n "$NGROK_URL" ]; then
+    echo -e "${G}■${N} Tunnel established"
+    break
+  fi
 
-echo -e "${G}■${N} Tunnel established"
+  if [ $i -lt $MAX_RETRIES ]; then
+    echo -e "${Y}■${N} Retry $i/$MAX_RETRIES..."
+    kill $NGROK_PID 2>/dev/null || true
+    sleep $RETRY_DELAY
+  else
+    echo -e "${R}■${N} ngrok failed after $MAX_RETRIES attempts"
+    echo ""
+    echo -e "${W}Troubleshooting:${N}"
+    echo -e "  ${D}1.${N} Check ngrok auth: ${W}ngrok config check${N}"
+    echo -e "  ${D}2.${N} Check logs: ${W}tail -20 /tmp/villa-ngrok.log${N}"
+    echo -e "  ${D}3.${N} Run diagnostics: ${W}./scripts/ngrok-debug.sh${N}"
+    echo -e "  ${D}4.${N} Get auth token: ${W}https://dashboard.ngrok.com/get-started/your-authtoken${N}"
+    echo ""
+    exit 1
+  fi
+done
+
 echo ""
 
 # ═══════════════════════════════════════════════════════════════
-# Connection Info (Claude Code style - compact, scannable)
+# Connection Info
 # ═══════════════════════════════════════════════════════════════
 echo -e "${D}─────────────────────────────────────────${N}"
 echo -e "${C}CONNECTIONS${N}"
 echo -e "${D}─────────────────────────────────────────${N}"
 echo ""
-echo -e "${D}Same Network (faster):${N}"
+echo -e "${D}Same Network (faster, no passkeys):${N}"
 echo -e "  ${M}http://${LOCAL_IP}:${PORT}${N}"
 echo ""
-echo -e "${D}Any Network (ngrok):${N}"
+echo -e "${D}Any Network (passkeys work):${N}"
 echo -e "  ${M}${NGROK_URL}${N}"
 echo ""
-print_qr_hint "$NGROK_URL"
-echo ""
 
 # ═══════════════════════════════════════════════════════════════
-# Device Testing Checklist
+# Quick Reference
 # ═══════════════════════════════════════════════════════════════
 echo -e "${D}─────────────────────────────────────────${N}"
-echo -e "${C}TESTING CHECKLIST${N}"
+echo -e "${C}QUICK REFERENCE${N}"
 echo -e "${D}─────────────────────────────────────────${N}"
 echo ""
-echo -e "${D}iOS Safari:${N}"
-echo -e "  ${D}□${N} Open URL in Safari (not Chrome)"
-echo -e "  ${D}□${N} Create Villa ID → Face ID prompt"
-echo -e "  ${D}□${N} Sign In → passkey auto-select"
+echo -e "${D}Test passkeys:${N}     Use ngrok URL (HTTPS required)"
+echo -e "${D}Test UI only:${N}      Use local IP (faster)"
+echo -e "${D}Report issues:${N}     \"On [device], [action] → [problem]\""
+echo -e "${D}Refresh:${N}           Pull down on mobile"
+echo -e "${D}Clear state:${N}       Add ?reset to URL"
 echo ""
-echo -e "${D}Android Chrome:${N}"
-echo -e "  ${D}□${N} Open URL in Chrome"
-echo -e "  ${D}□${N} Create Villa ID → fingerprint prompt"
-echo -e "  ${D}□${N} Check cross-device sync"
-echo ""
-
-# ═══════════════════════════════════════════════════════════════
-# Claude Workflow Commands
-# ═══════════════════════════════════════════════════════════════
-echo -e "${D}─────────────────────────────────────────${N}"
-echo -e "${C}CLAUDE WORKFLOW${N}"
-echo -e "${D}─────────────────────────────────────────${N}"
-echo ""
-echo -e "${D}Report issue:${N}"
-echo -e "  ${W}\"On [device], [action] shows [problem]\"${N}"
-echo ""
-echo -e "${D}Quick fixes:${N}"
-echo -e "  ${D}•${N} Hot reload: Save file → auto-refresh"
-echo -e "  ${D}•${N} Hard refresh: Pull down on mobile"
-echo -e "  ${D}•${N} Clear state: Add ?reset to URL"
+echo -e "${D}Diagnostics:${N}       ${W}./scripts/ngrok-debug.sh${N}"
+echo -e "${D}ngrok dashboard:${N}   ${W}open http://127.0.0.1:4040${N}"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════
 # Status Line
 # ═══════════════════════════════════════════════════════════════
 echo -e "${D}─────────────────────────────────────────${N}"
-echo -e "${G}●${N} ${D}Ready${N}  ${D}│${N}  ${D}Ctrl+C to stop${N}  ${D}│${N}  ${D}Logs: /tmp/villa-*.log${N}"
+echo -e "${G}●${N} ${D}Ready${N}  ${D}│${N}  ${D}Ctrl+C to stop${N}"
 echo -e "${D}─────────────────────────────────────────${N}"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════
-# Keep alive and show live stats
+# Keep alive with health monitoring
 # ═══════════════════════════════════════════════════════════════
+FAIL_COUNT=0
+MAX_FAILS=3
+
 while true; do
-  # Check if processes are still running
-  if ! kill -0 $DEV_PID 2>/dev/null; then
-    echo -e "${R}■${N} Dev server crashed - check /tmp/villa-dev.log"
-    exit 1
+  sleep 10
+
+  # Check dev server health
+  if ! check_health; then
+    ((FAIL_COUNT++))
+    if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
+      echo -e "${R}■${N} Dev server stopped responding"
+      echo -e "${D}   Check: tail -50 /tmp/villa-dev.log${N}"
+      exit 1
+    fi
+  else
+    FAIL_COUNT=0
   fi
 
+  # Check ngrok
   if ! kill -0 $NGROK_PID 2>/dev/null; then
     echo -e "${R}■${N} ngrok disconnected"
+    echo -e "${D}   Restart with: npm run dev:share${N}"
     exit 1
   fi
 
-  sleep 5
+  # Check if tunnel still exists
+  if [ -z "$(get_ngrok_url)" ]; then
+    echo -e "${Y}■${N} Tunnel lost, checking..."
+    sleep 3
+    if [ -z "$(get_ngrok_url)" ]; then
+      echo -e "${R}■${N} ngrok tunnel closed"
+      echo -e "${D}   Free tier tunnels expire after ~2 hours${N}"
+      echo -e "${D}   Restart with: npm run dev:share${N}"
+      exit 1
+    fi
+  fi
 done
