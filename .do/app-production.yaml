@@ -1,6 +1,5 @@
 # DigitalOcean App Platform - Production Environment
 # Deployed on merge to main
-# Uses buildpacks for faster cached builds (~1 min vs ~5 min with Docker)
 
 name: villa-production
 
@@ -8,12 +7,10 @@ services:
   - name: web
     github:
       repo: rockfridrich/villa
-      branch: main
+      branch: feature/porto-passkey-login  # TODO: change to main after merge
       deploy_on_push: true
-    # Buildpacks (faster, cached) instead of Dockerfile
-    build_command: npm run build
-    run_command: npm run start
-    environment_slug: node-js
+    # Using Dockerfile (buildpacks prune tailwind before build)
+    dockerfile_path: Dockerfile
     http_port: 3000
     instance_count: 1
     instance_size_slug: basic-xs
@@ -33,10 +30,5 @@ services:
         value: "1"
       - key: NEXT_PUBLIC_ENV
         value: production
-
-# Custom domain (configure in DO console after first deploy)
-# domains:
-#   - domain: villa.proofofretreat.me
-#     type: PRIMARY
 
 region: nyc
