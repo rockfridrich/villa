@@ -1,0 +1,149 @@
+name: Villa Code Review Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: Code Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Security Review
+        id: security
+        run: |
+          ISSUES=""
+          TROLL=""
+
+          # Check for console.log in production code
+          if grep -rn "console\\.log" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "// debug"; then
+            ISSUES="${ISSUES}\n🚨 **Console.log detected** - Remove before merge"
+          fi
+
+          # Check for hardcoded secrets patterns
+          if grep -rn "sk_live\|pk_live\|api_key\|secret" src/ --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            ISSUES="${ISSUES}\n🔴 **CRITICAL: Possible hardcoded secret detected!**"
+          fi
+
+          # Check for eval usage
+          if grep -rn "eval(" src/ --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            ISSUES="${ISSUES}\n🔴 **CRITICAL: eval() usage detected - XSS risk!**"
+          fi
+
+          # Check for innerHTML
+          if grep -rn "innerHTML\|dangerouslySetInnerHTML" src/ --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            ISSUES="${ISSUES}\n⚠️ **innerHTML/dangerouslySetInnerHTML detected** - Ensure input is sanitized"
+          fi
+
+          # Check for TODO/FIXME
+          TODO_COUNT=$(grep -rn "TODO\|FIXME" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l || echo "0")
+          if [ "$TODO_COUNT" -gt 5 ]; then
+            ISSUES="${ISSUES}\n📝 **${TODO_COUNT} TODOs/FIXMEs found** - Consider addressing before merge"
+          fi
+
+          # Check for any usage
+          ANY_COUNT=$(grep -rn ": any" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l || echo "0")
+          if [ "$ANY_COUNT" -gt 0 ]; then
+            ISSUES="${ISSUES}\n🎯 **${ANY_COUNT} 'any' types found** - TypeScript strict mode violation"
+          fi
+
+          # Check for Porto in user-facing strings (Villa ID policy)
+          if grep -rn "'Porto\|\"Porto" src/ --include="*.tsx" 2>/dev/null | grep -v "// internal\|import\|from 'porto"; then
+            ISSUES="${ISSUES}\n🏷️ **'Porto' found in user-facing code** - Use 'Villa ID' instead (see spec)"
+          fi
+
+          # Occasional troll (1 in 10 chance)
+          RANDOM_NUM=$((RANDOM % 10))
+          if [ "$RANDOM_NUM" -eq 7 ]; then
+            TROLLS=(
+              "I see you've chosen violence with this PR. Bold move. 🍿"
+              "This code is like my ex - it works, but I'm not sure why."
+              "Did you write this at 3am? Because same energy."
+              "LGTM (Looks Good To Merge... after 47 more reviews)"
+              "I've seen worse. I've also seen better. But I've definitely seen worse."
+              "The code is fine, but have you considered interpretive dance instead?"
+            )
+            TROLL="${TROLLS[$((RANDOM % ${#TROLLS[@]}))]}"
+          fi
+
+          echo "issues<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$ISSUES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "troll<<EOF" >> $GITHUB_OUTPUT
+          echo "$TROLL" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post Review Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = `${{ steps.security.outputs.issues }}`.trim();
+            const troll = `${{ steps.security.outputs.troll }}`.trim();
+            const files = `${{ steps.changed.outputs.files }}`.trim();
+
+            if (!files) {
+              console.log('No TypeScript/JavaScript files changed');
+              return;
+            }
+
+            let body = '## 🤖 Villa Code Review Bot\n\n';
+
+            if (issues) {
+              body += '### Security & Quality Issues\n\n';
+              body += issues + '\n\n';
+            } else {
+              body += '### ✅ No critical issues found\n\n';
+              body += 'Code looks clean! Ship it. 🚀\n\n';
+            }
+
+            body += '---\n';
+            body += `*Reviewed ${files.split('\n').length} file(s)*`;
+
+            if (troll) {
+              body += `\n\n> 💭 ${troll}`;
+            }
+
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('Villa Code Review Bot')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

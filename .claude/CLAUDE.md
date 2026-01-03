@@ -4,6 +4,55 @@ Privacy-first passkey authentication. Porto SDK wrapper with Villa theming.
 
 **Repo:** https://github.com/rockfridrich/villa
 
+---
+
+## Session Best Practices (Ultrathink)
+
+### Before Starting Any Task
+
+1. **Read LEARNINGS.md** — Contains past mistakes and patterns
+2. **Check STATUS.md** — Know what's done, what's in progress
+3. **Clarify intent** — Ask before assuming (especially UX decisions)
+
+### Workflow That Works
+
+```
+1. Clarify intent first (don't assume)
+2. Update spec BEFORE code (Language Guidelines, Copy Standards)
+3. @build implements in single pass
+4. @review catches dead code
+5. Commit after each phase (clear git history)
+6. Run tests before pushing
+```
+
+### Language Guidelines Pattern
+
+Always add to specs when external systems are involved:
+
+| Internal/Tech | User-Facing |
+|---------------|-------------|
+| Porto account | Villa ID |
+| wallet address | (hidden or "Villa ID") |
+| SDK names | Never shown to users |
+
+### Copy Standards Pattern
+
+| Action | Button Text | Helper Text |
+|--------|-------------|-------------|
+| Primary action | "Sign In" | — |
+| Secondary action | "Create Villa ID" | — |
+| Leave session | "Switch Account" | "Your passkey stays active..." |
+
+### Anti-Patterns to Avoid
+
+- ❌ Implementing before spec is clear
+- ❌ Pivoting without updating spec first
+- ❌ Over-engineering detection logic
+- ❌ Leaving unused code/props
+- ❌ Committing without running tests
+
+---
+
 ## Agent-First Development
 
 This project uses **Claude Code agents** for implementation. Humans focus on specs and review; agents handle code.

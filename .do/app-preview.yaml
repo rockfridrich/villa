@@ -1,0 +1,30 @@
+# DigitalOcean App Platform - Preview Environment
+# Auto-created for each PR, deleted when PR closes
+
+name: villa-pr-${PR_NUMBER}
+
+services:
+  - name: web
+    github:
+      repo: rockfridrich/villa
+      branch: ${BRANCH_NAME}
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    health_check:
+      http_path: /
+      initial_delay_seconds: 15
+      period_seconds: 10
+    envs:
+      - key: NODE_ENV
+        value: preview
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: NEXT_PUBLIC_ENV
+        value: preview
+
+region: nyc

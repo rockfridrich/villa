@@ -1,4 +1,5 @@
 import { clsx } from 'clsx'
+import Image from 'next/image'
 
 interface AvatarProps {
   src?: string
@@ -44,11 +45,19 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
     lg: 'w-20 h-20 text-xl',
   }
 
+  const sizePixels = {
+    sm: 32,
+    md: 48,
+    lg: 80,
+  }
+
   if (src) {
     return (
-      <img
+      <Image
         src={src}
         alt={name}
+        width={sizePixels[size]}
+        height={sizePixels[size]}
         className={clsx(
           'rounded-full object-cover',
           sizeClasses[size],
