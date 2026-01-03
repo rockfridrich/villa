@@ -66,10 +66,30 @@ See [BACKLOG.md](../BACKLOG.md) for full roadmap.
 
 ```bash
 npm install
-npm run dev  # HTTPS required for passkeys
+npm run dev        # Start at http://localhost:3000
+npm run dev:https  # Start with HTTPS (for passkey testing)
+npm run dev:clean  # Clear cache and start fresh
 ```
 
-Dev server runs at `https://localhost:3000` (or 3001 if 3000 is busy).
+## Essential Commands
+
+| Task | Command |
+|------|---------|
+| **Start dev server** | `npm run dev` |
+| **Start with HTTPS** | `npm run dev:https` |
+| **Clear cache + start** | `npm run dev:clean` |
+| **Type check** | `npm run typecheck` |
+| **Run E2E tests** | `npm run test:e2e:chromium` |
+| **Full verification** | `npm run verify` |
+| **Debug E2E tests** | `npm run test:e2e:ui` |
+
+See [DEVELOPMENT.md](../DEVELOPMENT.md) for full command reference.
+
+## Troubleshooting
+
+**Blank page / no styles?** → `npm run dev:clean`
+**Port in use?** → `pkill -f "next dev"` then `npm run dev`
+**Passkeys not working?** → Use `npm run dev:https`
 
 ## Project Structure
 

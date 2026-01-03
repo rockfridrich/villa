@@ -2,100 +2,145 @@ import { Porto, Dialog, Mode } from 'porto'
 import type { ThemeFragment } from 'porto/theme'
 
 /**
- * Villa theme for Porto dialog
- * Maps Villa's design system to Porto's theme tokens
+ * Proof of Retreat theme for Porto dialog
+ * Cream backgrounds, ink text, yellow accents
  */
 export const villaTheme: ThemeFragment = {
-  colorScheme: 'light dark',
+  colorScheme: 'light',
 
-  // Villa primary blue (#2563eb) for accents
-  accent: ['#2563eb', '#3b82f6'],
+  // Yellow accent (#ffe047)
+  accent: '#ffe047',
 
-  // Primary button styling (Villa blue)
-  primaryBackground: ['#2563eb', '#3b82f6'],
-  primaryContent: ['#ffffff', '#ffffff'],
-  primaryBorder: ['#2563eb', '#3b82f6'],
-  primaryHoveredBackground: ['#1d4ed8', '#2563eb'],
-  primaryHoveredBorder: ['#1d4ed8', '#2563eb'],
+  // Primary button styling (yellow with brown text)
+  primaryBackground: '#ffe047',
+  primaryContent: '#382207',
+  primaryBorder: '#ffe047',
+  primaryHoveredBackground: '#f5d63d',
+  primaryHoveredBorder: '#f5d63d',
 
-  // Secondary button (subtle)
-  secondaryBackground: ['#f1f5f9', '#1e293b'],
-  secondaryContent: ['#334155', '#e2e8f0'],
-  secondaryBorder: ['#e2e8f0', '#334155'],
-  secondaryHoveredBackground: ['#e2e8f0', '#334155'],
-  secondaryHoveredBorder: ['#cbd5e1', '#475569'],
+  // Secondary button (cream with ink)
+  secondaryBackground: '#fef9f0',
+  secondaryContent: '#0d0d17',
+  secondaryBorder: '#e0e0e6',
+  secondaryHoveredBackground: '#fdf3e0',
+  secondaryHoveredBorder: '#c4c4cc',
 
-  // Base colors (backgrounds, text)
-  baseBackground: ['#ffffff', '#0f172a'],
-  baseAltBackground: ['#f8fafc', '#1e293b'],
-  basePlaneBackground: ['#f1f5f9', '#1e293b'],
-  baseContent: ['#0f172a', '#f8fafc'],
-  baseContentSecondary: ['#64748b', '#94a3b8'],
-  baseContentTertiary: ['#94a3b8', '#64748b'],
-  baseBorder: ['#e2e8f0', '#334155'],
-  baseHoveredBackground: ['#f1f5f9', '#1e293b'],
+  // Base colors (cream backgrounds, ink text)
+  baseBackground: '#fffcf8',
+  baseAltBackground: '#fef9f0',
+  basePlaneBackground: '#fdf3e0',
+  baseContent: '#0d0d17',
+  baseContentSecondary: '#45454f',
+  baseContentTertiary: '#61616b',
+  baseBorder: '#e0e0e6',
+  baseHoveredBackground: '#fef9f0',
 
   // Frame (dialog container)
-  frameBackground: ['#ffffff', '#0f172a'],
-  frameBorder: ['#e2e8f0', '#334155'],
-  frameContent: ['#0f172a', '#f8fafc'],
-  frameRadius: 16,
+  frameBackground: '#fffcf8',
+  frameBorder: '#e0e0e6',
+  frameContent: '#0d0d17',
+  frameRadius: 14,
 
   // Form fields
-  fieldBackground: ['#ffffff', '#1e293b'],
-  fieldContent: ['#0f172a', '#f8fafc'],
-  fieldContentSecondary: ['#64748b', '#94a3b8'],
-  fieldBorder: ['#e2e8f0', '#334155'],
-  fieldFocusedBackground: ['#ffffff', '#1e293b'],
-  fieldFocusedContent: ['#0f172a', '#f8fafc'],
-  fieldErrorBorder: ['#ef4444', '#f87171'],
+  fieldBackground: '#fffcf8',
+  fieldContent: '#0d0d17',
+  fieldContentSecondary: '#45454f',
+  fieldBorder: '#e0e0e6',
+  fieldFocusedBackground: '#fffcf8',
+  fieldFocusedContent: '#0d0d17',
+  fieldErrorBorder: '#ef4444',
 
-  // Border radius
+  // Border radius (matches Tailwind config)
   radiusSmall: 6,
-  radiusMedium: 8,
-  radiusLarge: 12,
+  radiusMedium: 10,
+  radiusLarge: 14,
 
-  // Status colors
-  positiveBackground: ['#dcfce7', '#166534'],
-  positiveContent: ['#166534', '#bbf7d0'],
-  positiveBorder: ['#86efac', '#22c55e'],
+  // Status colors (green from brand)
+  positiveBackground: '#e8f5e8',
+  positiveContent: '#698f69',
+  positiveBorder: '#698f69',
 
-  negativeBackground: ['#fee2e2', '#7f1d1d'],
-  negativeContent: ['#dc2626', '#fecaca'],
-  negativeBorder: ['#fca5a5', '#ef4444'],
+  negativeBackground: '#fee2e2',
+  negativeContent: '#dc2626',
+  negativeBorder: '#fca5a5',
 
-  // Focus ring
-  focus: ['#2563eb', '#3b82f6'],
+  // Focus ring (yellow)
+  focus: '#ffe047',
 
-  // Links
-  link: ['#2563eb', '#60a5fa'],
+  // Links (brown accent)
+  link: '#382207',
 
   // Separators
-  separator: ['#e2e8f0', '#334155'],
+  separator: '#e0e0e6',
 }
 
-// Singleton Porto instance with Villa theme
+// Porto instance management
 let portoInstance: ReturnType<typeof Porto.create> | null = null
 let themeController: Dialog.ThemeController | null = null
+let currentMode: 'popup' | 'inline' = 'popup'
 
-export function getPorto(): ReturnType<typeof Porto.create> {
+export interface PortoOptions {
+  /** Container element for inline rendering */
+  container?: HTMLElement | null
+  /** Force recreate instance even if one exists */
+  forceRecreate?: boolean
+}
+
+/**
+ * Get or create Porto instance
+ * @param options.container - If provided, uses experimental_inline mode
+ * @param options.forceRecreate - Force recreate instance for mode switch
+ */
+export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.create> {
+  const { container, forceRecreate } = options
+  const requestedMode = container ? 'inline' : 'popup'
+
+  // Recreate if mode changed or forced
+  if (portoInstance && (forceRecreate || currentMode !== requestedMode)) {
+    portoInstance = null
+    themeController = null
+  }
+
   if (!portoInstance) {
     // Create theme controller for dynamic updates
     themeController = Dialog.createThemeController()
+    currentMode = requestedMode
 
-    portoInstance = Porto.create({
-      mode: Mode.dialog({
-        renderer: Dialog.popup({
-          type: 'popup',
-          size: { width: 380, height: 520 },
+    if (container) {
+      // Use experimental_inline for embedded dialog
+      // experimental_inline expects element as a getter function
+      portoInstance = Porto.create({
+        mode: Mode.dialog({
+          renderer: Dialog.experimental_inline({ element: () => container }),
+          host: 'https://id.porto.sh/dialog',
+          theme: villaTheme,
+          themeController,
         }),
-        host: 'https://id.porto.sh/dialog',
-        theme: villaTheme,
-        themeController,
-      }),
-    })
+      })
+    } else {
+      // Use popup for standalone dialog
+      portoInstance = Porto.create({
+        mode: Mode.dialog({
+          renderer: Dialog.popup({
+            type: 'popup',
+            size: { width: 380, height: 520 },
+          }),
+          host: 'https://id.porto.sh/dialog',
+          theme: villaTheme,
+          themeController,
+        }),
+      })
+    }
   }
   return portoInstance
+}
+
+/**
+ * Reset Porto instance (useful when switching between modes)
+ */
+export function resetPorto(): void {
+  portoInstance = null
+  themeController = null
 }
 
 /**
@@ -140,10 +185,11 @@ export async function checkExistingAccount(): Promise<string | null> {
 /**
  * Create a new Porto account
  * Shows the Porto sign-up flow directly
+ * @param container - Optional element for inline rendering
  */
-export async function createAccount(): Promise<PortoConnectResult> {
+export async function createAccount(container?: HTMLElement | null): Promise<PortoConnectResult> {
   try {
-    const porto = getPorto()
+    const porto = getPorto({ container })
 
     // Use wallet_connect which shows the full Porto dialog
     // Porto will show create account UI for new users
@@ -181,10 +227,11 @@ export async function createAccount(): Promise<PortoConnectResult> {
 /**
  * Sign in with existing Porto account
  * Uses eth_requestAccounts which prompts for passkey selection
+ * @param container - Optional element for inline rendering
  */
-export async function signIn(): Promise<PortoConnectResult> {
+export async function signIn(container?: HTMLElement | null): Promise<PortoConnectResult> {
   try {
-    const porto = getPorto()
+    const porto = getPorto({ container })
 
     // eth_requestAccounts prompts user to select existing passkey
     const accounts = await porto.provider.request({

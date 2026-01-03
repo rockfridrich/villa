@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Fingerprint, Check, AlertCircle } from 'lucide-react'
 import { Button, Input, Spinner } from '@/components/ui'
@@ -11,6 +11,7 @@ import {
   signIn,
   checkExistingAccount,
   isPortoSupported,
+  resetPorto,
 } from '@/lib/porto'
 
 type Step =
@@ -36,6 +37,9 @@ export default function OnboardingPage() {
   const [address, setAddress] = useState<string | null>(null)
   const [isSupported, setIsSupported] = useState(true)
   const [hasExistingAccount, setHasExistingAccount] = useState(false)
+
+  // Ref for inline Porto container
+  const portoContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Check Porto support and existing account on mount
   useEffect(() => {
@@ -73,9 +77,14 @@ export default function OnboardingPage() {
   const handleCreateAccount = async () => {
     setStep('connecting')
 
+    // Wait for container to be available
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     try {
-      // Porto shows its create account UI directly
-      const result = await createAccount()
+      // Reset Porto to ensure fresh instance with inline container
+      resetPorto()
+      // Porto shows its create account UI in the inline container
+      const result = await createAccount(portoContainerRef.current)
 
       if (!result.success) {
         throw result.error
@@ -93,6 +102,7 @@ export default function OnboardingPage() {
         message,
         retry: () => {
           setError(null)
+          resetPorto()
           setStep('welcome')
         },
       })
@@ -103,9 +113,14 @@ export default function OnboardingPage() {
   const handleSignIn = async () => {
     setStep('connecting')
 
+    // Wait for container to be available
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     try {
-      // Porto shows passkey selection for sign in
-      const result = await signIn()
+      // Reset Porto to ensure fresh instance with inline container
+      resetPorto()
+      // Porto shows passkey selection in the inline container
+      const result = await signIn(portoContainerRef.current)
 
       if (!result.success) {
         throw result.error
@@ -130,6 +145,7 @@ export default function OnboardingPage() {
         message,
         retry: () => {
           setError(null)
+          resetPorto()
           setStep('welcome')
         },
       })
@@ -167,7 +183,7 @@ export default function OnboardingPage() {
 
   if (!isSupported) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-6">
+      <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-cream-50">
         <div className="w-full max-w-sm">
           {error && <ErrorStep message={error.message} onRetry={error.retry} />}
         </div>
@@ -176,8 +192,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-cream-50">
+      <div className="w-full max-w-md">
         {step === 'welcome' && (
           <WelcomeStep
             onCreateNew={handleCreateAccount}
@@ -186,7 +202,9 @@ export default function OnboardingPage() {
           />
         )}
 
-        {step === 'connecting' && <ConnectingStep />}
+        {step === 'connecting' && (
+          <ConnectingStep portoContainerRef={portoContainerRef} />
+        )}
 
         {step === 'success' && <SuccessStep />}
 
@@ -223,11 +241,11 @@ function WelcomeStep({
   return (
     <div className="text-center space-y-8">
       <div className="space-y-4">
-        <div className="w-16 h-16 mx-auto bg-villa-500 rounded-2xl flex items-center justify-center">
-          <Fingerprint className="w-8 h-8 text-white" />
+        <div className="w-16 h-16 mx-auto bg-accent-yellow rounded-2xl flex items-center justify-center">
+          <Fingerprint className="w-8 h-8 text-accent-brown" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Villa</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-lg">
+        <h1 className="text-3xl font-serif tracking-tight text-ink">Villa</h1>
+        <p className="text-ink-muted text-lg">
           Your identity. No passwords.
         </p>
       </div>
@@ -256,16 +274,24 @@ function WelcomeStep({
   )
 }
 
-function ConnectingStep() {
+function ConnectingStep({
+  portoContainerRef,
+}: {
+  portoContainerRef: React.MutableRefObject<HTMLDivElement | null>
+}) {
   return (
-    <div className="text-center space-y-6">
-      <Spinner size="lg" className="mx-auto" />
+    <div className="text-center space-y-4">
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Connecting...</h2>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
+        <h2 className="text-xl font-serif text-ink">Connecting...</h2>
+        <p className="text-ink-muted text-sm">
           Complete the biometric prompt
         </p>
       </div>
+      {/* Inline Porto container - full height for dialog */}
+      <div
+        ref={portoContainerRef}
+        className="min-h-[520px] h-[60vh] max-h-[640px] w-full rounded-lg bg-cream-100 border border-neutral-100 overflow-hidden"
+      />
     </div>
   )
 }
@@ -273,12 +299,12 @@ function ConnectingStep() {
 function SuccessStep() {
   return (
     <div className="text-center space-y-6">
-      <div className="w-20 h-20 mx-auto bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+      <div className="w-20 h-20 mx-auto bg-accent-green rounded-full flex items-center justify-center animate-bounce">
         <Check className="w-10 h-10 text-white" />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Connected!</h2>
-        <p className="text-slate-500 dark:text-slate-400">
+        <h2 className="text-2xl font-serif text-ink">Connected!</h2>
+        <p className="text-ink-muted">
           Your secure identity is ready
         </p>
       </div>
@@ -302,8 +328,8 @@ function ProfileStep({
   return (
     <div className="space-y-8">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">Set Up Profile</h2>
-        <p className="text-slate-500 dark:text-slate-400">
+        <h2 className="text-2xl font-serif text-ink">Set Up Profile</h2>
+        <p className="text-ink-muted">
           What should we call you?
         </p>
       </div>
@@ -339,12 +365,12 @@ function ErrorStep({
 }) {
   return (
     <div className="text-center space-y-6">
-      <div className="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+      <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
         <AlertCircle className="w-8 h-8 text-red-500" />
       </div>
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Something went wrong</h2>
-        <p className="text-slate-500 dark:text-slate-400">{message}</p>
+        <h2 className="text-xl font-serif text-ink">Something went wrong</h2>
+        <p className="text-ink-muted">{message}</p>
       </div>
       <Button size="lg" className="w-full" onClick={onRetry}>
         Try Again

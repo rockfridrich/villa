@@ -19,7 +19,11 @@ export default function HomePage() {
   }, [identity, router])
 
   if (!identity) {
-    return null
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-cream-50">
+        <div className="animate-spin w-8 h-8 border-4 border-accent-yellow border-t-transparent rounded-full" />
+      </main>
+    )
   }
 
   const handleLogout = async () => {
@@ -47,10 +51,10 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen p-6 bg-cream-50">
       <div className="max-w-sm mx-auto space-y-6">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Villa</h1>
+          <h1 className="text-2xl font-serif text-ink">Villa</h1>
           <Button variant="ghost" size="default" onClick={handleLogout}>
             <LogOut className="w-5 h-5" />
           </Button>
@@ -64,14 +68,14 @@ export default function HomePage() {
               size="lg"
             />
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-semibold">{identity.displayName}</h2>
+              <h2 className="text-xl font-serif text-ink">{identity.displayName}</h2>
               <button
                 onClick={handleCopyAddress}
-                className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
               >
                 <span className="font-mono">{truncateAddress(identity.address)}</span>
                 {copied ? (
-                  <Check className="w-4 h-4 text-green-500" />
+                  <Check className="w-4 h-4 text-accent-green" />
                 ) : (
                   <Copy className="w-4 h-4" />
                 )}
@@ -83,12 +87,12 @@ export default function HomePage() {
         <Card>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Created</span>
-              <span>{formatDate(identity.createdAt)}</span>
+              <span className="text-ink-muted">Created</span>
+              <span className="text-ink">{formatDate(identity.createdAt)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Status</span>
-              <span className="text-green-500">Active</span>
+              <span className="text-ink-muted">Status</span>
+              <span className="text-accent-green">Active</span>
             </div>
           </CardContent>
         </Card>

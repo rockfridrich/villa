@@ -1,0 +1,32 @@
+# Digital Ocean App Platform Specification
+# Deploy: doctl apps create --spec .do/app.yaml
+# Update: doctl apps update <app-id> --spec .do/app.yaml
+
+name: villa
+
+services:
+  - name: web
+    github:
+      repo: rockfridrich/villa
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    health_check:
+      http_path: /
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+
+region: nyc

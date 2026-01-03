@@ -1,0 +1,53 @@
+# Dependencies (will be installed in container)
+node_modules
+
+# Build outputs
+.next
+out
+build
+dist
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Environment files (use Docker env vars instead)
+.env
+.env.local
+.env*.local
+
+# IDE and OS
+.idea
+.vscode
+*.swp
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# Documentation
+*.md
+!README.md
+
+# Tests (not needed in production)
+tests
+*.spec.ts
+*.test.ts
+
+# Development configs
+.eslintrc*
+.prettierrc*
+tsconfig*.json
+vitest.config*
+playwright.config*
+
+# CI/CD
+.github
+.do

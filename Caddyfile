@@ -1,0 +1,11 @@
+# Caddyfile for local HTTPS development
+# Caddy automatically generates local certificates
+
+localhost {
+    reverse_proxy app:3000
+}
+
+# Alternative: use villa.local (add to /etc/hosts: 127.0.0.1 villa.local)
+villa.local {
+    reverse_proxy app:3000
+}

@@ -1,0 +1,21 @@
+# Development Dockerfile with hot reload
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for native modules
+RUN apk add --no-cache libc6-compat
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including devDependencies)
+RUN npm ci
+
+# Copy source (will be overwritten by volume mount)
+COPY . .
+
+EXPOSE 3000
+
+# Start dev server
+CMD ["npm", "run", "dev"]

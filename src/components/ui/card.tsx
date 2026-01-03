@@ -7,8 +7,8 @@ export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
       className={clsx(
-        'rounded-xl border border-slate-200 dark:border-slate-700',
-        'bg-white dark:bg-slate-800',
+        'rounded-lg border border-neutral-100',
+        'bg-cream-100',
         'shadow-sm p-6',
         className
       )}
@@ -29,7 +29,7 @@ export function CardHeader({ className, children, ...props }: CardProps) {
 
 export function CardTitle({ className, children, ...props }: CardProps) {
   return (
-    <h3 className={clsx('text-lg font-medium', className)} {...props}>
+    <h3 className={clsx('text-lg font-serif text-ink', className)} {...props}>
       {children}
     </h3>
   )

@@ -18,8 +18,8 @@ export default function Home() {
 
   // Show loading while redirecting
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-4 border-villa-500 border-t-transparent rounded-full" />
+    <main className="min-h-screen flex items-center justify-center bg-cream-50">
+      <div className="animate-spin w-8 h-8 border-4 border-accent-yellow border-t-transparent rounded-full" />
     </main>
   )
 }

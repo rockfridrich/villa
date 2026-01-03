@@ -14,9 +14,32 @@ Villa provides native WebAuthn passkey authentication, giving village projects:
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
+
+Visit http://localhost:3000 to see the app.
+
+### Development Options
+
+| Method | Command | URL | Use Case |
+|--------|---------|-----|----------|
+| **Native** | `npm run dev` | http://localhost:3000 | Fast local dev |
+| **HTTPS** | `npm run dev:https` | https://localhost:3000 | Passkey testing |
+| **Docker** | `docker compose up` | https://localhost | Production-like |
+
+### Docker Setup (recommended for passkey testing)
+
+```bash
+# macOS with Colima
+brew install colima docker docker-compose
+colima start
+docker compose up
+
+# Or use the dev script
+./scripts/dev.sh --docker
+```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup and troubleshooting.
 
 ## Project Structure
 

@@ -1,0 +1,39 @@
+# Local development with HTTPS
+# Usage: docker compose up
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    networks:
+      - villa-net
+
+  # Caddy provides automatic HTTPS with local certificates
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - villa-net
+
+networks:
+  villa-net:
+
+volumes:
+  caddy_data:
+  caddy_config:

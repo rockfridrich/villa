@@ -34,4 +34,11 @@ npm-debug.log*
 tmp/
 temp/
 
-certificates
+# Certificates
+certificates/
+*.pem
+*.crt
+*.key
+
+# Docker
+.docker/

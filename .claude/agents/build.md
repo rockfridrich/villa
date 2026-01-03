@@ -184,11 +184,33 @@ async function connectWallet(): Promise<Result<WalletConnection>> {
 - Run pre-commit hooks before every commit
 - Never commit: secrets, console.logs, commented code
 
+## Running & Testing
+
+**Always verify your work compiles and passes tests:**
+
+```bash
+# Quick verification
+npm run typecheck          # Check types
+npm run test:e2e:chromium  # Run E2E tests
+
+# Full verification (before PR)
+npm run verify             # typecheck + build + e2e
+
+# Development
+npm run dev:clean          # Clear cache and start fresh
+npm run dev:https          # For passkey testing
+```
+
+**Troubleshooting:**
+- Blank page? → `npm run dev:clean`
+- Port in use? → `pkill -f "next dev"`
+- Tailwind not updating? → Delete `.next` folder
+
 ## Handoff
 
 When you complete implementation:
 
-1. Run full test suite
+1. Run `npm run verify` to ensure everything passes
 2. Update `specs/STATUS.md` to "BUILDING" → "REVIEW"
 3. Create PR with description referencing the feature spec
 4. Suggest: `@review "Review PR #{number}"`
