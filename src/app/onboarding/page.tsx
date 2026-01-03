@@ -9,7 +9,6 @@ import { displayNameSchema } from '@/lib/validation'
 import {
   createAccount,
   signIn,
-  checkExistingAccount,
   isPortoSupported,
   resetPorto,
 } from '@/lib/porto'
@@ -36,35 +35,23 @@ export default function OnboardingPage() {
   const [error, setError] = useState<ErrorState | null>(null)
   const [address, setAddress] = useState<string | null>(null)
   const [isSupported, setIsSupported] = useState(true)
-  const [hasExistingAccount, setHasExistingAccount] = useState(false)
 
   // Ref for inline Porto container
   const portoContainerRef = useRef<HTMLDivElement | null>(null)
 
-  // Check Porto support and existing account on mount
+  // Check Porto support on mount
   useEffect(() => {
-    const checkSupport = async () => {
-      if (!isPortoSupported()) {
-        setIsSupported(false)
-        setError({
-          message:
-            'Your browser does not support passkeys. Please use a modern browser like Safari, Chrome, or Edge.',
-          retry: () => {
-            window.location.reload()
-          },
-        })
-        setStep('error')
-        return
-      }
-
-      // Check if user has existing Porto account
-      const existingAddress = await checkExistingAccount()
-      if (existingAddress) {
-        setHasExistingAccount(true)
-      }
+    if (!isPortoSupported()) {
+      setIsSupported(false)
+      setError({
+        message:
+          'Your browser does not support passkeys. Please use a modern browser like Safari, Chrome, or Edge.',
+        retry: () => {
+          window.location.reload()
+        },
+      })
+      setStep('error')
     }
-
-    checkSupport()
   }, [])
 
   // Redirect if already has identity
@@ -198,7 +185,6 @@ export default function OnboardingPage() {
           <WelcomeStep
             onCreateNew={handleCreateAccount}
             onSignIn={handleSignIn}
-            hasExistingAccount={hasExistingAccount}
           />
         )}
 
@@ -232,11 +218,9 @@ export default function OnboardingPage() {
 function WelcomeStep({
   onCreateNew,
   onSignIn,
-  hasExistingAccount,
 }: {
   onCreateNew: () => void
   onSignIn: () => void
-  hasExistingAccount: boolean
 }) {
   return (
     <div className="text-center space-y-8">
