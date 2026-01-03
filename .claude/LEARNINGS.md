@@ -832,4 +832,119 @@ echo -e "${G}✓${N} Done"
 
 ---
 
+---
+
+## Session: 2026-01-04 — Multi-Terminal Coordination & Architect Agent
+
+### What Happened
+
+1. **Multiple Claude Code terminals running simultaneously** — Risk of file conflicts and duplicated work
+2. **No decomposition phase** — Build agents jumped into implementation without clear file ownership
+3. **Created architect agent** — Opus-powered task decomposition with explicit file ownership
+4. **Defined coordination protocol** — WBS (Work Breakdown Structure) pattern for parallel work
+
+### The Problem
+
+When 2-3 Claude Code terminals run in parallel:
+- Agents edit the same files → merge conflicts
+- Work gets duplicated → wasted tokens
+- Dependencies unclear → blocking and waiting
+- No coordination mechanism → chaos
+
+### The Solution: Architect Agent + WBS
+
+**New workflow phase:**
+```
+spec → architect → build (parallel) → test + review
+```
+
+**Architect agent produces:**
+- Work Units (WU) with explicit file ownership
+- Dependency graph (what blocks what)
+- Shared interfaces (created first, locked after)
+- Parallel execution plan
+
+### Key Patterns Introduced
+
+#### 1. File Ownership Types
+
+| Type | Rule |
+|------|------|
+| **Exclusive** | Only assigned agent edits |
+| **Read-only** | Any agent imports, none edit |
+| **Shared types** | Created in WU-0, locked after |
+
+#### 2. Work Unit Structure
+
+```markdown
+### WU-1: {Task Name}
+**Owner:** Build Agent 1
+**Depends on:** WU-0
+**Files (exclusive):** src/components/Feature/
+**Files (read-only):** src/types/shared.ts
+**Deliverable:** What's delivered
+**Tests:** tests/unit/feature.test.ts
+```
+
+#### 3. Commit Convention
+
+```bash
+git commit -m "feat(WU-1): Complete user profile component"
+```
+
+Other terminals check for dependent WU commits before starting.
+
+#### 4. Coordination Protocol
+
+```
+Terminal 1              Terminal 2              Terminal 3
+─────────────────────────────────────────────────────────
+@architect (WU-0)       [wait]                  [wait]
+  ↓ commit types
+@build WU-1             @build WU-2             @build WU-3
+```
+
+### When to Use Architect
+
+| Scenario | Use Architect? |
+|----------|----------------|
+| Single terminal, small feature | No |
+| Single terminal, large feature | Optional |
+| Multiple terminals, any feature | **Required** |
+| Refactoring across many files | **Required** |
+
+### Files Created/Modified
+
+**New:**
+- `.claude/agents/architect.md` — Architect agent definition
+
+**Updated:**
+- `.claude/CLAUDE.md` — Added architect to workflow, multi-terminal coordination section
+- `.claude/LEARNINGS.md` — This session
+
+### Anti-Patterns Identified
+
+- ❌ Running multiple build agents without @architect decomposition
+- ❌ Editing files not assigned to your Work Unit
+- ❌ Starting dependent WU before blocking WU commits
+- ❌ Skipping WU-0 (shared types) phase
+
+### Benefits
+
+| Before | After |
+|--------|-------|
+| Random file conflicts | Explicit ownership prevents conflicts |
+| Duplicated work | Clear WU assignments |
+| Blocking on dependencies | Dependency graph shows what to wait for |
+| No coordination | Commit messages signal completion |
+
+### Learnings Applied
+
+1. **Decompose before building** — @architect creates WBS before any @build runs
+2. **Interface-first design** — Shared types in WU-0, locked thereafter
+3. **Explicit file ownership** — Every file has one owner during implementation
+4. **Commit-based coordination** — WU completion signaled via commit messages
+
+---
+
 *Last updated: 2026-01-04*

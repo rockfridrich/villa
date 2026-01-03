@@ -50,6 +50,9 @@ Always add to specs when external systems are involved:
 - ❌ Over-engineering detection logic
 - ❌ Leaving unused code/props
 - ❌ Committing without running tests
+- ❌ Running multiple build agents without @architect decomposition
+- ❌ Editing files not assigned to your Work Unit
+- ❌ Starting dependent WU before blocking WU commits
 
 ---
 
@@ -145,13 +148,14 @@ This project uses **Claude Code agents** for implementation. Humans focus on spe
 | Agent | Model | Why | Cost |
 |-------|-------|-----|------|
 | **spec** | `opus` | Needs deep reasoning for architecture decisions | $$$ |
+| **architect** | `opus` | Task decomposition requires deep reasoning about dependencies | $$$ |
 | **build** | `sonnet` | Fast iteration, good code quality | $$ |
 | **test** | `haiku` | Running commands, checking output | $ |
 | **review** | `sonnet` | Security analysis needs quality, not speed | $$ |
 | **explore** | `haiku` | Quick file searches, codebase navigation | $ |
 
 **Rule of thumb:**
-- **Opus** → Architecture, complex decisions, spec writing
+- **Opus** → Architecture, complex decisions, spec writing, task decomposition
 - **Sonnet** → Implementation, code review, moderate complexity
 - **Haiku** → Quick tasks, searches, running tests, simple edits
 
@@ -200,17 +204,24 @@ PHASE 1: Specification (human + opus)
 ├── @spec agent writes spec (opus - needs reasoning)
 └── Human approves spec
 
-PHASE 2: Implementation (parallel, sonnet)
-├── @build agent implements (sonnet - fast iteration)
-├── [Optional] @explore agent researches in parallel (haiku)
-└── Commit after each logical chunk
+PHASE 2: Architecture (opus) — REQUIRED for multi-terminal work
+├── @architect decomposes spec into Work Units (WU)
+├── Assigns explicit file ownership per WU
+├── Defines shared interfaces (created first)
+└── Outputs: specs/{feature}.wbs.md
 
-PHASE 3: Validation (parallel, haiku/sonnet)
+PHASE 3: Implementation (parallel, sonnet)
+├── WU-0: Shared types (one agent, blocking)
+├── WU-1..N: Build agents work in parallel (file ownership enforced)
+├── Each agent only edits files assigned to their WU
+└── Commit after each WU: "feat(WU-X): Complete {task}"
+
+PHASE 4: Validation (parallel, haiku/sonnet)
 ├── @test agent runs E2E (haiku - just running commands)
 ├── @review agent checks code (sonnet - needs analysis)
 └── Both run simultaneously
 
-PHASE 4: Ship
+PHASE 5: Ship
 ├── Fix any issues from review
 ├── Re-run tests
 └── Merge
@@ -221,7 +232,9 @@ PHASE 4: Ship
 | Situation | Command | Model |
 |-----------|---------|-------|
 | New feature | `@spec "Feature X"` | opus |
+| Decompose for parallel work | `@architect "Decompose Feature X"` | opus |
 | Implement spec | `@build "Implement X"` | sonnet |
+| Implement work unit | `@build "Implement WU-1: Task name"` | sonnet |
 | Run tests | `@test "Run E2E"` | haiku |
 | Review PR | `@review "Review PR #1"` | sonnet |
 | Find files | `@explore "Where is auth handled?"` | haiku |
@@ -232,9 +245,103 @@ PHASE 4: Ship
 All agents are defined in `.claude/agents/`:
 
 - **spec.md** — Creates feature specs with Why, UI Boundaries, Tasks (opus)
+- **architect.md** — Decomposes specs into parallel Work Units with file ownership (opus)
 - **build.md** — Implements code following specs (sonnet)
 - **test.md** — E2E, integration, security tests (haiku)
 - **review.md** — Code review for security, quality, spec compliance (sonnet)
+
+---
+
+## Multi-Terminal Coordination
+
+When running **multiple Claude Code terminals** simultaneously, use this protocol to prevent conflicts.
+
+### The Problem
+
+Without coordination, multiple terminals can:
+- Edit the same file simultaneously (merge conflicts)
+- Duplicate work (wasted tokens/time)
+- Create incompatible implementations (integration failures)
+- Block each other waiting for shared resources
+
+### The Solution: Work Breakdown Structure (WBS)
+
+**Before parallel work, run the architect agent:**
+
+```bash
+@architect "Decompose {feature} for parallel implementation"
+```
+
+This produces `specs/{feature}.wbs.md` with:
+- Work Units (WU) with explicit file ownership
+- Dependency graph (what blocks what)
+- Shared interfaces (created first, read-only thereafter)
+- Parallel execution plan
+
+### File Ownership Rules
+
+| Type | Rule | Example |
+|------|------|---------|
+| **Exclusive** | Only assigned agent edits | `src/components/Feature/` |
+| **Read-only** | Any agent imports, none edit | `src/types/shared.ts` |
+| **Shared types** | Created in WU-0, locked after | `src/types/{feature}.ts` |
+
+### Coordination Protocol
+
+```
+Terminal 1              Terminal 2              Terminal 3
+─────────────────────────────────────────────────────────
+@architect (WU-0)       [wait]                  [wait]
+  ↓ commit types
+@build WU-1             @build WU-2             @build WU-3
+  ↓ commit              ↓ commit                ↓ commit
+[wait for all]          [wait for all]          [wait for all]
+@build WU-4 (integration)
+```
+
+### Commit Convention
+
+Signal completion via commit messages:
+```bash
+git commit -m "feat(WU-1): Complete user profile component"
+```
+
+Other terminals check for dependent WU commits before starting blocked work.
+
+### When to Use Architect
+
+| Scenario | Use Architect? |
+|----------|----------------|
+| Single terminal, small feature | No |
+| Single terminal, large feature | Optional (helps planning) |
+| Multiple terminals, any feature | **Yes (required)** |
+| Refactoring across many files | **Yes (required)** |
+
+### Quick Start: Parallel Implementation
+
+```bash
+# Terminal 1: Create work breakdown
+@architect "Decompose user settings feature"
+
+# Review specs/{feature}.wbs.md, then:
+
+# Terminal 1: Shared types (blocking)
+@build "Implement WU-0: Shared types for user settings"
+
+# After WU-0 commits, in parallel:
+# Terminal 1:
+@build "Implement WU-1: Settings API hook"
+
+# Terminal 2:
+@build "Implement WU-2: Display name editor"
+
+# Terminal 3:
+@build "Implement WU-3: Avatar picker"
+
+# After all WUs complete:
+# Any terminal:
+@build "Implement WU-N: Integration and E2E tests"
+```
 
 ## Learnings Integration
 
@@ -297,6 +404,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for full command reference.
 ├── LEARNINGS.md        # Session learnings and patterns
 ├── agents/             # Agent definitions
 │   ├── spec.md
+│   ├── architect.md
 │   ├── build.md
 │   ├── test.md
 │   └── review.md
