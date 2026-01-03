@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Fingerprint, Check, AlertCircle } from 'lucide-react'
+import { Fingerprint, Check, AlertCircle, ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Spinner } from '@/components/ui'
 import { useIdentityStore } from '@/lib/store'
 import { displayNameSchema } from '@/lib/validation'
@@ -12,8 +12,15 @@ import {
   isPortoSupported,
   resetPorto,
 } from '@/lib/porto'
+import {
+  detectInAppBrowser,
+  getAppDisplayName,
+  getCurrentUrl,
+  type InAppBrowserInfo,
+} from '@/lib/browser'
 
 type Step =
+  | 'inapp-browser'
   | 'welcome'
   | 'connecting'
   | 'success'
@@ -35,6 +42,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<ErrorState | null>(null)
   const [address, setAddress] = useState<string | null>(null)
   const [isSupported, setIsSupported] = useState(true)
+  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserInfo | null>(null)
 
   // Ref for inline Porto container
   const portoContainerRef = useRef<HTMLDivElement | null>(null)
@@ -51,8 +59,17 @@ export default function OnboardingPage() {
     }
   }, [])
 
-  // Check Porto support on mount
+  // Check for in-app browser and Porto support on mount
   useEffect(() => {
+    // First check for in-app browser
+    const browserInfo = detectInAppBrowser()
+    if (browserInfo.isInApp) {
+      setInAppBrowser(browserInfo)
+      setStep('inapp-browser')
+      return
+    }
+
+    // Then check Porto support
     if (!isPortoSupported()) {
       setIsSupported(false)
       setError({
@@ -191,6 +208,10 @@ export default function OnboardingPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-cream-50">
       <div className="w-full max-w-md">
+        {step === 'inapp-browser' && inAppBrowser && (
+          <InAppBrowserStep browserInfo={inAppBrowser} />
+        )}
+
         {step === 'welcome' && (
           <WelcomeStep
             onCreateNew={handleCreateAccount}
@@ -222,6 +243,91 @@ export default function OnboardingPage() {
         )}
       </div>
     </main>
+  )
+}
+
+function InAppBrowserStep({
+  browserInfo,
+}: {
+  browserInfo: InAppBrowserInfo
+}) {
+  const [copied, setCopied] = useState(false)
+  const appName = getAppDisplayName(browserInfo.app)
+  const url = getCurrentUrl()
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback: select text for manual copy
+      const input = document.createElement('input')
+      input.value = url
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  return (
+    <div className="text-center space-y-6">
+      <div className="space-y-4">
+        <div className="w-16 h-16 mx-auto bg-accent-yellow rounded-2xl flex items-center justify-center">
+          <ExternalLink className="w-8 h-8 text-accent-brown" />
+        </div>
+        <h1 className="text-2xl font-serif tracking-tight text-ink">
+          Open in Browser
+        </h1>
+        <p className="text-ink-muted">
+          For security, passkeys only work in{' '}
+          <span className="font-medium text-ink">Safari</span> or{' '}
+          <span className="font-medium text-ink">Chrome</span>.
+        </p>
+      </div>
+
+      <div className="bg-cream-100 rounded-xl p-4 space-y-3">
+        <p className="text-sm font-medium text-ink">
+          You&apos;re in {appName}
+        </p>
+        <p className="text-sm text-ink-muted">
+          {browserInfo.instructions}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <Button
+          size="lg"
+          className="w-full"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <>
+              <CheckCircle2 className="w-5 h-5 mr-2" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="w-5 h-5 mr-2" />
+              Copy Link
+            </>
+          )}
+        </Button>
+        <p className="text-xs text-ink-muted">
+          Then paste in Safari or Chrome
+        </p>
+      </div>
+
+      <div className="pt-4 border-t border-neutral-100">
+        <p className="text-xs text-ink-muted">
+          Why? In-app browsers can&apos;t securely store passkeys.
+          Opening in a real browser keeps your identity safe.
+        </p>
+      </div>
+    </div>
   )
 }
 
