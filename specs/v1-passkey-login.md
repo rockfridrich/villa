@@ -18,36 +18,55 @@ The current implementation uses native WebAuthn with fake derived addresses. Por
 
 ## User Experience
 
-### New User (Create Account)
+### Welcome Screen Logic
+
+**Sign In is ALWAYS the primary button.** Most users are returning.
+
+Detection flow on app load:
+1. Check local storage for existing Villa identity
+2. If found → redirect to home (skip welcome)
+3. If not found → show welcome screen
+
+### Returning User (Sign In) — Primary Flow
 
 1. User opens Villa, sees welcome screen: "Your identity. No passwords."
-2. User taps "Create New Identity"
-3. Brief explainer: "Use Face ID to create your secure identity"
-4. User taps "Create Identity"
-5. Porto handles passkey creation (dialog or iframe, depending on context)
-6. Native biometric prompt (Face ID / Touch ID / fingerprint)
-7. Success animation
-8. User enters display name (required)
-9. Done - redirect to home screen
+2. User taps **"Sign In"** (primary button, always prominent)
+3. Porto passkey selector appears (styled with Villa theme)
+4. User selects their passkey, biometric prompt (Face ID / Touch ID)
+5. If display name exists locally → redirect to home
+6. If no display name (new device) → prompt for profile setup
 
-### Returning User (Sign In)
+### New User (Create Villa ID) — Secondary Flow
 
 1. User opens Villa, sees welcome screen
-2. If user has existing Porto account detected, "Sign In" is primary button
-3. User taps "Sign In with Passkey"
-4. Porto handles passkey authentication
-5. Native biometric prompt
-6. If display name exists in local storage, redirect directly to home
-7. If no display name stored, prompt for profile setup first
+2. User taps **"Create Villa ID"** (secondary button)
+3. Porto passkey creation flow (styled with Villa theme)
+4. Native biometric prompt to create passkey
+5. User enters display name (required)
+6. Done → redirect to home
+
+### Language Guidelines
+
+| Internal/Tech | User-Facing |
+|---------------|-------------|
+| Porto account | Villa ID |
+| Porto SDK | "Secured by passkeys" |
+| Wallet address | Villa ID (or just not shown) |
+| eth_requestAccounts | "Sign In" |
+| wallet_connect | "Create Villa ID" |
+
+**Never say "Porto" to users.** It's infrastructure, like saying "PostgreSQL" to users.
 
 ## Screens
 
-- **Welcome:** Value prop, two CTAs (Create / Sign In), passkey detection determines primary button
-- **Explainer:** One visual, one sentence explaining passkey security, CTA to proceed
-- **Connecting:** Loading state while Porto processes (skeleton or spinner)
-- **Success:** Brief celebration moment before profile setup
-- **Profile:** Display name input (required), continue button
-- **Error:** What went wrong, retry button, help text
+- **Welcome:** Value prop "Your identity. No passwords.", two CTAs:
+  - **Primary:** "Sign In" (always prominent, yellow)
+  - **Secondary:** "Create Villa ID" (outline/ghost style)
+  - Footer: "Secured by passkeys" (subtle, no Porto mention)
+- **Connecting:** Loading state while Porto processes (spinner with "Connecting...")
+- **Profile Setup:** Display name input (required), "Continue" button
+- **Error:** What went wrong, "Try Again" button, contextual help text
+- **Home:** Profile display, "Switch Account" button
 
 ## States
 
@@ -139,16 +158,25 @@ Map Porto errors to user-friendly messages:
 
 ## Tasks
 
-- [ ] Create `src/lib/porto.ts` with Porto SDK wrapper
-- [ ] Update `src/app/onboarding/page.tsx` to use Porto
-- [ ] Remove or deprecate `src/lib/webauthn.ts`
-- [ ] Add connection detection on welcome screen (eth_accounts check)
+### Completed ✓
+- [x] Create `src/lib/porto.ts` with Porto SDK wrapper
+- [x] Update `src/app/onboarding/page.tsx` to use Porto
+- [x] Remove or deprecate `src/lib/webauthn.ts`
+- [x] Write E2E tests for full onboarding flow
+- [x] Write security tests (XSS prevention, no sensitive data leaks)
+- [x] Add session storage clearing on logout
+- [x] Document session behavior
+
+### Remaining
+- [ ] **Update button copy**: "Create New Identity" → "Create Villa ID"
+- [ ] **Update button copy**: "Sign In with Passkey" → "Sign In"
+- [ ] **Make Sign In primary**: Yellow/filled style, Create as secondary/outline
+- [ ] **Add security badge**: "Secured by passkeys" footer on welcome
+- [ ] **Update E2E tests** to match new copy
 - [ ] Test create account flow on iOS Safari
 - [ ] Test create account flow on Android Chrome
 - [ ] Test sign-in flow with existing passkey
 - [ ] Test error states (cancel, network, timeout)
-- [ ] Write E2E tests for full onboarding flow
-- [ ] Write security tests (XSS prevention, no sensitive data leaks)
 
 ## Acceptance Criteria
 
@@ -216,9 +244,11 @@ Your passkey stays active for quick sign-in
 | Action | Button Text | Helper Text |
 |--------|-------------|-------------|
 | Leave session | "Switch Account" | "Your passkey stays active for quick sign-in" |
-| Create identity | "Create New Identity" | — |
-| Return user | "Sign In with Passkey" | — |
+| Create identity | "Create Villa ID" | — |
+| Return user | "Sign In" | — |
 | Error retry | "Try Again" | Context-specific error message |
+| Welcome tagline | — | "Your identity. No passwords." |
+| Security badge | — | "Secured by passkeys" |
 
 ### What We Cannot Control
 
