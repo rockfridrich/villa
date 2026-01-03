@@ -57,35 +57,101 @@ Always add to specs when external systems are involved:
 
 This project uses **Claude Code agents** for implementation. Humans focus on specs and review; agents handle code.
 
-### Workflow
+### Model Selection Guide
+
+| Agent | Model | Why | Cost |
+|-------|-------|-----|------|
+| **spec** | `opus` | Needs deep reasoning for architecture decisions | $$$ |
+| **build** | `sonnet` | Fast iteration, good code quality | $$ |
+| **test** | `haiku` | Running commands, checking output | $ |
+| **review** | `sonnet` | Security analysis needs quality, not speed | $$ |
+| **explore** | `haiku` | Quick file searches, codebase navigation | $ |
+
+**Rule of thumb:**
+- **Opus** → Architecture, complex decisions, spec writing
+- **Sonnet** → Implementation, code review, moderate complexity
+- **Haiku** → Quick tasks, searches, running tests, simple edits
+
+### Parallel Agent Patterns
+
+**Maximize parallelism to reduce human wait time:**
 
 ```
-1. Human describes feature/task
-2. Claude spawns @spec agent → writes spec
-3. Human reviews/approves spec
-4. Claude spawns @build agent → implements
-5. Claude spawns @test agent → writes tests
-6. Claude spawns @review agent → code review
-7. Human does final review → merge
+❌ Sequential (slow):
+  spec → wait → build → wait → test → wait → review
+
+✅ Parallel (fast):
+  spec → build ─┬─ test (background)
+                └─ review (parallel)
 ```
 
-### When to Spawn Agents
+### When to Run Agents in Parallel
 
-| Situation | Agent | Command |
-|-----------|-------|---------|
-| New feature request | spec | `@spec "Feature description"` |
-| Implement approved spec | build | `@build "Implement {spec-name}"` |
-| Write/update tests | test | `@test "Test {feature}"` |
-| Review PR or code | review | `@review "Review {PR/code}"` |
+| Scenario | Parallel Agents | Why |
+|----------|-----------------|-----|
+| After build completes | `test` + `review` | Independent tasks |
+| Multiple file changes | Multiple `build` agents | Different files |
+| Research + implement | `explore` + `build` | Don't block on research |
+| Multi-feature PR | Separate `review` per feature | Faster feedback |
+
+### Parallel Invocation Syntax
+
+**Single message, multiple agents:**
+```
+Run these in parallel:
+1. @test "Run E2E tests"
+2. @review "Review onboarding changes"
+```
+
+**Background agent (don't wait):**
+```
+@build "Implement feature X" --background
+[Continue chatting while it works]
+```
+
+### Agent Workflow
+
+```
+PHASE 1: Specification (human + opus)
+├── Human describes feature
+├── @spec agent writes spec (opus - needs reasoning)
+└── Human approves spec
+
+PHASE 2: Implementation (parallel, sonnet)
+├── @build agent implements (sonnet - fast iteration)
+├── [Optional] @explore agent researches in parallel (haiku)
+└── Commit after each logical chunk
+
+PHASE 3: Validation (parallel, haiku/sonnet)
+├── @test agent runs E2E (haiku - just running commands)
+├── @review agent checks code (sonnet - needs analysis)
+└── Both run simultaneously
+
+PHASE 4: Ship
+├── Fix any issues from review
+├── Re-run tests
+└── Merge
+```
+
+### Quick Agent Commands
+
+| Situation | Command | Model |
+|-----------|---------|-------|
+| New feature | `@spec "Feature X"` | opus |
+| Implement spec | `@build "Implement X"` | sonnet |
+| Run tests | `@test "Run E2E"` | haiku |
+| Review PR | `@review "Review PR #1"` | sonnet |
+| Find files | `@explore "Where is auth handled?"` | haiku |
+| Quick edit | `@build "Fix typo in X" --model haiku` | haiku |
 
 ### Agent Definitions
 
 All agents are defined in `.claude/agents/`:
 
-- **spec.md** — Creates feature specs with Why, UI Boundaries, Tasks
-- **build.md** — Implements code following specs, TDD approach
-- **test.md** — E2E, integration, security tests
-- **review.md** — Code review for security, quality, spec compliance
+- **spec.md** — Creates feature specs with Why, UI Boundaries, Tasks (opus)
+- **build.md** — Implements code following specs (sonnet)
+- **test.md** — E2E, integration, security tests (haiku)
+- **review.md** — Code review for security, quality, spec compliance (sonnet)
 
 ## Learnings Integration
 

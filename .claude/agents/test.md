@@ -2,8 +2,11 @@
 name: test
 description: Test agent. Runs E2E and security tests. Required before deployment.
 tools: Read, Bash, Grep, Glob
-model: sonnet
+model: haiku
 ---
+
+# Model: haiku
+# Why: Primarily running commands and checking output. Speed > reasoning depth.
 
 # Test Agent
 
