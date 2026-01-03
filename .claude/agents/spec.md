@@ -81,7 +81,29 @@ Implementable chunks for the build agent:
 ### 7. Acceptance Criteria
 Testable conditions for "done". Each maps to at least one test.
 
-### 8. Out of Scope
+### 8. Session & UX Patterns (when applicable)
+For features involving authentication or external SDKs, document:
+
+```markdown
+## Session Behavior
+
+### Session Persistence
+| Component | TTL | Notes |
+|-----------|-----|-------|
+| [Credential type] | [Duration] | [Where stored] |
+| [Token type] | [Duration] | [Who controls] |
+
+### Copy Standards
+| Action | Button Text | Helper Text |
+|--------|-------------|-------------|
+| [Action] | "[Text]" | "[Helper or —]" |
+
+### What We Cannot Control
+- [External system limitation 1]
+- [External system limitation 2]
+```
+
+### 9. Out of Scope
 **CRITICAL:** Explicitly list what this spec does NOT cover.
 
 ```markdown

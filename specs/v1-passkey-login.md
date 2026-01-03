@@ -186,6 +186,47 @@ Map Porto errors to user-friendly messages:
 
 We CANNOT replace Porto's security-critical UI—only style it.
 
+## Session Behavior
+
+Porto manages session state server-side. Key behaviors to communicate in UX:
+
+### Session Persistence
+
+| Component | TTL | User Expectation |
+|-----------|-----|------------------|
+| Passkey credential | Indefinite | Stored in device secure enclave |
+| Porto session token | ~24h+ (not documented) | Managed by id.porto.sh |
+| Villa local state | Until "Switch Account" | Cleared on explicit user action |
+
+### UX Implications
+
+**"Switch Account" not "Sign Out"**
+- Passkeys provide "remembered device" UX (like biometric unlock on mobile apps)
+- After switching, re-authentication is seamless (passkey auto-selects)
+- True session termination requires removing passkey from device settings
+
+**Helper text pattern:**
+```
+[Switch Account]
+Your passkey stays active for quick sign-in
+```
+
+### Copy Standards
+
+| Action | Button Text | Helper Text |
+|--------|-------------|-------------|
+| Leave session | "Switch Account" | "Your passkey stays active for quick sign-in" |
+| Create identity | "Create New Identity" | — |
+| Return user | "Sign In with Passkey" | — |
+| Error retry | "Try Again" | Context-specific error message |
+
+### What We Cannot Control
+
+- Porto session TTL (server-side)
+- Passkey credential lifetime (device OS)
+- Biometric prompt UI (system-level)
+- Porto dialog labels (not yet in SDK types)
+
 ## Out of Scope (v1)
 
 - Session permissions (`grantPermissions` capability)

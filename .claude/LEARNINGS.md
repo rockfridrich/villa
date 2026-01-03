@@ -277,4 +277,51 @@ docker info > /dev/null 2>&1 || { echo "Docker not connected"; exit 1; }
 
 ---
 
+---
+
+## Session: 2026-01-03 — Session Behavior & UX Patterns
+
+### What Happened
+
+1. **Sign-out didn't force re-auth** — Porto caches session, passkey auto-selects
+2. **User expected passkey prompt** — but got seamless re-authentication
+3. **Researched Porto TTLs** — not documented, server-side controlled
+4. **Reframed as feature** — "Switch Account" with helper text explaining persistence
+
+### Key Insight
+
+Passkey sessions behave like biometric unlock on mobile apps—the device "remembers" you. This is good UX, but needs clear communication.
+
+### Learnings Applied
+
+#### 1. Specs Must Document Session Behavior
+
+Added to spec template:
+- Session Persistence table (what, TTL, who controls)
+- Copy Standards table (button text + helper text)
+- "What We Cannot Control" section
+
+#### 2. Copy Should Match Mental Model
+
+| Wrong | Right | Why |
+|-------|-------|-----|
+| "Sign Out" | "Switch Account" | Passkey stays active |
+| (no helper) | "Your passkey stays active for quick sign-in" | Set expectations |
+
+#### 3. When External System Controls Behavior, Document Limits
+
+Porto controls:
+- Session TTL (~24h+, not configurable)
+- Passkey credential lifetime (device OS)
+- Dialog labels (not yet in SDK types)
+
+### Files Updated
+
+- `specs/v1-passkey-login.md` — Added Session Behavior section
+- `.claude/agents/spec.md` — Added Section 8: Session & UX Patterns
+- `src/lib/porto.ts` — Documented session behavior in code
+- `src/app/home/page.tsx` — "Sign Out" → "Switch Account" + helper text
+
+---
+
 *Last updated: 2026-01-03*
