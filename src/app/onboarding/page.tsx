@@ -250,26 +250,16 @@ function WelcomeStep({
         </p>
       </div>
       <div className="space-y-3">
-        {hasExistingAccount ? (
-          <>
-            <Button size="lg" className="w-full" onClick={onSignIn}>
-              Sign In with Passkey
-            </Button>
-            <Button size="lg" variant="secondary" className="w-full" onClick={onCreateNew}>
-              Create New Identity
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="lg" className="w-full" onClick={onCreateNew}>
-              Create New Identity
-            </Button>
-            <Button size="lg" variant="secondary" className="w-full" onClick={onSignIn}>
-              Sign In with Passkey
-            </Button>
-          </>
-        )}
+        <Button size="lg" className="w-full" onClick={onSignIn}>
+          Sign In
+        </Button>
+        <Button size="lg" variant="secondary" className="w-full" onClick={onCreateNew}>
+          Create Villa ID
+        </Button>
       </div>
+      <footer className="pt-4">
+        <p className="text-ink-muted text-sm">Secured by passkeys</p>
+      </footer>
     </div>
   )
 }

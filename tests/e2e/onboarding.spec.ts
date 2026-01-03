@@ -17,15 +17,16 @@ test.describe('Onboarding Flow', () => {
 
     await expect(page.getByRole('heading', { name: 'Villa' })).toBeVisible()
     await expect(page.getByText('Your identity. No passwords.')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Sign In with Passkey' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create Villa ID' })).toBeVisible()
+    await expect(page.getByText('Secured by passkeys')).toBeVisible()
   })
 
   test('shows connecting state when creating identity', async ({ page }) => {
     await page.goto('/onboarding')
 
     // Click create - goes directly to Porto (no explainer step)
-    await page.getByRole('button', { name: 'Create New Identity' }).click()
+    await page.getByRole('button', { name: 'Create Villa ID' }).click()
 
     // Should show connecting state OR error state (Porto may fail in test environment)
     await expect(
@@ -37,7 +38,7 @@ test.describe('Onboarding Flow', () => {
   test('shows connecting state when signing in', async ({ page }) => {
     await page.goto('/onboarding')
 
-    await page.getByRole('button', { name: 'Sign In with Passkey' }).click()
+    await page.getByRole('button', { name: 'Sign In' }).click()
 
     // Should show connecting state OR error state
     await expect(
@@ -100,8 +101,9 @@ test.describe('Mobile Responsiveness', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload()
 
-    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: 'Create Villa ID' })).toBeVisible()
   })
 
   test('profile screen fits mobile viewport', async ({ page }) => {
