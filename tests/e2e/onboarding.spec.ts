@@ -12,35 +12,38 @@ test.describe('Onboarding Flow', () => {
     await expect(page).toHaveURL(/\/onboarding/)
   })
 
-  test('shows welcome screen with get started button', async ({ page }) => {
+  test('shows welcome screen with create and sign in buttons', async ({ page }) => {
     await page.goto('/onboarding')
 
     await expect(page.getByRole('heading', { name: 'Villa' })).toBeVisible()
     await expect(page.getByText('Your identity. No passwords.')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Get Started' })).toBeVisible()
-  })
-
-  test('navigates to explainer on get started click', async ({ page }) => {
-    await page.goto('/onboarding')
-
-    await page.getByRole('button', { name: 'Get Started' }).click()
-
-    await expect(page.getByText('Secure & Simple')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create Identity' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign In with Passkey' })).toBeVisible()
   })
 
   test('shows connecting state when creating identity', async ({ page }) => {
     await page.goto('/onboarding')
 
-    await page.getByRole('button', { name: 'Get Started' }).click()
-    await page.getByRole('button', { name: 'Create Identity' }).click()
+    // Click create - goes directly to Porto (no explainer step)
+    await page.getByRole('button', { name: 'Create New Identity' }).click()
 
-    // Should show connecting state OR error state (Porto may fail without HTTPS)
-    // This validates the flow progresses past the explainer
+    // Should show connecting state OR error state (Porto may fail in test environment)
     await expect(
-      page.getByRole('heading', { name: 'Creating Identity...' })
+      page.getByRole('heading', { name: 'Connecting...' })
         .or(page.getByRole('heading', { name: 'Something went wrong' }))
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 10000 })
+  })
+
+  test('shows connecting state when signing in', async ({ page }) => {
+    await page.goto('/onboarding')
+
+    await page.getByRole('button', { name: 'Sign In with Passkey' }).click()
+
+    // Should show connecting state OR error state
+    await expect(
+      page.getByRole('heading', { name: 'Connecting...' })
+        .or(page.getByRole('heading', { name: 'Something went wrong' }))
+    ).toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -94,9 +97,11 @@ test.describe('Mobile Responsiveness', () => {
   test('welcome screen fits mobile viewport', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/onboarding')
+    await page.evaluate(() => localStorage.clear())
+    await page.reload()
 
-    await expect(page.getByRole('button', { name: 'Get Started' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Get Started' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create New Identity' })).toBeInViewport()
   })
 
   test('profile screen fits mobile viewport', async ({ page }) => {
