@@ -47,7 +47,7 @@ export function createPortoMock(options: PortoMockOptions) {
     }
   })
 
-  const personalSign = vi.fn(async (message: string) => {
+  const personalSign = vi.fn(async (_message: string) => {
     await simulateDelay()
     if (scenario !== 'success') throw new Error(`Cannot sign: ${scenario}`)
     return '0x' + '1'.repeat(130)
