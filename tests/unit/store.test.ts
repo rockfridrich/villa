@@ -63,16 +63,12 @@ describe('useIdentityStore', () => {
         createdAt: Date.now(),
       }
 
-      // Store console.error to verify it was called
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      useIdentityStore.getState().setIdentity(identity as Identity)
+      // setIdentity returns false on validation failure (no PII logging)
+      const result = useIdentityStore.getState().setIdentity(identity as Identity)
 
       const stored = useIdentityStore.getState().identity
       expect(stored).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      expect(result).toBe(false)
     })
 
     it('rejects invalid identity - missing required fields', () => {
@@ -82,15 +78,12 @@ describe('useIdentityStore', () => {
         // missing createdAt
       }
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      useIdentityStore.getState().setIdentity(identity as Identity)
+      // setIdentity returns false on validation failure (no PII logging)
+      const result = useIdentityStore.getState().setIdentity(identity as Identity)
 
       const stored = useIdentityStore.getState().identity
       expect(stored).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      expect(result).toBe(false)
     })
 
     it('rejects invalid identity - empty display name', () => {
@@ -100,15 +93,12 @@ describe('useIdentityStore', () => {
         createdAt: Date.now(),
       }
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      useIdentityStore.getState().setIdentity(identity as Identity)
+      // setIdentity returns false on validation failure (no PII logging)
+      const result = useIdentityStore.getState().setIdentity(identity as Identity)
 
       const stored = useIdentityStore.getState().identity
       expect(stored).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      expect(result).toBe(false)
     })
 
     it('overwrites existing identity', () => {
@@ -205,29 +195,25 @@ describe('useIdentityStore', () => {
     })
 
     it('rejects invalid display name', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const original = useIdentityStore.getState().identity
 
-      useIdentityStore.getState().updateProfile('') // empty string
+      // updateProfile returns false on validation failure (no PII logging)
+      const result = useIdentityStore.getState().updateProfile('') // empty string
 
       const stored = useIdentityStore.getState().identity
       expect(stored?.displayName).toBe(original?.displayName) // unchanged
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      expect(result).toBe(false)
     })
 
     it('rejects display name that is too long', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const original = useIdentityStore.getState().identity
 
-      useIdentityStore.getState().updateProfile('A'.repeat(51))
+      // updateProfile returns false on validation failure (no PII logging)
+      const result = useIdentityStore.getState().updateProfile('A'.repeat(51))
 
       const stored = useIdentityStore.getState().identity
       expect(stored?.displayName).toBe(original?.displayName) // unchanged
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      expect(result).toBe(false)
     })
   })
 

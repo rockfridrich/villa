@@ -4,8 +4,8 @@ import { type Identity, identitySchema, displayNameSchema } from './validation'
 
 interface IdentityStore {
   identity: Identity | null
-  setIdentity: (identity: Identity) => void
-  updateProfile: (displayName: string, avatar?: string) => void
+  setIdentity: (identity: Identity) => boolean
+  updateProfile: (displayName: string, avatar?: string) => boolean
   clearIdentity: () => void
 }
 
@@ -19,20 +19,21 @@ export const useIdentityStore = create<IdentityStore>()(
         const result = identitySchema.safeParse(identity)
         if (result.success) {
           set({ identity: result.data })
-        } else {
-          console.error('Invalid identity:', result.error)
+          return true
         }
+        // Return false on validation failure - no logging to avoid PII leaks
+        return false
       },
 
       updateProfile: (displayName: string, avatar?: string) => {
         const current = get().identity
-        if (!current) return
+        if (!current) return false
 
         // Validate display name
         const nameResult = displayNameSchema.safeParse(displayName)
         if (!nameResult.success) {
-          console.error('Invalid display name:', nameResult.error)
-          return
+          // Return false on validation failure - no logging to avoid PII leaks
+          return false
         }
 
         set({
@@ -42,6 +43,7 @@ export const useIdentityStore = create<IdentityStore>()(
             avatar: avatar ?? current.avatar,
           },
         })
+        return true
       },
 
       clearIdentity: () => {
