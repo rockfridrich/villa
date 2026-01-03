@@ -7,6 +7,19 @@
 
 {One sentence: what does this feature accomplish for the user?}
 
+## Why This Approach
+
+### Alternatives Considered
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| Option A | Fast to implement | Missing X feature | ❌ |
+| Option B | Full featured | More complex | ✅ |
+
+### Decision Rationale
+
+{Why the chosen approach is best for Villa's goals}
+
 ## User Experience
 
 {Step by step from user's perspective. Number each step.}
@@ -22,6 +35,14 @@
 - Screen name: {purpose}
 - Screen name: {purpose}
 
+## UI Boundaries
+
+**Villa controls:**
+- {List what we control}
+
+**External system controls:**
+- {List what SDK/API controls}
+
 ## States
 
 {What states must each screen handle?}
@@ -30,6 +51,20 @@
 - Error
 - Success
 - Offline
+
+## Session Behavior
+
+| What | TTL | Who Controls | Notes |
+|------|-----|--------------|-------|
+| Session token | 24h | External SDK | Auto-refresh |
+| Local state | Persistent | Villa | localStorage |
+
+## Language Guidelines
+
+| Internal/Tech | User-Facing |
+|---------------|-------------|
+| SDK name | Never shown |
+| wallet address | Villa ID |
 
 ## Technical
 
@@ -42,6 +77,22 @@
 **Security:** Auth, validation, privacy requirements
 
 **Performance:** Latency expectations, offline behavior
+
+## Deployment Considerations
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| NEXT_PUBLIC_X | Yes | {description} |
+
+### Platform Quirks
+
+{Known issues with deployment platform}
+
+- doctl: Use `Spec.Name` not `Name` (returns nil)
+- Buildpacks: Prune devDeps before build
+- {Other quirks discovered}
 
 ## Tasks
 
@@ -60,6 +111,7 @@
 - [ ] System handles Y error
 - [ ] E2E tests pass
 - [ ] Security tests pass
+- [ ] Deployed and verified
 
 ## Out of Scope
 
