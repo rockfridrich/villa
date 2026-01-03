@@ -7,7 +7,7 @@ services:
   - name: web
     github:
       repo: rockfridrich/villa
-      branch: main
+      branch: feature/porto-passkey-login  # TODO: change back to main after merge
       deploy_on_push: true
     dockerfile_path: Dockerfile
     http_port: 3000

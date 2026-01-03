@@ -1,13 +1,14 @@
 # Production Dockerfile for Villa
 # Multi-stage build for optimal size
 
-# Stage 1: Dependencies
+# Stage 1: Dependencies (all deps needed for build)
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+# Skip husky install in CI/Docker (no git hooks needed)
+RUN npm ci --ignore-scripts
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
