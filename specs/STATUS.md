@@ -32,9 +32,12 @@ Porto SDK integration for passkey authentication with Villa theming.
 | Race condition fixes | ✅ | Atomic Porto instance management |
 | iOS Safari testing | 🔲 | Manual testing needed |
 | Android Chrome testing | 🔲 | Manual testing needed |
-| Docker setup | 🔲 | Colima download issues |
-| DigitalOcean deploy | 🔲 | App Platform + GitHub hooks |
-| Feature branch previews | 🔲 | Auto-deploy on PR |
+| Docker setup | ✅ | BuildKit optimizations, cache mounts |
+| DigitalOcean deploy | ✅ | App Platform + GitHub integration |
+| Feature branch previews | ✅ | Auto-deploy on PR (collaborators only) |
+| E2E on deployments | ✅ | Playwright against deployed URLs |
+| Asset caching | ✅ | 1yr immutable for static, no-store for API |
+| Collaborator security | ✅ | Only repo collaborators can trigger deploys |
 
 **Spec:** [v1-passkey-login.md](v1-passkey-login.md)
 

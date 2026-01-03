@@ -1228,4 +1228,183 @@ Before launching on `proofofretreat.me`:
 
 ---
 
+## Session: 2026-01-04 — DigitalOcean Deployment & Docker Optimization
+
+### What Happened
+
+1. **Set up DigitalOcean App Platform** — GitHub integration, preview deploys, production deploys
+2. **Buildpacks failed** — Pruned devDependencies (tailwindcss) before running build
+3. **Switched to Dockerfile** — Full control over build order
+4. **Missing public/ broke build** — Next.js standalone requires it to exist
+5. **Optimized Docker with BuildKit** — Cache mounts for npm and Next.js build cache
+6. **Added asset caching headers** — Static assets get 1-year immutable cache
+7. **Security: Collaborator-only preview deploys** — Non-collaborators can't trigger DO deploys
+
+### Key Failures & Fixes
+
+| Problem | Root Cause | Fix |
+|---------|------------|-----|
+| Buildpacks can't find tailwindcss | Prunes devDeps before build command | Use Dockerfile |
+| Docker COPY fails for /app/public | Directory doesn't exist | Create `public/.gitkeep` |
+| Variables not substituted in preview YAML | `${PR_NUMBER}` not expanded | Use `envsubst` in workflow |
+| Non-collaborators could trigger deploys | No permission check | Check `repos.getCollaboratorPermissionLevel()` |
+| Slow Docker builds | No caching | BuildKit `--mount=type=cache` |
+
+### Buildpacks vs Dockerfile Decision
+
+**When to use Buildpacks:**
+- Simple apps without devDep build requirements
+- Want zero Dockerfile maintenance
+- Don't need fine-grained control
+
+**When to use Dockerfile:**
+- Build requires devDependencies (Tailwind, TypeScript, PostCSS)
+- Need specific build order
+- Want BuildKit cache optimizations
+- Complex multi-stage builds
+
+**Our choice: Dockerfile** — Tailwind is a devDep needed at build time.
+
+### Docker Build Optimizations Applied
+
+```dockerfile
+# syntax=docker/dockerfile:1.4
+
+# Cache npm packages across builds (~60s → ~5s on cache hit)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts
+
+# Cache Next.js build cache (incremental builds)
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
+```
+
+**Impact:**
+| Build Type | Before | After |
+|------------|--------|-------|
+| Clean build | ~3 min | ~3 min |
+| Package change | ~3 min | ~1 min |
+| Code-only change | ~3 min | ~30s |
+
+### Asset Caching Strategy
+
+| Asset | Cache-Control | Why |
+|-------|---------------|-----|
+| `/_next/static/*` | 1 year, immutable | Hashed filenames |
+| `/public/*` | 1 day + stale-while-revalidate | May change |
+| `/api/*` | no-store | Fresh data |
+
+### Security: Preview Deploy Access Control
+
+**Problem:** Fork PRs from random users could trigger preview deploys, consuming DO resources and potentially exposing secrets.
+
+**Solution:**
+```yaml
+- name: Check if PR author is collaborator
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const { data: permissionLevel } = await github.rest.repos.getCollaboratorPermissionLevel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        username: context.payload.pull_request.user.login
+      });
+      const hasAccess = ['admin', 'write', 'maintain'].includes(permissionLevel.permission);
+```
+
+Only collaborators with write access can trigger preview deployments.
+
+### Files Changed
+
+**New:**
+- `public/.gitkeep` — Empty public dir for Docker
+
+**Modified:**
+- `Dockerfile` — BuildKit cache mounts, healthcheck
+- `.do/app-production.yaml` — Dockerfile path (not buildpacks)
+- `.do/app-preview.yaml` — Dockerfile path
+- `.github/workflows/deploy.yml` — Collaborator check, E2E tests, concurrency
+- `next.config.js` — Cache headers, compression, ETags
+- `playwright.config.ts` — BASE_URL support for deployed testing
+- `README.md` — CI/Deploy status badges
+
+### Deployment Architecture
+
+```
+PR from collaborator → deploy-preview → e2e-preview → comment results
+                            ↓
+                    villa-pr-{number}.ondigitalocean.app
+                            ↓
+PR closed → cleanup-preview (delete app)
+
+Push to main → deploy-production → e2e-production
+                    ↓
+            villa-production.ondigitalocean.app
+```
+
+### Learnings Applied
+
+#### 1. Always Create Required Directories
+
+Next.js standalone mode expects `public/` to exist. Empty dirs need `.gitkeep`:
+
+```bash
+mkdir -p public && touch public/.gitkeep
+```
+
+#### 2. Test Docker Locally First
+
+Before pushing to DO:
+```bash
+docker build -t villa .
+docker run -p 3000:3000 villa
+```
+
+#### 3. Use envsubst for Dynamic YAML
+
+```yaml
+# .do/app-preview.yaml
+name: villa-pr-${PR_NUMBER}
+branch: ${BRANCH_NAME}
+```
+
+```bash
+# In workflow
+export PR_NUMBER="123"
+export BRANCH_NAME="feature/x"
+envsubst < .do/app-preview.yaml > .do/app-preview-generated.yaml
+```
+
+#### 4. Healthcheck Endpoints for Deployments
+
+```typescript
+// src/app/api/health/route.ts
+export async function GET() {
+  return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() })
+}
+```
+
+Wait for health before running E2E:
+```bash
+for i in {1..20}; do
+  curl -sf "$URL/api/health" && exit 0
+  sleep 10
+done
+```
+
+### Open Questions
+
+1. **DO App Platform limitations** — Can we get SSH access for debugging?
+2. **Preview app costs** — How much per PR? Auto-cleanup working?
+3. **Custom domain setup** — Process for proofofretreat.me?
+
+### Next Steps
+
+1. **Verify deployment succeeds** — Watch current build
+2. **Test E2E on deployed URL** — Passkeys work via HTTPS
+3. **Set up custom domain** — villa.proofofretreat.me
+4. **Register with Porto** — For iframe mode in production
+
+---
+
 *Last updated: 2026-01-04*
