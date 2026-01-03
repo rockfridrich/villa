@@ -117,7 +117,17 @@ npm run dev:share
 This will:
 1. Start the dev server
 2. Create a secure HTTPS tunnel
-3. Display a shareable URL (https://xxxx.ngrok.io)
+3. Display QR codes for easy mobile scanning
+4. Show both local WiFi and ngrok URLs
+
+**QR Codes:** Scan with your phone camera to open instantly.
+- Local WiFi QR: Faster, same network only (no passkeys)
+- ngrok QR: Any network, passkeys work
+
+**Prerequisite for QR codes:**
+```bash
+brew install qrencode
+```
 
 Open the URL on your phone to test passkeys on real devices.
 

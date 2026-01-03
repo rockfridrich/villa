@@ -163,6 +163,25 @@ echo -e "  ${M}${NGROK_URL}${N}"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════
+# QR Codes (if qrencode available)
+# ═══════════════════════════════════════════════════════════════
+if command -v qrencode &> /dev/null; then
+  echo -e "${D}─────────────────────────────────────────${N}"
+  echo -e "${C}QR CODES${N} ${D}(scan with phone camera)${N}"
+  echo -e "${D}─────────────────────────────────────────${N}"
+  echo ""
+  echo -e "${W}Local WiFi${N} ${D}(same network only)${N}"
+  qrencode -t ANSIUTF8 -m 1 "http://${LOCAL_IP}:${PORT}" 2>/dev/null
+  echo ""
+  echo -e "${W}ngrok${N} ${D}(any network, passkeys work)${N}"
+  qrencode -t ANSIUTF8 -m 1 "${NGROK_URL}" 2>/dev/null
+  echo ""
+else
+  echo -e "${D}Tip: Install qrencode for QR codes: brew install qrencode${N}"
+  echo ""
+fi
+
+# ═══════════════════════════════════════════════════════════════
 # Quick Reference
 # ═══════════════════════════════════════════════════════════════
 echo -e "${D}─────────────────────────────────────────${N}"
