@@ -163,15 +163,38 @@ Map Porto errors to user-friendly messages:
 - [ ] E2E tests pass
 - [ ] Security tests pass
 
+## UI Boundaries
+
+**Villa controls:**
+- Welcome screen (value prop, two CTAs)
+- Profile setup (display name input)
+- Home screen (profile display, logout)
+- Error messages and retry flows
+- Loading/connecting states
+
+**Porto controls (security-critical):**
+- Passkey creation dialog
+- Passkey authentication prompts
+- Biometric verification (Face ID / Touch ID / fingerprint)
+- Key management and secure storage
+- Cross-device sync
+
+**Villa customizes Porto via ThemeFragment:**
+- Colors (accent, primary, secondary, backgrounds)
+- Border radius
+- Button labels
+
+We CANNOT replace Porto's security-critical UI—only style it.
+
 ## Out of Scope (v1)
 
-- Custom Porto theming (use default Porto UI)
 - Session permissions (`grantPermissions` capability)
 - Sign-In with Ethereum (`signInWithEthereum` capability)
 - Email capture during account creation
 - Recovery setup UI (Porto handles internally)
 - Backend integration (local-only for v1)
 - Multi-device sync UI (Porto handles automatically)
+- Embedded Porto UI (`Dialog.experimental_inline`)
 
 ## Recovery (Porto Built-in)
 

@@ -2,29 +2,51 @@
 
 Current progress and what's next.
 
-## Phase 1: Passkey Login [CURRENT]
+## Phase 1: Passkey Login [IN PROGRESS]
 
-Porto SDK integration for passkey authentication. Porto provides real wallet addresses, passkey management, and built-in recovery.
+Porto SDK integration for passkey authentication with Villa theming.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Create `src/lib/porto.ts` | 🔲 | Porto SDK wrapper with connect/check methods |
-| Update onboarding to use Porto | 🔲 | Replace native WebAuthn with Porto SDK |
-| Remove `src/lib/webauthn.ts` | 🔲 | No longer needed with Porto |
-| Connection detection | 🔲 | eth_accounts check on welcome screen |
-| Welcome screen | 🔲 | Two CTAs based on existing account detection |
-| Onboarding flow | 🔲 | Create account + sign in paths |
-| Profile setup | 🔲 | Display name required |
-| Local storage | ✅ | Already working with Zustand |
-| E2E tests | 🔲 | Playwright for full flow |
-| Security tests | 🔲 | XSS, no sensitive data leaks |
-| iOS Safari testing | 🔲 | Face ID / Touch ID |
-| Android Chrome testing | 🔲 | Fingerprint |
+| Create `src/lib/porto.ts` | ✅ | Porto SDK wrapper with Villa theme |
+| Villa theme for Porto | ✅ | 30+ color tokens mapped |
+| Separate create/sign-in flows | ✅ | `createAccount()` and `signIn()` |
+| Update onboarding to use Porto | ✅ | Direct Porto dialog, no explainer |
+| Remove `src/lib/webauthn.ts` | ✅ | Deleted, using Porto SDK |
+| Connection detection | ✅ | eth_accounts check on mount |
+| Welcome screen | ✅ | Two CTAs based on account detection |
+| Onboarding flow | ✅ | Create + sign in paths |
+| Profile setup | ✅ | Display name with Zod validation |
+| Home screen | ✅ | Profile display with logout |
+| Local storage | ✅ | Zustand with persist |
+| TypeScript strict | ✅ | No errors |
+| E2E tests | 🔲 | Scaffold exists, needs Porto mocks |
+| Security tests | 🔲 | XSS tests written, need run |
+| iOS Safari testing | 🔲 | Manual testing needed |
+| Android Chrome testing | 🔲 | Manual testing needed |
 | Deploy v1 | 🔲 | After all tests pass |
 
 **Spec:** [v1-passkey-login.md](v1-passkey-login.md)
 
-**Key change:** Migrating from native WebAuthn (fake derived addresses) to Porto SDK (real wallet addresses as canonical user ID).
+**Branch:** `feature/porto-passkey-login` ([PR #1](https://github.com/rockfridrich/villa/pull/1))
+
+### Implementation Notes
+
+Porto SDK provides:
+- Real Ethereum wallet addresses (not hash-derived)
+- Passkey management, cross-device sync
+- Built-in recovery (social, email, OAuth)
+- Theming via ThemeFragment (60+ tokens)
+
+Villa controls:
+- Welcome screen, profile setup, home screen
+- Error messages and retry flows
+- Theme colors applied to Porto dialogs
+
+Porto controls (security-critical):
+- Passkey creation/authentication prompts
+- Transaction signing UI
+- Key management
 
 ## Phase 2: Recovery [NEXT]
 
@@ -55,7 +77,7 @@ Local-first AI assistant.
 
 ## How to Help
 
-See [BACKLOG.md](../BACKLOG.md) for detailed tasks and labels.
+See [BACKLOG.md](../BACKLOG.md) for detailed tasks.
 
 **Quick links:**
 - [Good first issues](https://github.com/rockfridrich/villa/labels/good-first-issue)

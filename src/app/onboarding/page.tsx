@@ -7,14 +7,14 @@ import { Button, Input, Spinner } from '@/components/ui'
 import { useIdentityStore } from '@/lib/store'
 import { displayNameSchema } from '@/lib/validation'
 import {
-  connectPorto,
+  createAccount,
+  signIn,
   checkExistingAccount,
   isPortoSupported,
 } from '@/lib/porto'
 
 type Step =
   | 'welcome'
-  | 'explainer'
   | 'connecting'
   | 'success'
   | 'profile'
@@ -70,15 +70,42 @@ export default function OnboardingPage() {
     }
   }, [identity, router])
 
-  const handleGetStarted = () => {
-    setStep('explainer')
-  }
-
-  const handleConnect = async () => {
+  const handleCreateAccount = async () => {
     setStep('connecting')
 
     try {
-      const result = await connectPorto()
+      // Porto shows its create account UI directly
+      const result = await createAccount()
+
+      if (!result.success) {
+        throw result.error
+      }
+
+      // Store the Porto wallet address
+      setAddress(result.address)
+
+      // Show success and move to profile
+      setStep('success')
+      setTimeout(() => setStep('profile'), 1500)
+    } catch (err) {
+      const message = getErrorMessage(err as Error)
+      setError({
+        message,
+        retry: () => {
+          setError(null)
+          setStep('welcome')
+        },
+      })
+      setStep('error')
+    }
+  }
+
+  const handleSignIn = async () => {
+    setStep('connecting')
+
+    try {
+      // Porto shows passkey selection for sign in
+      const result = await signIn()
 
       if (!result.success) {
         throw result.error
@@ -94,7 +121,7 @@ export default function OnboardingPage() {
         return
       }
 
-      // Show success and move to profile
+      // New sign-in (different device?), need profile setup
       setStep('success')
       setTimeout(() => setStep('profile'), 1500)
     } catch (err) {
@@ -153,14 +180,10 @@ export default function OnboardingPage() {
       <div className="w-full max-w-sm">
         {step === 'welcome' && (
           <WelcomeStep
-            onCreateNew={handleGetStarted}
-            onSignIn={handleConnect}
+            onCreateNew={handleCreateAccount}
+            onSignIn={handleSignIn}
             hasExistingAccount={hasExistingAccount}
           />
-        )}
-
-        {step === 'explainer' && (
-          <ExplainerStep onContinue={handleConnect} />
         )}
 
         {step === 'connecting' && <ConnectingStep />}
@@ -229,26 +252,6 @@ function WelcomeStep({
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-function ExplainerStep({ onContinue }: { onContinue: () => void }) {
-  return (
-    <div className="text-center space-y-8">
-      <div className="space-y-4">
-        <div className="w-20 h-20 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-          <Fingerprint className="w-10 h-10 text-villa-500" />
-        </div>
-        <h2 className="text-2xl font-semibold">Secure & Simple</h2>
-        <p className="text-slate-500 dark:text-slate-400">
-          Use Face ID or fingerprint to create your secure identity. No
-          passwords to remember.
-        </p>
-      </div>
-      <Button size="lg" className="w-full" onClick={onContinue}>
-        Create Identity
-      </Button>
     </div>
   )
 }
