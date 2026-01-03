@@ -79,6 +79,10 @@ let portoInstance: ReturnType<typeof Porto.create> | null = null
 let themeController: Dialog.ThemeController | null = null
 let currentMode: 'popup' | 'inline' = 'popup'
 
+// Note: Porto SDK labels customization is documented but not yet in types
+// When available, add: signInPrompt, signIn, signUp, createAccount, dialogTitle
+// See: https://porto.sh/sdk/guides/theming
+
 export interface PortoOptions {
   /** Container element for inline rendering */
   container?: HTMLElement | null
@@ -266,7 +270,8 @@ export async function connectPorto(): Promise<PortoConnectResult> {
 }
 
 /**
- * Disconnect from Porto (clears session)
+ * Disconnect from Porto (clears session and storage)
+ * Ensures next sign-in requires passkey re-verification
  */
 export async function disconnectPorto(): Promise<void> {
   try {
@@ -276,6 +281,40 @@ export async function disconnectPorto(): Promise<void> {
     })
   } catch {
     // Ignore disconnect errors
+  }
+
+  // Clear Porto cached session to force passkey re-verification
+  clearPortoStorage()
+
+  // Reset instance so next connection is fresh
+  resetPorto()
+}
+
+/**
+ * Clear Porto's localStorage entries
+ * Forces re-authentication on next sign-in
+ */
+function clearPortoStorage(): void {
+  if (typeof window === 'undefined') return
+
+  // Clear all Porto-related storage keys
+  const keysToRemove: string[] = []
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && (key.startsWith('porto') || key.includes('porto') || key.includes('ithaca'))) {
+      keysToRemove.push(key)
+    }
+  }
+
+  keysToRemove.forEach(key => localStorage.removeItem(key))
+
+  // Also clear sessionStorage
+  for (let i = sessionStorage.length - 1; i >= 0; i--) {
+    const key = sessionStorage.key(i)
+    if (key && (key.startsWith('porto') || key.includes('porto') || key.includes('ithaca'))) {
+      sessionStorage.removeItem(key)
+    }
   }
 }
 
