@@ -394,4 +394,269 @@ This prevents "Porto" leaking into UI, or other internal jargon.
 
 ---
 
-*Last updated: 2026-01-03*
+---
+
+## Session: 2026-01-04 — Parallel Agents, Code Review & Security Fixes
+
+### What Happened
+
+1. **Launched 4 parallel agents** — review, unit tests, security tests, integration tests
+2. **Code review found 4 critical issues** — memory leaks, PII logging, race condition, sanitization bugs
+3. **Built comprehensive test suite** — 140+ tests (76 unit, 64 E2E)
+4. **Fixed all critical issues** — 3 commits addressing review findings
+5. **Improved validation security** — Enhanced sanitization (quotes, null bytes, backslashes)
+
+### Time & Efficiency
+
+| Task | Approach | Time |
+|------|----------|------|
+| Code review | review agent (sonnet) | ~3 min |
+| Unit tests (76) | build agent (sonnet) | ~5 min |
+| Integration tests (26) | build agent (sonnet) | ~5 min |
+| Security tests (24) | build agent (sonnet) | ~5 min |
+| **All parallel** | 4 agents simultaneously | **~5 min total** |
+| Fix memory leaks | Manual | 5 min |
+| Fix PII logging | Manual | 5 min |
+| Fix race condition | Manual | 5 min |
+
+**Key insight**: Parallel agents reduced what would be ~20 min sequential to ~5 min.
+
+### Critical Issues Found & Fixed
+
+#### 1. Memory Leaks (setTimeout not tracked)
+
+**Problem:**
+```typescript
+setTimeout(() => setStep('profile'), 1500)  // Not cleaned up on unmount
+```
+
+**Fix:**
+```typescript
+const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+useEffect(() => {
+  return () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+  }
+}, [])
+
+timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
+```
+
+#### 2. PII Logging via console.error
+
+**Problem:**
+```typescript
+console.error('Invalid identity:', result.error)  // Logs user data
+```
+
+**Fix:**
+```typescript
+// Return boolean instead of logging
+setIdentity: (identity) => {
+  const result = identitySchema.safeParse(identity)
+  if (result.success) {
+    set({ identity: result.data })
+    return true
+  }
+  return false  // No logging, caller handles error
+}
+```
+
+#### 3. Porto SDK Race Condition
+
+**Problem:**
+```typescript
+resetPorto()  // Sync: destroys instance
+const result = await createAccount(container)  // Async: creates new
+// Race: if Porto has async init, this could fail
+```
+
+**Fix:**
+```typescript
+// Let createAccount handle it atomically
+const result = await createAccount({ container, forceRecreate: true })
+// getPorto() handles recreation internally - no race
+```
+
+#### 4. Improved Input Sanitization
+
+**Before:** Only removed `<>` and escaped `&`
+
+**After:**
+```typescript
+function sanitize(str: string): string {
+  return str
+    .replace(/[<>]/g, '')       // HTML tags
+    .replace(/["'`]/g, '')      // Quotes (XSS, SQL injection)
+    .replace(/\x00/g, '')       // Null bytes
+    .replace(/\\/g, '')         // Backslashes (path traversal)
+    .replace(/&/g, '&amp;')     // Ampersands
+    .trim()
+    .slice(0, 50)
+}
+```
+
+### Learnings Applied
+
+#### 1. Parallel Agents for Independent Tasks
+
+**Pattern:**
+```
+After build completes:
+  ├── @test agent (background)
+  ├── @review agent (parallel)
+  └── Continue chatting while they work
+```
+
+**When to parallelize:**
+- Review + Tests (always independent)
+- Multiple file searches
+- Unit + Integration + Security tests
+
+#### 2. Return Types > Console Logging
+
+**Before:** Log errors, return void
+```typescript
+setIdentity: (identity) => void  // console.error on failure
+```
+
+**After:** Return success boolean, caller decides
+```typescript
+setIdentity: (identity) => boolean  // false on failure, no logging
+```
+
+Benefits:
+- No PII in logs
+- Caller can handle errors appropriately
+- Testable without mocking console
+
+#### 3. Atomic Instance Management
+
+**Pattern for SDK singletons:**
+```typescript
+// Bad: Separate reset + create
+resetInstance()
+const result = await useInstance()
+
+// Good: Atomic with options
+const result = await useInstance({ forceRecreate: true })
+```
+
+#### 4. Timeout Cleanup Pattern
+
+**Always track timeouts in React:**
+```typescript
+const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+// Cleanup on unmount
+useEffect(() => () => {
+  if (timeoutRef.current) clearTimeout(timeoutRef.current)
+}, [])
+
+// Clear before setting new
+if (timeoutRef.current) clearTimeout(timeoutRef.current)
+timeoutRef.current = setTimeout(callback, delay)
+```
+
+### Test Suite Created
+
+| Type | Count | Coverage |
+|------|-------|----------|
+| Unit (validation) | 33 | XSS, sanitization, schema |
+| Unit (store) | 22 | CRUD, persistence, errors |
+| Unit (porto) | 21 | Helpers, error handling |
+| Integration | 26 | Flows, mobile, persistence |
+| Security | 24 | XSS vectors, CSP, session |
+| E2E (existing) | 14 | Onboarding, home |
+| **Total** | **140** | |
+
+### Workflow Improvements
+
+| Before | After | Benefit |
+|--------|-------|---------|
+| Sequential agent calls | Parallel agents | 4x faster |
+| console.error for validation | Return boolean | No PII leaks |
+| Manual resetPorto() calls | forceRecreate option | No race conditions |
+| No timeout cleanup | useRef + useEffect | No memory leaks |
+| Limited test coverage | 140+ tests | Catch regressions |
+
+### Files Changed
+
+**Security fixes:**
+- `src/app/onboarding/page.tsx` — Memory leak fix + race condition fix
+- `src/app/home/page.tsx` — Memory leak fix + clipboard error handling
+- `src/lib/store.ts` — PII logging removed, return types added
+- `src/lib/porto.ts` — AuthOptions, forceRecreate, atomic management
+- `src/lib/validation.ts` — Enhanced sanitization
+
+**Test infrastructure:**
+- `tests/unit/*.test.ts` — 76 unit tests
+- `tests/e2e/integration.spec.ts` — 26 integration tests
+- `tests/security/comprehensive.spec.ts` — 24 security tests
+- `vitest.config.*.ts` — Test configurations
+- `tests/setup.ts` — Global test setup
+- `playwright.config.ts` — Exclude unit tests from E2E
+
+---
+
+## Patterns to Apply
+
+### For Code Review
+
+Always run @review after significant changes. It catches:
+- Memory leaks (setTimeout, addEventListener, subscriptions)
+- PII logging (console.error with user data)
+- Race conditions (async/sync mixing)
+- Security gaps (sanitization, validation)
+
+### For Error Handling
+
+```typescript
+// Don't: Log and return void
+function doThing(): void {
+  if (error) console.error('Error:', sensitiveData)
+}
+
+// Do: Return result, let caller handle
+function doThing(): boolean | Result<T> {
+  if (error) return false  // or { success: false, error }
+}
+```
+
+### For React Cleanup
+
+```typescript
+// Timeouts
+const ref = useRef<NodeJS.Timeout>()
+useEffect(() => () => ref.current && clearTimeout(ref.current), [])
+
+// Subscriptions
+useEffect(() => {
+  const sub = subscribe()
+  return () => sub.unsubscribe()
+}, [])
+
+// Event listeners
+useEffect(() => {
+  window.addEventListener('resize', handler)
+  return () => window.removeEventListener('resize', handler)
+}, [])
+```
+
+### For SDK Integration
+
+```typescript
+// Provide atomic operations with options
+export async function connectSDK(options: {
+  container?: HTMLElement
+  forceRecreate?: boolean  // Default true for clean state
+}) {
+  const instance = getInstance({ ...options })  // Handles recreation internally
+  return instance.connect()
+}
+```
+
+---
+
+*Last updated: 2026-01-04*

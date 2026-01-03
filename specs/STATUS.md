@@ -22,8 +22,14 @@ Porto SDK integration for passkey authentication with Villa theming.
 | Home screen | ✅ | Profile display with Switch Account |
 | Local storage | ✅ | Zustand with persist |
 | TypeScript strict | ✅ | No errors |
-| E2E tests | ✅ | 14/14 passing |
-| Security tests | ✅ | XSS + storage tests passing |
+| Unit tests | ✅ | 76 tests (validation, store, porto) |
+| Integration tests | ✅ | 26 tests (flows, mobile, persistence) |
+| Security tests | ✅ | 24 tests (XSS, CSP, session) |
+| E2E tests | ✅ | 14 tests (onboarding, home) |
+| **Total tests** | ✅ | **140 passing** |
+| Memory leak fixes | ✅ | setTimeout cleanup with refs |
+| PII logging fixes | ✅ | Return types, no console.error |
+| Race condition fixes | ✅ | Atomic Porto instance management |
 | iOS Safari testing | 🔲 | Manual testing needed |
 | Android Chrome testing | 🔲 | Manual testing needed |
 | Docker setup | 🔲 | Colima download issues |
