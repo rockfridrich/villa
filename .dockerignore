@@ -44,9 +44,9 @@ tests
 # Development configs
 .eslintrc*
 .prettierrc*
-tsconfig*.json
 vitest.config*
 playwright.config*
+# Note: tsconfig.json is REQUIRED for path aliases (@/*)
 
 # CI/CD
 .github
