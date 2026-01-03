@@ -201,14 +201,28 @@ export async function checkExistingAccount(): Promise<string | null> {
   }
 }
 
+export interface AuthOptions {
+  /** Container element for inline rendering */
+  container?: HTMLElement | null
+  /** Force recreate Porto instance (use when switching modes) */
+  forceRecreate?: boolean
+}
+
 /**
  * Create a new Porto account
  * Shows the Porto sign-up flow directly
- * @param container - Optional element for inline rendering
+ * @param options.container - Optional element for inline rendering
+ * @param options.forceRecreate - Force new instance (default: true for clean state)
  */
-export async function createAccount(container?: HTMLElement | null): Promise<PortoConnectResult> {
+export async function createAccount(options: AuthOptions | HTMLElement | null = {}): Promise<PortoConnectResult> {
+  // Support legacy signature: createAccount(containerElement)
+  const opts: AuthOptions = options instanceof HTMLElement || options === null
+    ? { container: options, forceRecreate: true }
+    : { forceRecreate: true, ...options }
+
   try {
-    const porto = getPorto({ container })
+    // getPorto handles mode switching atomically - no separate resetPorto() needed
+    const porto = getPorto({ container: opts.container, forceRecreate: opts.forceRecreate })
 
     // Use wallet_connect which shows the full Porto dialog
     // Porto will show create account UI for new users
@@ -246,11 +260,18 @@ export async function createAccount(container?: HTMLElement | null): Promise<Por
 /**
  * Sign in with existing Porto account
  * Uses eth_requestAccounts which prompts for passkey selection
- * @param container - Optional element for inline rendering
+ * @param options.container - Optional element for inline rendering
+ * @param options.forceRecreate - Force new instance (default: true for clean state)
  */
-export async function signIn(container?: HTMLElement | null): Promise<PortoConnectResult> {
+export async function signIn(options: AuthOptions | HTMLElement | null = {}): Promise<PortoConnectResult> {
+  // Support legacy signature: signIn(containerElement)
+  const opts: AuthOptions = options instanceof HTMLElement || options === null
+    ? { container: options, forceRecreate: true }
+    : { forceRecreate: true, ...options }
+
   try {
-    const porto = getPorto({ container })
+    // getPorto handles mode switching atomically - no separate resetPorto() needed
+    const porto = getPorto({ container: opts.container, forceRecreate: opts.forceRecreate })
 
     // eth_requestAccounts prompts user to select existing passkey
     const accounts = await porto.provider.request({

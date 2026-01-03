@@ -80,10 +80,9 @@ export default function OnboardingPage() {
     await new Promise(resolve => setTimeout(resolve, 100))
 
     try {
-      // Reset Porto to ensure fresh instance with inline container
-      resetPorto()
-      // Porto shows its create account UI in the inline container
-      const result = await createAccount(portoContainerRef.current)
+      // createAccount handles instance management internally with forceRecreate
+      // No separate resetPorto() needed - avoids race condition
+      const result = await createAccount({ container: portoContainerRef.current })
 
       if (!result.success) {
         throw result.error
@@ -116,10 +115,9 @@ export default function OnboardingPage() {
     await new Promise(resolve => setTimeout(resolve, 100))
 
     try {
-      // Reset Porto to ensure fresh instance with inline container
-      resetPorto()
-      // Porto shows passkey selection in the inline container
-      const result = await signIn(portoContainerRef.current)
+      // signIn handles instance management internally with forceRecreate
+      // No separate resetPorto() needed - avoids race condition
+      const result = await signIn({ container: portoContainerRef.current })
 
       if (!result.success) {
         throw result.error
