@@ -6,6 +6,26 @@ Privacy-first passkey authentication. Porto SDK wrapper with Villa theming.
 
 ---
 
+## Quick Reference
+
+```bash
+npm run dev          # Local dev
+npm run dev:https    # Passkey testing
+npm run qa           # Mobile QA (ngrok)
+npm run verify       # Full check
+```
+
+| Agent | Model | Use For |
+|-------|-------|---------|
+| @spec | opus | Architecture |
+| @build | sonnet | Implementation |
+| @test | haiku | Run tests |
+| @review | sonnet | Code review |
+
+**See also:** [rules.md](rules.md) for code quality standards
+
+---
+
 ## Session Best Practices (Ultrathink)
 
 ### Before Starting Any Task
