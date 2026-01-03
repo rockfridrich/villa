@@ -4,12 +4,12 @@ Public roadmap. Discuss in [GitHub Issues](https://github.com/rockfridrich/villa
 
 ## Phase 1: Passkey Login [IN PROGRESS]
 
-Core identity with passwordless auth via Porto SDK.
+Core identity with passwordless auth via WebAuthn.
 
-- [ ] Porto SDK integration with Villa theming
-- [ ] Welcome and onboarding screens
-- [ ] Profile setup (name, avatar)
-- [ ] Local storage persistence
+- [x] WebAuthn implementation for native passkeys
+- [x] Welcome and onboarding screens
+- [x] Profile setup (name, avatar)
+- [x] Local storage persistence
 - [ ] E2E tests (Playwright)
 - [ ] Security tests
 - [ ] Mobile testing (iOS Safari, Android Chrome)
@@ -49,6 +49,7 @@ Local-first AI with optional cloud (consent required).
 
 Open for community input. Create an issue to discuss!
 
+- **Porto SDK integration** — Web3 wallet with passkey signing (requires user understanding of blockchain concepts)
 - **Villa SDK** — Let other village projects use Villa auth
 - **Telegram bot** — Capture community context from chats
 - **Multi-language** — i18n support

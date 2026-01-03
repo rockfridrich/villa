@@ -4,10 +4,11 @@ Privacy-first passkey authentication for pop-up villages.
 
 ## What This Is
 
-Villa wraps [Porto SDK](https://porto.sh/sdk) with custom theming, giving village projects:
+Villa provides native WebAuthn passkey authentication, giving village projects:
 - **Passwordless auth** via Face ID, Touch ID, or fingerprint
+- **Native biometric prompts** — works with iCloud Keychain, Google Password Manager, 1Password
 - **Consistent identity** across village apps
-- **Privacy by default** — your data stays yours
+- **Privacy by default** — your data stays yours, passkeys never leave your device
 
 ## Quick Start
 
@@ -31,10 +32,11 @@ villa/
 │   ├── vision.md             # Product vision
 │   └── STATUS.md             # Phase status
 ├── docs/
-│   ├── security.md           # Security model
-│   ├── privacy.md            # Privacy guarantees
-│   ├── contributing.md       # How to contribute
-│   └── integration.md        # SDK integration (coming)
+│   ├── security.md                # Security model
+│   ├── privacy.md                 # Privacy guarantees
+│   ├── contributing.md            # How to contribute
+│   ├── webauthn-implementation.md # WebAuthn details
+│   └── integration.md             # SDK integration (coming)
 ├── tests/
 │   ├── e2e/                  # Playwright tests
 │   └── security/             # Security tests
@@ -84,7 +86,8 @@ Every PR must pass the security checklist. No exceptions.
 
 ## Links
 
-- [Porto SDK](https://porto.sh/sdk) — Passkey infrastructure
+- [WebAuthn Guide](https://webauthn.guide/) — Passkey standard
+- [Passkeys.dev](https://passkeys.dev/) — Passkey resources
 - [Unforgettable](https://docs.unforgettable.app/sdk/) — Face recovery (Phase 2)
 - [Telegram](https://t.me/proofofretreat) — Community chat
 
