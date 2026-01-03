@@ -209,6 +209,47 @@ npm run dev:https          # For passkey testing
 - Port in use? → `pkill -f "next dev"`
 - Tailwind not updating? → Delete `.next` folder
 
+## Live QA / Hot Debugging Mode
+
+When user is testing on mobile device and reporting issues in real-time:
+
+### Feedback Format (from tester)
+
+```
+On [device], [action] shows [problem]
+```
+
+### Response Pattern
+
+1. **Read the relevant file** — Don't guess, check the code
+2. **Apply minimal fix** — One change at a time
+3. **Announce the fix** — "Fixed: [what you changed]"
+4. **Wait for verification** — Tester refreshes and confirms
+
+### Hot Reload Tips
+
+- **Files auto-reload** — Save triggers rebuild
+- **State preserved** — React Fast Refresh keeps state
+- **Force refresh** — Tell tester to add `?reset` to URL
+- **Style issues** — May need `npm run dev:clean`
+
+### Common Mobile Issues
+
+| Issue | Likely Cause | Fix |
+|-------|--------------|-----|
+| Button unresponsive | Missing touch target size | Add `min-h-[44px]` |
+| Text cut off | Fixed width on mobile | Use `max-w-full` or `truncate` |
+| Layout broken | Missing responsive class | Add `sm:` / `md:` variants |
+| Passkey fails | HTTP not HTTPS | Use ngrok URL |
+| Spinner forever | Promise rejection unhandled | Check error boundary |
+
+### Don't Do
+
+- Don't make multiple changes before tester verifies
+- Don't refactor during QA (fix the issue, refactor later)
+- Don't add features during QA (just fix reported issues)
+- Don't assume—ask for screenshot/video if unclear
+
 ## Handoff
 
 When you complete implementation:

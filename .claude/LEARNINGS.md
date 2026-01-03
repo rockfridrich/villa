@@ -659,4 +659,177 @@ export async function connectSDK(options: {
 
 ---
 
+## Session: 2026-01-04 — Live QA Workflow Optimization
+
+### What Happened
+
+1. **Set up ngrok for mobile testing** — Enables passkey testing on real iOS/Android devices
+2. **Created Claude Code-style terminal output** — Compact, scannable, functional
+3. **Added local IP detection** — Faster testing when on same network
+4. **Built QA session scripts** — Start/end rituals for structured testing
+5. **Documented feedback loop** — Optimized for Claude + human tester workflow
+
+### Problem Solved
+
+**Before:** No way to test passkeys on mobile devices without deploying
+
+**After:**
+```bash
+npm run qa  # Shows local IP + ngrok URL, testing checklist, Claude workflow
+```
+
+### Key Patterns
+
+#### 1. Local IP Preferred, ngrok for Passkeys
+
+| Use Case | Connection | Why |
+|----------|------------|-----|
+| UI/layout testing | `http://192.168.x.x:3000` | Faster (no tunnel) |
+| Passkey testing | `https://xxxx.ngrok.app` | HTTPS required |
+| Remote tester | ngrok URL | Works anywhere |
+
+#### 2. Structured Feedback Format
+
+**Tester reports:**
+```
+On [device], [action] shows [problem]
+```
+
+**Examples:**
+- "On iPhone Safari, Create Villa ID spinner never stops"
+- "On Android Chrome, profile name truncated"
+
+**Claude responds:**
+1. Read relevant file
+2. Apply fix
+3. Hot reload auto-refreshes device
+4. Tester verifies
+
+#### 3. Session Rituals
+
+**Start (`npm run qa`):**
+- Git status check
+- TypeScript check
+- Share URLs displayed
+- Testing checklist shown
+
+**End (`npm run qa:end`):**
+- Changed files summary
+- Lint/typecheck status
+- Commit instructions
+
+#### 4. Terminal Output Style (Claude Code)
+
+**Principles:**
+- Minimal color (functional, not decorative)
+- Compact sections with dim separators
+- Status indicators: `■` (in progress), `●` (ready), `✓` (done)
+- URLs highlighted, instructions dimmed
+
+**Example:**
+```
+Villa Local Share
+─────────────────────────────────────────
+■ Starting dev server...
+■ Starting ngrok tunnel...
+● Dev server ready
+
+─────────────────────────────────────────
+CONNECTIONS
+─────────────────────────────────────────
+
+Same Network (faster):
+  http://192.168.1.100:3000
+
+Any Network (ngrok):
+  https://e76773c013fc.ngrok.app
+```
+
+### Hot Debugging Workflow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  HUMAN                         CLAUDE                        │
+│  ──────                        ──────                        │
+│  1. Runs npm run qa            Displays connection info      │
+│  2. Opens URL on device        [Waits for feedback]          │
+│  3. Tests feature              [Waits for feedback]          │
+│  4. Reports: "X broken"        Reads code, applies fix       │
+│  5. Pulls down to refresh      [File saved → hot reload]     │
+│  6. Verifies fix               [Waits for next issue]        │
+│  7. "looks good"               "commit the QA fixes"         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `scripts/ngrok-share.sh` | Start dev + ngrok, show connection info |
+| `scripts/qa-start.sh` | Full session start (checks + share) |
+| `scripts/qa-end.sh` | Session end (summary + commit prompt) |
+
+### npm Scripts Added
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev:share` | Just ngrok sharing |
+| `npm run qa` | Full QA session (typecheck → share) |
+| `npm run qa:end` | End session, show changes |
+
+### Learnings Applied
+
+1. **Local network is faster** — Prefer `http://192.168.x.x:3000` for UI testing
+2. **ngrok required for passkeys** — WebAuthn needs HTTPS
+3. **Structured feedback reduces iteration time** — "On [device], [action] shows [problem]"
+4. **Session rituals catch issues early** — Typecheck before sharing
+5. **Claude Code terminal style** — Compact, functional, professional
+
+---
+
+## Patterns to Apply
+
+### For Live QA Sessions
+
+```bash
+# Start
+npm run qa
+
+# Report issues as:
+"On [device], [action] shows [problem]"
+
+# End
+npm run qa:end
+# or tell Claude: "commit the QA fixes"
+```
+
+### For Terminal Scripts
+
+```bash
+# Colors (Claude Code style)
+G='\033[0;32m'  # Green - success
+Y='\033[0;33m'  # Yellow - in progress
+R='\033[0;31m'  # Red - error
+D='\033[0;90m'  # Dim - secondary
+W='\033[1;37m'  # White bold - headers
+N='\033[0m'     # Reset
+
+# Status indicators
+echo -e "${Y}■${N} In progress..."
+echo -e "${G}●${N} Ready"
+echo -e "${G}✓${N} Done"
+```
+
+### For Connection Options
+
+```markdown
+| Network | URL | Passkeys |
+|---------|-----|----------|
+| Same WiFi | http://LOCAL_IP:3000 | ❌ |
+| ngrok | https://xxxx.ngrok.app | ✅ |
+| Local HTTPS | https://localhost:3000 | ✅ |
+```
+
+---
+
 *Last updated: 2026-01-04*

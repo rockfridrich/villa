@@ -53,6 +53,89 @@ Always add to specs when external systems are involved:
 
 ---
 
+## Live QA Workflow (Mobile Testing)
+
+**Optimized for rapid iteration with real device feedback.**
+
+### Start a QA Session
+
+```bash
+npm run qa          # Full session: typecheck → share
+# or
+npm run dev:share   # Just share (skip checks)
+```
+
+Output shows:
+- Local IP URL (faster, same network)
+- ngrok URL (any network, passkeys work)
+- Testing checklist
+- Claude workflow tips
+
+### Connection Options
+
+| Network | URL | Passkeys | Speed |
+|---------|-----|----------|-------|
+| Same WiFi | `http://192.168.x.x:3000` | ❌ HTTP only | Fast |
+| Any network | `https://xxxx.ngrok.app` | ✅ HTTPS | ~100ms latency |
+| Local HTTPS | `https://localhost:3000` | ✅ mkcert | Fastest |
+
+**Passkeys require HTTPS** — use ngrok URL for real passkey testing.
+
+### Feedback Loop Pattern
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. Tester reports: "On iPhone, Sign In button unresponsive"│
+│  2. Claude fixes: Edit button handler, add loading state    │
+│  3. Hot reload: Tester pulls down to refresh                │
+│  4. Verify: "Working now" or iterate                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Report format (paste to Claude):**
+```
+On [device], [action] shows [problem]
+
+Example: "On iPhone Safari, Create Villa ID shows spinner forever"
+```
+
+### Hot Debugging Commands
+
+| Issue | Fix |
+|-------|-----|
+| UI not updating | Pull down to refresh on mobile |
+| State stuck | Add `?reset` to URL |
+| Style issues | `npm run dev:clean` then reshare |
+| Passkey fails | Check ngrok URL is HTTPS |
+
+### End QA Session
+
+```bash
+npm run qa:end
+```
+
+Shows:
+- Changed files summary
+- TypeScript/lint check results
+- Commit instructions
+
+Or tell Claude: **"commit the QA fixes"**
+
+### Device Testing Checklist
+
+**iOS Safari:**
+- [ ] Create Villa ID → Face ID prompt
+- [ ] Sign In → passkey auto-select
+- [ ] Home screen → profile displays
+- [ ] Switch Account → re-auth flow
+
+**Android Chrome:**
+- [ ] Create Villa ID → fingerprint prompt
+- [ ] Sign In → Google Password Manager
+- [ ] Cross-device passkey sync
+
+---
+
 ## Agent-First Development
 
 This project uses **Claude Code agents** for implementation. Humans focus on specs and review; agents handle code.

@@ -41,6 +41,9 @@ docker compose up    # https://localhost (with Caddy)
 | `npm run dev` | Start dev server at http://localhost:3000 |
 | `npm run dev:https` | Start with HTTPS (for passkey/WebAuthn) |
 | `npm run dev:clean` | Clear cache and start fresh |
+| `npm run dev:share` | Share locally via ngrok (test on mobile devices) |
+| `npm run qa` | Full QA session (typecheck → share) |
+| `npm run qa:end` | End QA session, show changes summary |
 
 ### Quality Checks
 
@@ -103,6 +106,20 @@ Passkeys require HTTPS. Use:
 npm run dev:https
 ```
 Then visit https://localhost:3000
+
+### Testing on mobile devices (iOS/Android)
+
+Use ngrok to share your local server:
+```bash
+npm run dev:share
+```
+
+This will:
+1. Start the dev server
+2. Create a secure HTTPS tunnel
+3. Display a shareable URL (https://xxxx.ngrok.io)
+
+Open the URL on your phone to test passkeys on real devices.
 
 ### E2E tests failing
 
@@ -239,6 +256,9 @@ docker run -d -p 3000:3000 --name villa your-registry/villa:latest
 | Script | Description |
 |--------|-------------|
 | `./scripts/dev.sh` | Start development (--native, --https, --docker) |
+| `./scripts/ngrok-share.sh` | Share locally via ngrok for mobile testing |
+| `./scripts/qa-start.sh` | Full QA session with pre-checks |
+| `./scripts/qa-end.sh` | End QA session, summarize changes |
 | `./scripts/build.sh` | Build for production (--native, --docker) |
 | `./scripts/test.sh` | Run tests (--quick, --e2e, --all) |
 | `./scripts/deploy.sh` | Deploy to Digital Ocean (--create, --update) |
