@@ -1,5 +1,6 @@
 # DigitalOcean App Platform - Preview Environment
-# Auto-created for each PR, deleted when PR closes
+# Auto-created for PRs from collaborators only
+# Uses buildpacks for faster cached builds
 
 name: villa-pr-${PR_NUMBER}
 
@@ -9,14 +10,17 @@ services:
       repo: rockfridrich/villa
       branch: ${BRANCH_NAME}
       deploy_on_push: true
-    dockerfile_path: Dockerfile
+    # Buildpacks (faster, cached) instead of Dockerfile
+    build_command: npm run build
+    run_command: npm run start
+    environment_slug: node-js
     http_port: 3000
     instance_count: 1
     instance_size_slug: basic-xxs
     routes:
       - path: /
     health_check:
-      http_path: /
+      http_path: /api/health
       initial_delay_seconds: 15
       period_seconds: 10
     envs:
