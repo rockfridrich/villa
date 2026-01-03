@@ -324,4 +324,74 @@ Porto controls:
 
 ---
 
+## Session: 2026-01-03 — Successful Agent Workflow (Reference)
+
+### What Went Well
+
+This session demonstrated the ideal agent workflow with minimal pivots:
+
+```
+1. User clarified UX intent → "Villa ID", Sign In primary
+2. @spec updated with Language Guidelines, Copy Standards
+3. @build implemented changes (4 tasks in one pass)
+4. @review approved with 1 non-blocking item
+5. Cleanup applied immediately
+6. All 14 tests pass
+```
+
+**Time: ~15 min from spec to shipped code**
+
+### Workflow That Worked
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1. Clarify intent first | User said "Sign In primary, Villa ID branding" | Clear direction |
+| 2. Update spec before code | Added Language Guidelines table | Build agent had exact copy |
+| 3. Build agent does implementation | Single pass, 4 tasks | No back-and-forth |
+| 4. Review agent catches cleanup | Unused prop flagged | Immediate fix |
+| 5. Commit after each phase | spec → build → cleanup | Clear git history |
+
+### Patterns to Repeat
+
+1. **Language Guidelines table in spec** — Maps internal terms to user-facing copy
+2. **Copy Standards table** — Exact button text + helper text
+3. **Sign In always primary** — Don't over-engineer detection logic
+4. **Review agent catches dead code** — Use it after every build
+
+### Spec Template Addition
+
+```markdown
+### Language Guidelines
+
+| Internal/Tech | User-Facing |
+|---------------|-------------|
+| [Technical term] | [User term] |
+```
+
+This prevents "Porto" leaking into UI, or other internal jargon.
+
+---
+
+## Remaining Work: Deployment
+
+### Blocked
+- Docker testing (Colima download issues)
+- DigitalOcean App Platform setup
+
+### Next Session Priorities
+1. Get Colima/Docker working
+2. Set up DigitalOcean App Platform
+3. Configure GitHub → DO deployment hooks
+4. Feature branch → preview deployments
+5. Main branch → production deployment
+
+### DigitalOcean Setup Needed
+- App Platform app creation
+- GitHub integration
+- Environment variables (none for v1, but structure needed)
+- Domain configuration (proofofretreat.me?)
+- Auto-deploy on push
+
+---
+
 *Last updated: 2026-01-03*

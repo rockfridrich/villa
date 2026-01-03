@@ -13,18 +13,22 @@ Porto SDK integration for passkey authentication with Villa theming.
 | Separate create/sign-in flows | ✅ | `createAccount()` and `signIn()` |
 | Update onboarding to use Porto | ✅ | Direct Porto dialog, no explainer |
 | Remove `src/lib/webauthn.ts` | ✅ | Deleted, using Porto SDK |
-| Connection detection | ✅ | eth_accounts check on mount |
-| Welcome screen | ✅ | Two CTAs based on account detection |
+| Villa ID branding | ✅ | No "Porto" in user-facing copy |
+| Sign In primary | ✅ | Yellow button, always first |
+| Session behavior docs | ✅ | TTLs, "Switch Account" UX |
+| Welcome screen | ✅ | Sign In + Create Villa ID |
 | Onboarding flow | ✅ | Create + sign in paths |
 | Profile setup | ✅ | Display name with Zod validation |
-| Home screen | ✅ | Profile display with logout |
+| Home screen | ✅ | Profile display with Switch Account |
 | Local storage | ✅ | Zustand with persist |
 | TypeScript strict | ✅ | No errors |
-| E2E tests | 🔲 | Scaffold exists, needs Porto mocks |
-| Security tests | 🔲 | XSS tests written, need run |
+| E2E tests | ✅ | 14/14 passing |
+| Security tests | ✅ | XSS + storage tests passing |
 | iOS Safari testing | 🔲 | Manual testing needed |
 | Android Chrome testing | 🔲 | Manual testing needed |
-| Deploy v1 | 🔲 | After all tests pass |
+| Docker setup | 🔲 | Colima download issues |
+| DigitalOcean deploy | 🔲 | App Platform + GitHub hooks |
+| Feature branch previews | 🔲 | Auto-deploy on PR |
 
 **Spec:** [v1-passkey-login.md](v1-passkey-login.md)
 

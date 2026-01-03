@@ -68,20 +68,34 @@ Step-by-step from user's perspective for each flow.
 - [Why it must stay external (e.g., security)]
 ```
 
-### 5. Technical Approach
+### 5. Language Guidelines
+Map internal/technical terms to user-facing copy:
+
+```markdown
+### Language Guidelines
+
+| Internal/Tech | User-Facing |
+|---------------|-------------|
+| [SDK name] | [User term or hidden] |
+| [Technical ID] | [Friendly name] |
+```
+
+**Rule:** Infrastructure terms (SDK names, wallet addresses) should never appear in UI.
+
+### 6. Technical Approach
 Data models, APIs, dependencies. Keep code minimal—describe behavior in prose.
 
-### 6. Tasks
+### 7. Tasks
 Implementable chunks for the build agent:
 1. Mocks first (all external dependencies)
 2. Core logic with tests
 3. Integration
 4. Polish
 
-### 7. Acceptance Criteria
+### 8. Acceptance Criteria
 Testable conditions for "done". Each maps to at least one test.
 
-### 8. Session & UX Patterns (when applicable)
+### 9. Session & UX Patterns (when applicable)
 For features involving authentication or external SDKs, document:
 
 ```markdown
@@ -103,7 +117,7 @@ For features involving authentication or external SDKs, document:
 - [External system limitation 2]
 ```
 
-### 9. Out of Scope
+### 10. Out of Scope
 **CRITICAL:** Explicitly list what this spec does NOT cover.
 
 ```markdown
