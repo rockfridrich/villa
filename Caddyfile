@@ -1,11 +1,32 @@
 # Caddyfile for local HTTPS development
 # Caddy automatically generates local certificates
 
+(security_headers) {
+    header {
+        # HSTS - enforce HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Clickjacking protection
+        X-Frame-Options "DENY"
+        # XSS protection (legacy browsers)
+        X-XSS-Protection "1; mode=block"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Permissions policy (disable unused features)
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        # Remove server header
+        -Server
+    }
+}
+
 localhost {
+    import security_headers
     reverse_proxy app:3000
 }
 
 # Alternative: use villa.local (add to /etc/hosts: 127.0.0.1 villa.local)
 villa.local {
+    import security_headers
     reverse_proxy app:3000
 }
