@@ -13,6 +13,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # CI tests - must pass before merge
+  ci:
+    name: CI Tests
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npx vitest run --config vitest.config.unit.ts
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (local)
+        run: npm run test:e2e:chromium
+        env:
+          CI: true
+
   # Security check: only collaborators can trigger preview deploys
   check-permission:
     name: Check Permission
@@ -43,13 +76,14 @@ jobs:
               core.notice('Preview deployments are only available for repository collaborators. External contributors can request a maintainer to deploy their PR for testing.');
             }
 
-  # Deploy preview for PRs from collaborators
+  # Deploy preview for PRs from collaborators (after CI passes)
   deploy-preview:
     name: Deploy Preview
-    needs: check-permission
+    needs: [ci, check-permission]
     if: |
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
+      needs.ci.result == 'success' &&
       needs.check-permission.outputs.is-collaborator == 'true'
     runs-on: ubuntu-latest
     outputs:
@@ -78,9 +112,11 @@ jobs:
         run: |
           APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
 
-          if doctl apps list --format Name --no-header | grep -q "^${APP_NAME}$"; then
-            echo "Updating existing preview app..."
-            APP_ID=$(doctl apps list --format ID,Name --no-header | grep "${APP_NAME}" | awk '{print $1}')
+          # Use Spec.Name (not Name) - doctl returns <nil> for Name
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
+
+          if [ -n "$APP_ID" ]; then
+            echo "Updating existing preview app: $APP_ID"
             doctl apps update $APP_ID --spec .do/app-preview-generated.yaml
           else
             echo "Creating new preview app..."
@@ -89,10 +125,10 @@ jobs:
 
           # Wait for URL
           for i in {1..30}; do
-            APP_URL=$(doctl apps list --format DefaultIngress,Name --no-header | grep "${APP_NAME}" | awk '{print $1}')
-            if [ -n "$APP_URL" ] && [ "$APP_URL" != "null" ]; then
-              echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
-              echo "✅ Preview URL: https://${APP_URL}"
+            APP_URL=$(doctl apps list --format DefaultIngress,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
+            if [ -n "$APP_URL" ] && [ "$APP_URL" != "null" ] && [ "$APP_URL" != "<nil>" ]; then
+              echo "url=${APP_URL}" >> $GITHUB_OUTPUT
+              echo "✅ Preview URL: ${APP_URL}"
               exit 0
             fi
             echo "Waiting for URL... ($i/30)"
@@ -190,10 +226,44 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Deploy production (main branch only)
+  # CI for production (main branch)
+  ci-production:
+    name: CI Tests (Production)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npx vitest run --config vitest.config.unit.ts
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (local)
+        run: npm run test:e2e:chromium
+        env:
+          CI: true
+
+  # Deploy production (main branch only, after CI)
   deploy-production:
     name: Deploy Production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci-production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci-production.result == 'success'
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
@@ -211,18 +281,19 @@ jobs:
       - name: Deploy to App Platform
         id: deploy
         run: |
-          APP_ID=$(doctl apps list --format ID,Name --no-header | grep "villa-production" | awk '{print $1}')
+          # Use Spec.Name (not Name) - doctl returns <nil> for Name
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
 
           if [ -z "$APP_ID" ]; then
             echo "Creating production app..."
             doctl apps create --spec .do/app-production.yaml
           else
-            echo "Updating production app..."
+            echo "Updating production app: $APP_ID"
             doctl apps update $APP_ID --spec .do/app-production.yaml
           fi
 
           # Wait for deployment
-          APP_ID=$(doctl apps list --format ID,Name --no-header | grep "villa-production" | awk '{print $1}')
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
           for i in {1..30}; do
             STATUS=$(doctl apps get $APP_ID --format ActiveDeployment.Phase --no-header 2>/dev/null || echo "PENDING")
             if [ "$STATUS" = "ACTIVE" ]; then
@@ -297,11 +368,12 @@ jobs:
       - name: Delete preview app
         run: |
           APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
-          APP_ID=$(doctl apps list --format ID,Name --no-header | grep "${APP_NAME}" | awk '{print $1}')
+          # Use Spec.Name (not Name) - doctl returns <nil> for Name
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
 
           if [ -n "$APP_ID" ]; then
-            echo "🗑️ Deleting preview app: ${APP_NAME}"
+            echo "🗑️ Deleting preview app: ${APP_NAME} ($APP_ID)"
             doctl apps delete $APP_ID --force
           else
-            echo "No preview app found"
+            echo "No preview app found for ${APP_NAME}"
           fi
