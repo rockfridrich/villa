@@ -1089,4 +1089,143 @@ done
 
 ---
 
+## Session: 2026-01-04 — Porto Trusted Hosts & Cross-Domain Popup Issues
+
+### What Happened
+
+1. **Added QR codes to dev:share** — Terminal QR codes for instant mobile scanning
+2. **Researched Porto trusted hosts** — Required for iframe mode in production
+3. **Documented cross-domain popup issues** — ngrok testing always uses popup mode
+4. **Created comprehensive session summary** — For future reference
+
+### Porto SDK Trusted Hosts
+
+**Key discovery from [Porto production docs](https://porto.sh/sdk/production):**
+
+To enable iframe-based dialogs (better UX), production domains must be registered in Porto's trusted hosts list. Without registration, Porto falls back to popup mode.
+
+**Registration process:**
+1. Contact Porto team via [Telegram: @porto_devs](https://t.me/porto_devs)
+2. Request domain whitelisting for: `proofofretreat.me`
+3. Porto adds to their server-side whitelist
+4. Iframe mode becomes available for that domain
+
+**TODO:** Register proofofretreat.me with Porto team before production launch.
+
+### Cross-Domain Popup Issues with ngrok
+
+**Why ngrok always uses popup mode:**
+
+| Factor | Impact |
+|--------|--------|
+| ngrok URL not in trusted hosts | Iframe blocked, falls back to popup |
+| URL changes every session (free tier) | Can't register dynamic URLs |
+| Cross-origin restrictions | Porto dialog on id.porto.sh, app on *.ngrok.app |
+| Third-party cookie blocking | Some browsers block storage in popups |
+
+**Implications for QA testing:**
+
+1. **Popup blockers may interfere** — Testers must allow popups for ngrok domain
+2. **Different UX than production** — Production uses iframe (if registered), ngrok uses popup
+3. **Session persistence differs** — Popup mode may have different storage behavior
+4. **Can't test iframe-specific bugs** — Use `npm run dev:https` locally for that
+
+### QA Testing Matrix
+
+| Environment | Porto Mode | Passkeys | Use For |
+|-------------|------------|----------|---------|
+| `localhost:3000` (HTTP) | Popup | ❌ | UI-only testing |
+| `localhost:3000` (HTTPS) | Iframe (trusted) | ✅ | Full local testing |
+| ngrok URL | Popup (not trusted) | ✅ | Mobile device testing |
+| proofofretreat.me | Iframe (after registration) | ✅ | Production |
+
+### QR Code Feature Added
+
+**npm run dev:share now shows:**
+- Local WiFi QR (same network, no passkeys)
+- ngrok QR (any network, passkeys work)
+- Auto-detects if qrencode is installed
+
+**Install qrencode:**
+```bash
+brew install qrencode
+```
+
+### Session Summary: What We Built Today
+
+| Feature | Purpose | Files |
+|---------|---------|-------|
+| ngrok sharing | Mobile device testing | `scripts/ngrok-share.sh` |
+| QA session scripts | Structured testing workflow | `scripts/qa-*.sh` |
+| Health endpoint | Service monitoring | `src/app/api/health/route.ts` |
+| In-app browser detection | Security for Telegram/Instagram | `src/lib/browser.ts` |
+| Diagnostic tools | Debugging ngrok issues | `scripts/ngrok-debug.sh` |
+| QR code display | Easy mobile access | `scripts/ngrok-share.sh` |
+| CSP headers | Porto SDK security | `Caddyfile`, `next.config.js` |
+
+### Key Commits Today
+
+| Commit | Description |
+|--------|-------------|
+| Live QA workflow | ngrok sharing, qa scripts |
+| In-app browser detection | Telegram/Instagram guidance |
+| ngrok debugging | Health endpoint, diagnostics |
+| QR codes | Terminal QR for mobile scanning |
+
+### Patterns Discovered
+
+#### 1. Porto iframe vs popup decision tree
+
+```
+Is HTTPS? ─── No ──→ Popup (WebAuthn requires secure context)
+    │
+   Yes
+    │
+Is domain in trusted hosts? ─── No ──→ Popup
+    │
+   Yes
+    │
+Does browser support IntersectionObserver v2? ─── No ──→ Popup
+    │
+   Yes
+    │
+   ↓
+Iframe (best UX)
+```
+
+#### 2. Production Domain Checklist
+
+Before launching on `proofofretreat.me`:
+
+- [ ] Register domain with Porto team (@porto_devs on Telegram)
+- [ ] Verify CSP headers include `frame-src https://id.porto.sh`
+- [ ] Verify CSP headers include `connect-src https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh`
+- [ ] Test iframe mode works (not falling back to popup)
+- [ ] Test passkey creation and sign-in
+- [ ] Test cross-device passkey sync
+
+#### 3. ngrok Testing Best Practices
+
+```markdown
+1. Always allow popups for *.ngrok.app domain
+2. Use ngrok URL for passkey testing (HTTPS required)
+3. Use local IP for UI-only testing (faster)
+4. Know that UX differs from production (popup vs iframe)
+5. Restart if session expires (~2 hours on free tier)
+```
+
+### Open Questions
+
+1. **Porto trusted host SLA** — How long does registration take?
+2. **Subdomain support** — Does `*.proofofretreat.me` need separate registration?
+3. **ngrok Pro benefits** — Does reserved domain help with testing?
+
+### Next Steps
+
+1. **Register proofofretreat.me** with Porto team before production
+2. **Test iframe mode** with local HTTPS to preview production behavior
+3. **Consider ngrok Pro** for stable testing URL (optional)
+
+---
+
 *Last updated: 2026-01-04*
