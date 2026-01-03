@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, Copy, Check } from 'lucide-react'
 import { Button, Card, CardContent, Avatar } from '@/components/ui'
@@ -11,6 +11,18 @@ export default function HomePage() {
   const router = useRouter()
   const { identity, clearIdentity } = useIdentityStore()
   const [copied, setCopied] = useState(false)
+
+  // Ref for tracking timeout to prevent memory leaks
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!identity) {
@@ -33,9 +45,18 @@ export default function HomePage() {
   }
 
   const handleCopyAddress = async () => {
-    await navigator.clipboard.writeText(identity.address)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(identity.address)
+      setCopied(true)
+      // Clear any existing timeout before setting a new one
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      // Clipboard API can fail if permissions are denied or page doesn't have focus
+      console.error('Failed to copy address:', err)
+    }
   }
 
   const truncateAddress = (address: string) => {

@@ -39,6 +39,18 @@ export default function OnboardingPage() {
   // Ref for inline Porto container
   const portoContainerRef = useRef<HTMLDivElement | null>(null)
 
+  // Ref for tracking timeouts to prevent memory leaks
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
   // Check Porto support on mount
   useEffect(() => {
     if (!isPortoSupported()) {
@@ -82,7 +94,7 @@ export default function OnboardingPage() {
 
       // Show success and move to profile
       setStep('success')
-      setTimeout(() => setStep('profile'), 1500)
+      timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
     } catch (err) {
       const message = getErrorMessage(err as Error)
       setError({
@@ -125,7 +137,7 @@ export default function OnboardingPage() {
 
       // New sign-in (different device?), need profile setup
       setStep('success')
-      setTimeout(() => setStep('profile'), 1500)
+      timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
     } catch (err) {
       const message = getErrorMessage(err as Error)
       setError({
