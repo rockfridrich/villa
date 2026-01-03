@@ -1,12 +1,56 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
   // Enable standalone output for Docker deployment
   output: 'standalone',
 
-  // Security headers (used when not behind Caddy)
+  // Enable compression (gzip)
+  compress: true,
+
+  // Optimize builds
+  swcMinify: true,
+
+  // Generate ETags for caching
+  generateEtags: true,
+
+  // Powered by header (disable for security)
+  poweredByHeader: false,
+
+  // Security + caching headers
   async headers() {
     return [
+      // Static assets - long cache (hashed filenames)
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Public assets - moderate cache
+      {
+        source: '/public/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      // API routes - no cache
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
+          },
+        ],
+      },
+      // All routes - security headers
       {
         source: '/:path*',
         headers: [
