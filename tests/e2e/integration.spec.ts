@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 /**
  * Integration Tests for Villa
@@ -298,7 +298,7 @@ test.describe('Mobile Integration', () => {
     await page.setViewportSize({ width: 375, height: 667 })
   })
 
-  test('touch interactions work on buttons', async ({ page, context }) => {
+  test('touch interactions work on buttons', async ({ page, context: _context }) => {
     // Note: Using click() instead of tap() as Playwright tap requires hasTouch in browser context
     // which is set at browser launch. click() works for mobile viewports.
     await page.goto('/')
@@ -524,8 +524,8 @@ test.describe('Error Recovery Integration', () => {
       // May fail, but shouldn't crash the process
     })
 
-    // If page loaded, verify basic elements
-    const heading = await page.getByRole('heading', { name: 'Villa' }).isVisible().catch(() => false)
+    // If page loaded, verify basic elements (check visibility but don't require it)
+    await page.getByRole('heading', { name: 'Villa' }).isVisible().catch(() => false)
 
     // Test passes if we didn't crash
     expect(true).toBe(true)

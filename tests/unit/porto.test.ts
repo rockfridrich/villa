@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { isPortoSupported, resetPorto, getPorto } from '@/lib/porto'
 
 describe('porto helpers', () => {
@@ -46,13 +46,6 @@ describe('porto helpers', () => {
     })
 
     it('forces new instance creation after reset', () => {
-      // Mock Porto.create to track calls
-      const createMock = vi.fn().mockReturnValue({
-        provider: {
-          request: vi.fn(),
-        },
-      })
-
       // We can't easily test the internal instance state without exposing it,
       // but we can verify the function executes without errors
       resetPorto()
