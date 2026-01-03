@@ -10,10 +10,16 @@ Core identity with passwordless auth via WebAuthn.
 - [x] Welcome and onboarding screens
 - [x] Profile setup (name, avatar)
 - [x] Local storage persistence
-- [ ] E2E tests (Playwright)
-- [ ] Security tests
+- [x] E2E tests (Playwright) — 14 tests
+- [x] Security tests — 24 tests
+- [x] Unit + integration tests — 102 tests
+- [x] DigitalOcean App Platform deployment
+- [x] Docker build optimization (BuildKit caching)
+- [x] Preview deployments for PRs
+- [x] E2E tests on deployed URLs
 - [ ] Mobile testing (iOS Safari, Android Chrome)
-- [ ] Deploy v1
+- [ ] Custom domain (villa.proofofretreat.me)
+- [ ] Porto iframe mode (requires domain registration)
 
 ## Phase 2: Recovery
 
@@ -55,6 +61,7 @@ Open for community input. Create an issue to discuss!
 - **Multi-language** — i18n support
 - **Desktop app** — Electron or Tauri wrapper
 - **Browser extension** — Quick identity access
+- **Bun package manager** — Replace npm with Bun for faster installs (~3x) and builds (~2x). Requires: Dockerfile update, CI workflow update, lock file migration
 
 ---
 
