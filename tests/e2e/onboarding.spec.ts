@@ -78,16 +78,16 @@ test.describe('Home Screen', () => {
     await expect(page.getByText('0x1234...7890')).toBeVisible()
   })
 
-  test('shows sign out button', async ({ page }) => {
+  test('shows switch account button', async ({ page }) => {
     await page.goto('/home')
 
-    await expect(page.getByRole('button', { name: /Sign Out/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Switch Account/i })).toBeVisible()
   })
 
-  test('clears identity and redirects on sign out', async ({ page }) => {
+  test('clears identity and redirects on switch account', async ({ page }) => {
     await page.goto('/home')
 
-    await page.getByRole('button', { name: /Sign Out/i }).click()
+    await page.getByRole('button', { name: /Switch Account/i }).click()
 
     await expect(page).toHaveURL(/\/onboarding/)
   })
