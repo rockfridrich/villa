@@ -167,4 +167,114 @@ Explicitly list what this spec does NOT cover.
 
 ---
 
+---
+
+## Session: 2026-01-03 — Docker Setup & Security Hardening
+
+### What Happened
+
+1. **Docker testing blocked** — Colima VM download (~500MB) repeatedly failed due to network
+2. **Pivoted to productive work** — Used blocked time for Caddy security review
+3. **Applied security headers** — Enhanced Caddyfile with HSTS, CSP, etc.
+4. **Generated debugging guide** — Created comprehensive Docker/Colima guide in-chat
+5. **Token inefficiency identified** — Background task output consumed 500KB+ of context
+
+### Time & Token Cost
+
+| Task | Time | Token Impact |
+|------|------|--------------|
+| Colima download attempts | 30+ min | **High** (verbose progress output) |
+| Caddy security research | 10 min | Medium (web fetches) |
+| Security headers | 5 min | Low |
+| Docker guide generation | 15 min | **High** (regenerated in-chat) |
+
+### Root Causes of Inefficiency
+
+1. **No quiet mode for Colima** — Progress output flooded context
+2. **Guides generated per-session** — Same content repeated across sessions
+3. **No pre-flight checks** — Discovered Docker issues mid-task
+4. **Context switching** — Jumped between Docker/Security/Docs
+
+### Learnings Applied
+
+#### 1. Use Quiet Commands for Background Tasks
+
+**Before:**
+```bash
+colima start  # Outputs 500KB of progress
+```
+
+**After:**
+```bash
+colima start 2>&1 | tail -5  # Only final status
+# Or check status separately
+colima status
+```
+
+#### 2. Persist Guides in Repo, Not Chat
+
+**Before:** Generate Docker debugging guide in conversation (high token cost, lost after session)
+
+**After:** Create `.claude/workflows/docker-debug.md` once, reference thereafter
+
+#### 3. Pre-flight Checks Before Docker Work
+
+```bash
+# Add to scripts/preflight.sh
+colima status > /dev/null 2>&1 || { echo "Start Colima first: colima start"; exit 1; }
+docker info > /dev/null 2>&1 || { echo "Docker not connected"; exit 1; }
+```
+
+#### 4. Batch Related Tasks
+
+**Before:** Docker → Security → Docker → Commit (context switches)
+
+**After:**
+- All Docker tasks together
+- All security tasks together
+- Single commit per logical change
+
+### Security Discoveries
+
+**Caddy Artifact Signing:**
+- Uses Sigstore (since v2.6.0)
+- Verify with: `cosign verify-blob`
+- Check transparency log with: `rekor-cli`
+
+**Security Headers Added:**
+- HSTS with preload
+- X-Content-Type-Options
+- X-Frame-Options DENY
+- Permissions-Policy (disable unused APIs)
+- Remove Server header
+
+### Workflow Optimizations
+
+| Optimization | Benefit |
+|--------------|---------|
+| `.claude/workflows/` directory | Persistent guides, lower token cost |
+| `scripts/preflight.sh` | Catch issues before work starts |
+| Quiet background commands | Reduce context pollution |
+| Batch similar tasks | Fewer context switches |
+
+---
+
+## Patterns to Apply
+
+### For Docker/Infra Work
+
+1. Run pre-flight checks first
+2. Use quiet/minimal output modes
+3. Document solutions in repo, not chat
+4. Test incrementally, not all-at-once
+
+### For Token Efficiency
+
+1. Reference existing docs instead of regenerating
+2. Use `tail -n` for long outputs
+3. Kill background tasks that produce verbose output
+4. Prefer haiku for research, opus for implementation
+
+---
+
 *Last updated: 2026-01-03*
