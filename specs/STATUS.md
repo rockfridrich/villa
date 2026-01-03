@@ -26,7 +26,7 @@ Porto SDK integration for passkey authentication with Villa theming.
 | Integration tests | ✅ | 26 tests (flows, mobile, persistence) |
 | Security tests | ✅ | 24 tests (XSS, CSP, session) |
 | E2E tests | ✅ | 14 tests (onboarding, home) |
-| **Total tests** | ✅ | **140 passing** |
+| **Total tests** | ✅ | **145 passing** (76 unit + 69 E2E) |
 | Memory leak fixes | ✅ | setTimeout cleanup with refs |
 | PII logging fixes | ✅ | Return types, no console.error |
 | Race condition fixes | ✅ | Atomic Porto instance management |
@@ -38,6 +38,8 @@ Porto SDK integration for passkey authentication with Villa theming.
 | E2E on deployments | ✅ | Playwright against deployed URLs |
 | Asset caching | ✅ | 1yr immutable for static, no-store for API |
 | Collaborator security | ✅ | Only repo collaborators can trigger deploys |
+| Production verified | ✅ | 69 E2E tests pass on deployed URL |
+| Porto SDK integration | ✅ | Iframe loads, connecting state works |
 
 **Spec:** [v1-passkey-login.md](v1-passkey-login.md)
 

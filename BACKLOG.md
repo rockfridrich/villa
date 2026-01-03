@@ -10,13 +10,14 @@ Core identity with passwordless auth via WebAuthn.
 - [x] Welcome and onboarding screens
 - [x] Profile setup (name, avatar)
 - [x] Local storage persistence
-- [x] E2E tests (Playwright) — 14 tests
+- [x] E2E tests (Playwright) — 69 tests
 - [x] Security tests — 24 tests
-- [x] Unit + integration tests — 102 tests
+- [x] Unit + integration tests — 76 tests
 - [x] DigitalOcean App Platform deployment
 - [x] Docker build optimization (BuildKit caching)
 - [x] Preview deployments for PRs
 - [x] E2E tests on deployed URLs
+- [x] Porto SDK integration verified on production
 - [ ] Mobile testing (iOS Safari, Android Chrome)
 - [ ] Custom domain (villa.proofofretreat.me)
 - [ ] Porto iframe mode (requires domain registration)

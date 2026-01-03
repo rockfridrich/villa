@@ -143,6 +143,24 @@ Or tell Claude: **"commit the QA fixes"**
 
 This project uses **Claude Code agents** for implementation. Humans focus on specs and review; agents handle code.
 
+### PARALLEL BY DEFAULT
+
+**Always run independent tasks in parallel.** This is the single biggest speedup for development.
+
+```
+❌ NEVER do this (sequential):
+  read file → wait → edit → wait → test → wait → review
+
+✅ ALWAYS do this (parallel):
+  read files in parallel → edit → test + review in parallel
+```
+
+**Parallel patterns to use automatically:**
+- Multiple file reads → single message with multiple Read calls
+- Test + Review → always run together after build
+- Independent searches → multiple Grep/Glob calls in parallel
+- E2E + Unit tests → can run simultaneously
+
 ### Model Selection Guide
 
 | Agent | Model | Why | Cost |
@@ -440,6 +458,60 @@ tests/
 2. **Validate all input** — Zod schemas for user data
 3. **No secrets in code** — Use environment variables
 4. **XSS prevention** — Sanitize display names
+5. **No hardcoded URLs** — Use `BASE_URL` env var for tests
+
+---
+
+## Environment Handling
+
+**Never hardcode environment-specific URLs in code.** Use environment variables.
+
+### Test Environments
+
+```bash
+# Local development
+npm run test:e2e:chromium
+
+# Against deployed URL
+BASE_URL=https://example.ondigitalocean.app npm run test:e2e:chromium
+```
+
+### Environment Detection
+
+```typescript
+// playwright.config.ts handles this automatically
+const baseURL = process.env.BASE_URL || 'http://localhost:3000'
+const isExternalUrl = baseURL !== 'http://localhost:3000'
+```
+
+### Writing Environment-Agnostic Tests
+
+```typescript
+// ✅ CORRECT: Use relative URLs
+await page.goto('/')
+await page.goto('/onboarding')
+
+// ❌ WRONG: Never hardcode URLs
+const BASE_URL = 'https://production.example.com'  // NO!
+await page.goto(BASE_URL)  // NO!
+```
+
+### Environment Matrix
+
+| Environment | URL Source | Passkeys | Use For |
+|-------------|------------|----------|---------|
+| Local HTTP | `localhost:3000` | ❌ | UI development |
+| Local HTTPS | `localhost:3000` (mkcert) | ✅ | Passkey development |
+| ngrok | Dynamic URL | ✅ | Mobile QA |
+| Preview | `villa-pr-N.ondigitalocean.app` | ✅ | PR testing |
+| Production | `villa-production-*.ondigitalocean.app` | ✅ | Live |
+
+### Open Source Considerations
+
+- **No secrets in repo** — Use GitHub secrets, DO environment variables
+- **No production URLs in code** — All URLs via BASE_URL env var
+- **No PII in tests** — Use mock data only
+- **Public CI logs** — Never log sensitive data
 
 ## Links
 

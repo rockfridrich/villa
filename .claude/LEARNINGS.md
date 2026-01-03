@@ -1407,4 +1407,137 @@ done
 
 ---
 
+---
+
+## Session: 2026-01-04 — Environment-Agnostic Testing & Parallel Execution
+
+### What Happened
+
+1. **Hardcoded production URL in test** — `passkey-live.spec.ts` had `https://villa-production-vcryk.ondigitalocean.app` hardcoded
+2. **Fixed to use relative URLs** — Tests now work with any `BASE_URL`
+3. **Deployment succeeded** — 64/64 E2E tests pass on production
+4. **Emphasized parallel execution** — Updated CLAUDE.md with PARALLEL BY DEFAULT
+
+### Key Insight: No Hardcoded URLs
+
+**Problem:** Test file had:
+```typescript
+const BASE_URL = 'https://villa-production-vcryk.ondigitalocean.app'
+await page.goto(BASE_URL)
+```
+
+**Why this is wrong:**
+- Other contributors can't test against their deployments
+- URL might change
+- Breaks open source principle of portable code
+- Violates security (could accidentally commit secrets)
+
+**Fix:**
+```typescript
+// Use relative URLs - playwright.config.ts provides baseURL
+await page.goto('/')
+await page.goto('/onboarding')
+```
+
+**Run against any environment:**
+```bash
+npm run test:e2e:chromium                                    # localhost
+BASE_URL=https://my-app.example.com npm run test:e2e:chromium  # deployed
+```
+
+### Parallel Execution Patterns
+
+**Before (slow):**
+```
+read → wait → edit → wait → test → wait → review
+```
+
+**After (fast):**
+```
+read files in parallel → edit → test + review in parallel
+```
+
+**Key patterns:**
+- Multiple Read calls in single message
+- Test + Review agents always run together
+- Independent Grep/Glob calls in parallel
+- Use background agents for long-running tasks
+
+### Deployment Verification Workflow
+
+```
+1. Deploy succeeds → check health endpoint
+2. Health OK → run E2E tests with BASE_URL
+3. Tests pass → deployment verified
+4. Post results to PR comment
+```
+
+**Health check pattern:**
+```bash
+curl -sf "$URL/api/health" && echo "Ready"
+```
+
+**E2E on deployed URL:**
+```bash
+BASE_URL=$DEPLOYED_URL npm run test:e2e:chromium
+```
+
+### Files Changed
+
+- `tests/e2e/passkey-live.spec.ts` — Removed hardcoded URL, use relative paths
+- `.claude/CLAUDE.md` — Added PARALLEL BY DEFAULT, Environment Handling section
+
+### Learnings Applied
+
+#### 1. Tests Must Be Environment-Agnostic
+
+```typescript
+// ✅ Correct
+test.beforeEach(async ({ page }) => {
+  await page.goto('/')  // Uses configured baseURL
+})
+
+// ❌ Wrong
+const BASE_URL = 'https://specific-deployment.com'
+await page.goto(BASE_URL)
+```
+
+#### 2. Parallel by Default
+
+Always ask: "Can these tasks run in parallel?"
+
+| Task Combination | Parallel? |
+|------------------|-----------|
+| Multiple file reads | ✅ Yes |
+| Test + Review | ✅ Yes |
+| Multiple Grep searches | ✅ Yes |
+| Edit → Test | ❌ No (test depends on edit) |
+
+#### 3. Environment Variables for URLs
+
+| What | How |
+|------|-----|
+| Test base URL | `BASE_URL` env var |
+| API endpoints | Relative paths (`/api/health`) |
+| External services | Environment-specific config |
+
+### Production Deployment Results
+
+| Check | Result |
+|-------|--------|
+| Health endpoint | `{"status":"ok"}` |
+| E2E tests | 69/69 passed |
+| Security headers | All present |
+| CSP for Porto | Correctly configured |
+
+### Open Source Checklist Applied
+
+- [x] No hardcoded production URLs
+- [x] No secrets in code
+- [x] Tests work for any contributor
+- [x] Environment via BASE_URL env var
+- [x] Documentation updated
+
+---
+
 *Last updated: 2026-01-04*
