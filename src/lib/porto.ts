@@ -83,6 +83,21 @@ let currentMode: 'popup' | 'inline' = 'popup'
 // When available, add: signInPrompt, signIn, signUp, createAccount, dialogTitle
 // See: https://porto.sh/sdk/guides/theming
 
+/**
+ * Porto Session Behavior
+ *
+ * Sessions are managed server-side by Porto (id.porto.sh). Key behaviors:
+ *
+ * - Passkey credentials persist in device secure enclave (indefinite)
+ * - Porto session tokens: TTL not publicly documented, appears ~24h+
+ * - After "logout", re-authentication is seamless (passkey auto-selects)
+ * - True session termination requires user to remove passkey from device
+ *
+ * This is by design: passkeys provide "remembered device" UX similar to
+ * biometric unlock on mobile apps. Users can switch accounts but their
+ * passkey remains available for quick re-authentication.
+ */
+
 export interface PortoOptions {
   /** Container element for inline rendering */
   container?: HTMLElement | null

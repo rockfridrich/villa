@@ -97,15 +97,18 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <div className="pt-4">
+        <div className="pt-4 space-y-2">
           <Button
             variant="secondary"
             className="w-full"
             onClick={handleLogout}
           >
             <LogOut className="w-5 h-5 mr-2" />
-            Sign Out
+            Switch Account
           </Button>
+          <p className="text-xs text-ink-muted text-center">
+            Your passkey stays active for quick sign-in
+          </p>
         </div>
       </div>
     </main>
