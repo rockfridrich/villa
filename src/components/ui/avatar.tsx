@@ -1,8 +1,13 @@
 import { clsx } from 'clsx'
 import Image from 'next/image'
+import type { AvatarConfig } from '@/types'
+import { generateAvatarFromSelection } from '@/lib/avatar'
 
 interface AvatarProps {
-  src?: string
+  /** Image URL, data URL, or AvatarConfig for DiceBear generation */
+  src?: string | AvatarConfig
+  /** Wallet address - required when src is AvatarConfig */
+  walletAddress?: string
   name: string
   size?: 'sm' | 'md' | 'lg'
   className?: string
@@ -38,7 +43,7 @@ function getColorFromName(name: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
+export function Avatar({ src, walletAddress, name, size = 'md', className }: AvatarProps) {
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-12 h-12 text-sm',
@@ -51,7 +56,23 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
     lg: 80,
   }
 
-  if (src) {
+  // Handle AvatarConfig - generate SVG from DiceBear
+  if (src && typeof src === 'object' && 'selection' in src && walletAddress) {
+    const svgString = generateAvatarFromSelection(walletAddress, src.selection, src.variant)
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`
+    return (
+      <img
+        src={dataUrl}
+        alt={name}
+        width={sizePixels[size]}
+        height={sizePixels[size]}
+        className={clsx('rounded-full object-cover', sizeClasses[size], className)}
+      />
+    )
+  }
+
+  // Handle string src (URL or data URL)
+  if (src && typeof src === 'string') {
     return (
       <Image
         src={src}
@@ -67,6 +88,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
     )
   }
 
+  // Fallback to initials
   return (
     <div
       className={clsx(

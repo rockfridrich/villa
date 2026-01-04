@@ -86,6 +86,7 @@ export default function HomePage() {
             <Avatar
               name={identity.displayName}
               src={identity.avatar}
+              walletAddress={identity.address}
               size="lg"
             />
             <div className="text-center space-y-1">

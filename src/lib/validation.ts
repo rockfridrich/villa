@@ -27,11 +27,31 @@ export const displayNameSchema = z
   .transform(sanitize)
   .refine((val) => val.length > 0, 'Name cannot be empty after sanitization')
 
+// Avatar style selection (user-facing)
+export const avatarStyleSelectionSchema = z.enum(['male', 'female', 'other'])
+
+// Avatar style (DiceBear style names)
+export const avatarStyleSchema = z.enum(['lorelei', 'lorelei-neutral', 'notionists-neutral'])
+
+// Avatar configuration (new format)
+export const avatarConfigSchema = z.object({
+  style: avatarStyleSchema,
+  selection: avatarStyleSelectionSchema,
+  variant: z.number().int().min(0),
+})
+
+// Avatar field - accepts either string (legacy) or AvatarConfig (new)
+const avatarSchema = z.union([
+  z.string(), // Legacy format
+  avatarConfigSchema, // New format
+]).optional()
+
 export const identitySchema = z.object({
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid address'),
   displayName: displayNameSchema,
-  avatar: z.string().optional(),
+  avatar: avatarSchema,
   createdAt: z.number(),
 })
 
 export type Identity = z.infer<typeof identitySchema>
+export type AvatarConfigValidated = z.infer<typeof avatarConfigSchema>

@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Fingerprint, Check, AlertCircle, ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Spinner } from '@/components/ui'
+import { AvatarSelection } from '@/components/sdk'
 import { useIdentityStore } from '@/lib/store'
 import { displayNameSchema } from '@/lib/validation'
+import type { AvatarConfig } from '@/types'
 import {
   createAccount,
   signIn,
@@ -25,6 +27,7 @@ type Step =
   | 'connecting'
   | 'success'
   | 'profile'
+  | 'avatar'
   | 'error'
 
 interface ErrorState {
@@ -41,7 +44,7 @@ export default function OnboardingPage() {
   const [nameError, setNameError] = useState<string>()
   const [error, setError] = useState<ErrorState | null>(null)
   const [address, setAddress] = useState<string | null>(null)
-  const [isSupported, setIsSupported] = useState(true)
+    const [isSupported, setIsSupported] = useState(true)
   const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserInfo | null>(null)
 
   // Ref for inline Porto container
@@ -186,9 +189,34 @@ export default function OnboardingPage() {
       return
     }
 
+    // Store validated display name and proceed to avatar
+    setStep('avatar')
+  }
+
+  const handleAvatarSelected = (config: AvatarConfig) => {
+    if (!address) {
+      setError({
+        message: 'No address found. Please try again.',
+        retry: () => {
+          setError(null)
+          setStep('welcome')
+        },
+      })
+      setStep('error')
+      return
+    }
+
+    const result = displayNameSchema.safeParse(displayName)
+    if (!result.success) {
+      setStep('profile')
+      return
+    }
+
+    // Save complete identity with avatar
     setIdentity({
       address,
       displayName: result.data,
+      avatar: config,
       createdAt: Date.now(),
     })
 
@@ -235,6 +263,14 @@ export default function OnboardingPage() {
             error={nameError}
             onSubmit={handleSubmitProfile}
             isPending={false}
+          />
+        )}
+
+        {step === 'avatar' && address && (
+          <AvatarSelection
+            walletAddress={address}
+            onSelect={handleAvatarSelected}
+            timerDuration={30}
           />
         )}
 

@@ -44,6 +44,8 @@
     "infra:status": "npx tsx src/lib/infra/cli.ts cloudflare zone status"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.4",
+    "@dicebear/core": "^9.2.4",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@simplewebauthn/browser": "^13.2.2",
