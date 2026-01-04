@@ -12,6 +12,54 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# =============================================================================
+# Input Validation (Security)
+# =============================================================================
+
+# Validate domain name - only allow valid domain characters
+validate_domain() {
+  local domain="$1"
+  if [[ -z "$domain" ]]; then
+    return 1
+  fi
+  # Domain: alphanumeric, dash, dot only; max 253 chars
+  if [[ ! "$domain" =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ ]]; then
+    return 1
+  fi
+  if [[ ${#domain} -gt 253 ]]; then
+    return 1
+  fi
+  # No consecutive dots or leading/trailing dashes in labels
+  if [[ "$domain" =~ \.\. ]] || [[ "$domain" =~ \.- ]] || [[ "$domain" =~ -\. ]]; then
+    return 1
+  fi
+  return 0
+}
+
+# Validate file path - reject dangerous patterns
+validate_path() {
+  local path="$1"
+  if [[ -z "$path" ]]; then
+    return 1
+  fi
+  # Reject shell metacharacters
+  if [[ "$path" =~ [\;\|\&\$\`\(\)\{\}\<\>\!] ]]; then
+    return 1
+  fi
+  # Reject path traversal
+  if [[ "$path" =~ \.\. ]]; then
+    return 1
+  fi
+  return 0
+}
+
+# Sanitize string for safe output (remove control characters)
+sanitize_output() {
+  local input="$1"
+  # Remove control characters except newline/tab, limit length
+  echo "$input" | tr -d '\000-\010\013-\037\177' | head -c 1000
+}
+
 echo -e "${BLUE}🚇 ngrok Custom Domain Setup for Villa${NC}"
 echo ""
 
@@ -64,22 +112,30 @@ echo ""
 NGROK_CONFIG="$HOME/.config/ngrok/ngrok.yml"
 if [ -f "$NGROK_CONFIG" ]; then
   echo -e "${CYAN}Current ngrok config:${NC}"
-  cat "$NGROK_CONFIG" | grep -E "domain|authtoken" | head -5 || true
+  # Only show domain config, NEVER show authtoken (credential exposure risk)
+  grep -E "^[[:space:]]*domain:" "$NGROK_CONFIG" 2>/dev/null | head -5 | while read -r line; do
+    sanitize_output "$line"
+  done || echo "  (no domains configured)"
   echo ""
 fi
 
 # Check if they have a reserved domain
 echo -e "${YELLOW}Checking ngrok domains...${NC}"
 DOMAINS=$(ngrok api reserved-domains list 2>/dev/null || echo "")
+# Sanitize API response to prevent injection
+DOMAINS=$(sanitize_output "$DOMAINS")
 
 if echo "$DOMAINS" | grep -q "dev-3.villa.cash"; then
   echo -e "${GREEN}✓ Custom domain dev-3.villa.cash is configured${NC}"
   NGROK_DOMAIN="dev-3.villa.cash"
 elif echo "$DOMAINS" | grep -q "ngrok"; then
+  # Extract and validate static domain from API response
   STATIC_DOMAIN=$(echo "$DOMAINS" | grep -oE '[a-z0-9-]+\.ngrok-free\.app' | head -1)
-  if [ -n "$STATIC_DOMAIN" ]; then
+  if [ -n "$STATIC_DOMAIN" ] && validate_domain "$STATIC_DOMAIN"; then
     echo -e "${GREEN}✓ Static domain found: $STATIC_DOMAIN${NC}"
     NGROK_DOMAIN="$STATIC_DOMAIN"
+  elif [ -n "$STATIC_DOMAIN" ]; then
+    echo -e "${YELLOW}⚠ Found domain but failed validation: skipping${NC}"
   fi
 else
   echo -e "${YELLOW}No reserved domains found${NC}"
@@ -103,36 +159,53 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 
 # Create/update ngrok config for villa
-VILLA_NGROK_CONFIG="/Users/me/Documents/Coding/villa/.ngrok.yml"
+# Use script directory to find project root (scripts/ is one level down)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+VILLA_NGROK_CONFIG="$PROJECT_ROOT/.ngrok.yml"
+
+# Validate the config path
+if ! validate_path "$VILLA_NGROK_CONFIG"; then
+  echo -e "${RED}Error: Invalid config path${NC}"
+  exit 1
+fi
 
 if [ -n "$NGROK_DOMAIN" ]; then
-  cat > "$VILLA_NGROK_CONFIG" << EOF
-# Villa ngrok configuration
-# Start tunnel: ngrok start villa --config .ngrok.yml
+  # Validate domain before writing to config
+  if ! validate_domain "$NGROK_DOMAIN"; then
+    echo -e "${RED}Error: Invalid domain format${NC}"
+    exit 1
+  fi
 
-version: "2"
-tunnels:
-  villa:
-    proto: http
-    addr: 3000
-    domain: $NGROK_DOMAIN
-    inspect: true
-EOF
+  # Write config with validated domain (using printf for safety)
+  {
+    printf '# Villa ngrok configuration\n'
+    printf '# Start tunnel: ngrok start villa --config .ngrok.yml\n'
+    printf '\n'
+    printf 'version: "2"\n'
+    printf 'tunnels:\n'
+    printf '  villa:\n'
+    printf '    proto: http\n'
+    printf '    addr: 3000\n'
+    printf '    domain: %s\n' "$NGROK_DOMAIN"
+    printf '    inspect: true\n'
+  } > "$VILLA_NGROK_CONFIG"
   echo -e "${GREEN}✓ Created .ngrok.yml with domain: $NGROK_DOMAIN${NC}"
 else
-  cat > "$VILLA_NGROK_CONFIG" << EOF
-# Villa ngrok configuration
-# Start tunnel: ngrok http 3000 --config .ngrok.yml
-
-version: "2"
-tunnels:
-  villa:
-    proto: http
-    addr: 3000
-    inspect: true
-    # Add domain here after setting up:
-    # domain: dev-3.villa.cash
-EOF
+  # Write config without domain
+  {
+    printf '# Villa ngrok configuration\n'
+    printf '# Start tunnel: ngrok http 3000 --config .ngrok.yml\n'
+    printf '\n'
+    printf 'version: "2"\n'
+    printf 'tunnels:\n'
+    printf '  villa:\n'
+    printf '    proto: http\n'
+    printf '    addr: 3000\n'
+    printf '    inspect: true\n'
+    printf '    # Add domain here after setting up:\n'
+    printf '    # domain: dev-3.villa.cash\n'
+  } > "$VILLA_NGROK_CONFIG"
   echo -e "${YELLOW}Created .ngrok.yml (no domain configured yet)${NC}"
 fi
 
