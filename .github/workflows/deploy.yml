@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened, closed, ready_for_review]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   deployments: write
 
@@ -17,6 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Production domain (CloudFlare DNS)
+  PRODUCTION_DOMAIN: villa.cash
+  PRODUCTION_URL: https://villa.cash
   # Delightful GIFs for bot messages
   GIF_SHIP: "https://media.giphy.com/media/ule4vhcY1xEKQ/giphy.gif"
   GIF_SUCCESS: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif"
@@ -581,10 +584,11 @@ jobs:
 
             ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
             if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+              # default_ingress already includes https://
               APP_URL=$(echo "$APP_JSON" | jq -r '.[0].default_ingress // empty')
               END_TIME=$(date +%s)
               DURATION=$((END_TIME - START_TIME))
-              echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
+              echo "url=${APP_URL}" >> $GITHUB_OUTPUT
               echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
               exit 0
             fi
