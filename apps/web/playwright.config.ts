@@ -6,7 +6,6 @@ const isExternalUrl = baseURL !== 'http://localhost:3000'
 
 // Parallel execution config
 const CI = !!process.env.CI
-const SHARD = process.env.SHARD // e.g., "1/3" for shard 1 of 3
 
 export default defineConfig({
   testDir: './tests',
@@ -60,7 +59,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: 'npm run dev',
+          command: 'pnpm run dev',
           url: 'http://localhost:3000',
           reuseExistingServer: !process.env.CI,
         },

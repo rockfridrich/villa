@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Turborepo
+.turbo/
+
 # Foundry (Solidity)
 contracts/cache/
 contracts/out/
@@ -57,3 +60,7 @@ certificates/
 # Local dev session files
 .villa-share.pid
 .logs/
+
+# Lock files (pnpm uses pnpm-lock.yaml)
+package-lock.json
+yarn.lock

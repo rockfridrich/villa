@@ -19,9 +19,12 @@ npm run qa           # Mobile QA via ngrok
 |-------|-------|---------|
 | @spec | opus | Architecture decisions |
 | @build | sonnet | Implementation |
+| @design | sonnet | UI bootstrap, critique, animations |
 | @test | haiku | Run tests |
 | @review | sonnet | Code review |
 | @ops | haiku | Git, GitHub, deploy |
+
+**Manifest:** [agents/](agents/) — Full definitions for all agents
 
 ---
 
@@ -59,19 +62,14 @@ npm run qa           # Mobile QA via ngrok
 ## Project Structure
 
 ```
-src/
-├── app/           # Next.js pages
-├── components/ui/ # UI components
-├── lib/           # Utilities (porto.ts, store.ts)
-└── types/         # TypeScript types
+apps/web/src/      # Main Next.js app
+├── app/           # Pages
+├── components/    # UI + SDK components
+├── animations/    # Lottie JSON files
+└── lib/           # Utilities (porto.ts, store.ts)
 
-tests/
-├── e2e/           # Playwright tests
-└── security/      # Security tests
-
-specs/
-├── active/        # Current specs
-└── reference/     # Templates, guides
+packages/          # Shared packages
+specs/             # active/, reference/
 ```
 
 ---
@@ -124,15 +122,19 @@ specs/
 
 ---
 
-## Multi-Terminal Coordination
+## Orchestration Model
 
-For parallel work across terminals:
+Human + Claude Code partnership:
+1. **Human** — sets direction (specs, priorities)
+2. **Claude** — orchestrates agents in parallel terminals
+3. **Agents** — execute domains (@build, @design, @test)
+4. **Human** — reviews, approves, merges
+
 ```bash
 ./scripts/coordinate.sh status  # Check state
-./scripts/coordinate.sh reset   # Clear locks
 ```
 
-See `scripts/coordinate.sh --help` for full usage.
+**Animation:** Lottie (vectors) + Framer Motion (interactions)
 
 ---
 
