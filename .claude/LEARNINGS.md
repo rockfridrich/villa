@@ -121,6 +121,28 @@ STATUS=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
 - ❌ setTimeout without cleanup ref
 - ❌ Multiple builds without @architect
 - ❌ Implementing before spec is clear
+- ❌ `git add .` without reviewing changes
+- ❌ Batching unrelated changes in one commit
+
+---
+
+## Agent Orchestration
+
+**Claude Code as conductor:** Main Claude directs specialized agents, each doing ONE thing well.
+
+```
+Human request → Claude Code (orchestrator)
+    ├── @spec → defines what
+    ├── @build → writes code
+    ├── @ops → commits + PR + deploy verify
+    ├── @test + @review (parallel)
+    └── Report to human
+```
+
+**Key separation:**
+- @build writes code, never commits
+- @ops commits atomically, never writes app code
+- Each agent has clear responsibility boundary
 
 ---
 
