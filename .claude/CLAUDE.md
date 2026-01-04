@@ -4,6 +4,9 @@ Privacy-first passkey authentication. Porto SDK wrapper with Villa theming.
 
 **Repo:** https://github.com/rockfridrich/villa
 
+> **[MANIFESTO.md](MANIFESTO.md)** - AI-Human collaboration principles
+> **[knowledge/](knowledge/)** - Domain-specific learnings (cloudflare, digitalocean, etc.)
+
 ---
 
 ## Domain Architecture
@@ -16,7 +19,7 @@ Privacy-first passkey authentication. Porto SDK wrapper with Villa theming.
 | `dev-2.villa.cash` | Preview | PR (slot 2) |
 | `dev-3.villa.cash` | Local dev | ngrok tunnel |
 
-**DNS:** CloudFlare (DNS only, no proxy) → DigitalOcean App Platform
+**CDN:** CloudFlare (Proxied, CDN enabled) → DigitalOcean App Platform
 
 **Release workflow:** PR → merge to main (staging) → test → `git tag v*` (production)
 
@@ -31,11 +34,14 @@ npm run dev          # Local dev
 npm run dev:https    # Passkey testing
 npm run qa           # Mobile QA (ngrok)
 npm run verify       # Full check
+npm run infra:status # CloudFlare status
 ```
 
 | Agent | Model | Use For |
 |-------|-------|---------|
 | @spec | opus | Architecture |
+| @product | opus | JTBD, UX specs, analytics |
+| @architect | opus | WBS decomposition |
 | @build | sonnet | Implementation |
 | @ops | haiku | Git/GitHub/Deploy |
 | @test | haiku | Run tests |
