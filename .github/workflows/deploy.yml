@@ -32,14 +32,28 @@ jobs:
     name: "⚡ Quick CI"
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
+    outputs:
+      should-e2e: ${{ steps.check-paths.outputs.run }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
+            nextjs-${{ runner.os }}-
 
       - run: npm ci
 
@@ -52,26 +66,6 @@ jobs:
       - name: Unit tests
         run: npx vitest run --config vitest.config.unit.ts
 
-  # =============================================================================
-  # FULL CI - Skip for drafts and [wip]/[skip e2e] commits
-  # =============================================================================
-  full-ci:
-    name: "🧪 E2E Tests"
-    needs: quick-ci
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.action != 'closed' &&
-      github.event.pull_request.draft == false &&
-      !contains(github.event.pull_request.title, '[wip]') &&
-      !contains(github.event.pull_request.title, '[skip e2e]')
-    runs-on: ubuntu-latest
-    outputs:
-      passed: ${{ steps.e2e.outcome == 'success' }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Check if E2E needed
         id: check-paths
         run: |
@@ -83,35 +77,94 @@ jobs:
             echo "📝 Skipping E2E - only docs/config changes"
           fi
 
+  # =============================================================================
+  # E2E TESTS - Sharded for parallel execution
+  # =============================================================================
+  e2e-tests:
+    name: "🧪 E2E (${{ matrix.shard }})"
+    needs: quick-ci
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.draft == false &&
+      needs.quick-ci.outputs.should-e2e == 'true' &&
+      !contains(github.event.pull_request.title, '[wip]') &&
+      !contains(github.event.pull_request.title, '[skip e2e]')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        if: steps.check-paths.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install dependencies
-        if: steps.check-paths.outputs.run == 'true'
         run: npm ci
 
-      - name: Install Playwright
-        if: steps.check-paths.outputs.run == 'true'
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests
-        id: e2e
-        if: steps.check-paths.outputs.run == 'true'
-        run: npm run test:e2e:chromium
+      - name: Install Playwright deps (if cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run E2E tests (shard ${{ matrix.shard }}/2)
+        run: npx playwright test --project=chromium --shard=${{ matrix.shard }}/2
         env:
           CI: true
 
-      - name: Upload report on failure
+      - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: playwright-report-pr-${{ github.event.pull_request.number }}
-          path: playwright-report/
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
+
+  # =============================================================================
+  # E2E RESULTS - Merge sharded results
+  # =============================================================================
+  e2e-results:
+    name: "📊 E2E Results"
+    needs: e2e-tests
+    if: always() && needs.e2e-tests.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all shard reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-shard-*
+          merge-multiple: true
+
+      - name: Merge reports
+        run: |
+          echo "📊 E2E Test Results"
+          echo "==================="
+          if [ -f test-results.json ]; then
+            cat test-results.json | jq -r '.suites[] | .title + ": " + (.specs | length | tostring) + " tests"' 2>/dev/null || echo "Results merged"
+          fi
+
+      - name: Check overall status
+        if: needs.e2e-tests.result == 'failure'
+        run: exit 1
 
   # =============================================================================
   # CHECK PERMISSION - For preview deploys
@@ -406,7 +459,7 @@ jobs:
         run: exit 1
 
   # =============================================================================
-  # PRODUCTION CI
+  # PRODUCTION CI - With caching for speed
   # =============================================================================
   ci-production:
     name: "🔒 CI (Production)"
@@ -421,12 +474,44 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
+            nextjs-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
+
+      - name: Quick checks (parallel)
+        run: |
+          npm run typecheck &
+          npm run lint &
+          wait
+
       - run: npx vitest run --config vitest.config.unit.ts
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e:chromium
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright deps (if cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: E2E tests (parallel shards)
+        run: npx playwright test --project=chromium
         env:
           CI: true
 

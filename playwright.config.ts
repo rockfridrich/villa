@@ -4,24 +4,43 @@ import { defineConfig, devices } from '@playwright/test'
 const baseURL = process.env.BASE_URL || 'http://localhost:3000'
 const isExternalUrl = baseURL !== 'http://localhost:3000'
 
+// Parallel execution config
+const CI = !!process.env.CI
+const SHARD = process.env.SHARD // e.g., "1/3" for shard 1 of 3
+
 export default defineConfig({
   testDir: './tests',
   testMatch: /.*\.(spec|e2e)\.ts$/,
   testIgnore: ['**/unit/**', '**/*.test.ts'],
+
+  // Parallel execution
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? [['github'], ['html']] : 'html',
+  workers: CI ? '50%' : undefined, // Use 50% of CPUs in CI (typically 2 workers)
+
+  // CI settings
+  forbidOnly: CI,
+  retries: CI ? 2 : 0,
+
+  // Reporters
+  reporter: CI
+    ? [['github'], ['html'], ['json', { outputFile: 'test-results.json' }]]
+    : 'html',
+
   use: {
     baseURL,
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
     // Longer timeouts for deployed environments (network latency)
     actionTimeout: isExternalUrl ? 30000 : 10000,
     navigationTimeout: isExternalUrl ? 60000 : 30000,
   },
+
   // Longer test timeout for deployed environments
   timeout: isExternalUrl ? 60000 : 30000,
+
+  // Output directory for test artifacts
+  outputDir: 'test-results/',
   projects: [
     {
       name: 'chromium',
