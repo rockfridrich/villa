@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  relay:
+    build:
+      context: ../..
+      dockerfile: apps/relay/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - CHAIN_ENV=testnet
+      - BASE_RPC_URL=${BASE_RPC_URL:-https://sepolia.base.org}
+      - MERCHANT_PRIVATE_KEY=${MERCHANT_PRIVATE_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
