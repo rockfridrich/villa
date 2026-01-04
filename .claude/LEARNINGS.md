@@ -86,9 +86,9 @@ useEffect(() => () => {
 # ❌ Unreliable for nested fields
 STATUS=$(doctl apps get $ID --format ActiveDeployment.Phase)
 
-# ✅ Always works
+# ✅ Always works (note: doctl apps get returns an array, use .[0])
 APP_JSON=$(doctl apps get $ID --output json)
-STATUS=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+STATUS=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
 ```
 
 ### CI/CD Workflow

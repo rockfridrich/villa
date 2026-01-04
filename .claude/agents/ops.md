@@ -172,10 +172,10 @@ gh pr edit $PR_NUMBER --add-label "ready-for-review"
 # ❌ BROKEN: Returns <nil> for nested fields
 STATUS=$(doctl apps get $APP_ID --format ActiveDeployment.Phase)
 
-# ✅ CORRECT: Always works
+# ✅ CORRECT: Always works (note: doctl apps get returns an array, use .[0])
 APP_JSON=$(doctl apps get $APP_ID --output json)
-STATUS=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
-IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.in_progress_deployment.phase // empty')
+STATUS=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
+IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
 ```
 
 ### Deploy Status Check
@@ -188,10 +188,11 @@ check_deploy_status() {
   local ELAPSED=0
 
   while [ $ELAPSED -lt $MAX_WAIT ]; do
-    APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '{}')
+    # Note: doctl apps get returns an array, use .[0] to access the app
+    APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '[]')
 
     # Check for in-progress deployment
-    IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.in_progress_deployment.phase // empty')
+    IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
     if [ -n "$IN_PROGRESS" ]; then
       echo "⏳ Deploying... ($IN_PROGRESS) [$ELAPSED/${MAX_WAIT}s]"
       sleep $INTERVAL
@@ -200,7 +201,7 @@ check_deploy_status() {
     fi
 
     # Check active deployment status
-    ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+    ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
     case "$ACTIVE_PHASE" in
       "ACTIVE")
         echo "✅ Deploy successful!"
