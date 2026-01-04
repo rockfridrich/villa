@@ -43,6 +43,18 @@ export type {
   WalletStorage,
 } from './wallet'
 
+// Contract addresses and utilities
+export {
+  getContracts,
+  getContractsForChain,
+  getNicknameResolverAddress,
+  getRecoverySignerAddress,
+  isDeployed,
+  CONTRACTS,
+  DEPLOYED_CHAINS,
+} from './contracts'
+export type { ContractDeployment, ChainContracts } from './contracts'
+
 // Types - all shared types for the ecosystem
 export type {
   Identity,

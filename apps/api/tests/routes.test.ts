@@ -8,7 +8,7 @@
  * - Avatar generation endpoints
  */
 
-import { describe, test, expect } from '@jest/globals'
+import { describe, test, expect } from 'vitest'
 import app from '../src/index'
 
 describe('WU-5: Nickname Endpoints', () => {

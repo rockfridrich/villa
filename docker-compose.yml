@@ -1,11 +1,41 @@
-# Local development with HTTPS
-# Usage: docker compose up
+# Villa Development Environment
+# Usage: docker compose up -d
+#
+# Services:
+# - postgres: Local PostgreSQL 17 for development
+# - caddy: HTTPS reverse proxy (for passkey testing)
+# - app: Next.js dev server (optional, can run locally)
 
 services:
+  # PostgreSQL for local development
+  postgres:
+    image: postgres:17-alpine
+    container_name: villa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: villa
+      POSTGRES_PASSWORD: villa_dev_password
+      POSTGRES_DB: villa_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U villa -d villa_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - villa-net
+
+  # Optional: Run app in Docker (most devs run locally with `pnpm dev`)
   app:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    profiles:
+      - full  # Only starts with `docker compose --profile full up`
     volumes:
       - .:/app
       - /app/node_modules
@@ -13,12 +43,19 @@ services:
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - DATABASE_URL=postgresql://villa:villa_dev_password@postgres:5432/villa_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - villa-net
 
   # Caddy provides automatic HTTPS with local certificates
   caddy:
     image: caddy:2-alpine
+    container_name: villa-caddy
+    profiles:
+      - https  # Only starts with `docker compose --profile https up`
     ports:
       - "80:80"
       - "443:443"
@@ -31,9 +68,30 @@ services:
     networks:
       - villa-net
 
+  # API service (for testing API separately)
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    profiles:
+      - api  # Only starts with `docker compose --profile api up`
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://villa:villa_dev_password@postgres:5432/villa_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - villa-net
+
 networks:
   villa-net:
+    driver: bridge
 
 volumes:
+  postgres_data:
   caddy_data:
   caddy_config:

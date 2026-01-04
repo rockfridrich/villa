@@ -6,6 +6,40 @@
 
 import type { Identity } from './types'
 
+/**
+ * Trusted origins for postMessage communication
+ */
+const TRUSTED_ORIGINS = [
+  'https://villa.cash',
+  'https://www.villa.cash',
+  'https://beta.villa.cash',
+  'https://dev-1.villa.cash',
+  'https://dev-2.villa.cash',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://localhost:3000',
+] as const
+
+/**
+ * Check if running in development mode
+ */
+function isDevelopment(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    process.env?.NODE_ENV === 'development'
+  )
+}
+
+/**
+ * Validates if origin is trusted
+ *
+ * @param origin - Origin to validate
+ * @returns True if origin is trusted
+ */
+function isOriginTrusted(origin: string): boolean {
+  return TRUSTED_ORIGINS.includes(origin as any)
+}
+
 export interface IframeConfig {
   /** URL to Villa auth page */
   url: string
@@ -102,8 +136,16 @@ export function onMessage(
 
   // Create new handler that validates message origin
   messageHandler = (event: MessageEvent) => {
-    // In production, validate event.origin matches villa.cash
-    // For now, accept all origins (will be configured later)
+    // Validate origin is trusted
+    if (!isOriginTrusted(event.origin)) {
+      if (isDevelopment()) {
+        console.warn(
+          `[Villa SDK] Received message from untrusted origin: ${event.origin}`
+        )
+      }
+      // Silently ignore in production
+      return
+    }
 
     const message = event.data as AuthMessage
 

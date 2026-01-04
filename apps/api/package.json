@@ -2,19 +2,47 @@
   "name": "@villa/api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
-    "build": "wrangler deploy --dry-run",
-    "typecheck": "tsc --noEmit"
+    "dev": "tsx watch src/server.ts",
+    "dev:docker": "docker compose up -d postgres && DATABASE_URL=postgresql://villa:villa_dev_password@localhost:5432/villa_dev tsx watch src/server.ts",
+    "dev:workers": "wrangler dev src/index.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "start:local": "APP_ENV=local node dist/server.js",
+    "start:staging": "APP_ENV=staging node dist/server.js",
+    "start:production": "APP_ENV=production node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "db:start": "docker compose up -d postgres",
+    "db:stop": "docker compose stop postgres",
+    "db:logs": "docker compose logs -f postgres",
+    "db:reset": "docker compose down -v postgres && docker compose up -d postgres",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed.ts",
+    "health": "curl -s http://localhost:3001/health | jq",
+    "health:ready": "curl -s http://localhost:3001/health/ready | jq"
   },
   "dependencies": {
     "hono": "^4.0.0",
+    "@hono/node-server": "^1.12.0",
     "drizzle-orm": "^0.30.0",
-    "viem": "^2.0.0"
+    "postgres": "^3.4.0",
+    "viem": "^2.0.0",
+    "dotenv": "^16.4.0"
   },
   "devDependencies": {
     "wrangler": "^3.0.0",
     "@cloudflare/workers-types": "^4.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "tsx": "^4.7.0",
+    "drizzle-kit": "^0.21.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^1.0.0"
   }
 }

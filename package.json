@@ -32,7 +32,18 @@
     "infra": "pnpm --filter @villa/web exec tsx src/lib/infra/cli.ts",
     "anvil": "anvil --mnemonic 'test test test test test test test test test test test junk'",
     "deploy:local": "cd contracts && source ~/.zshenv && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
-    "test:contracts": "cd contracts && source ~/.zshenv && forge test -vvv"
+    "test:contracts": "cd contracts && source ~/.zshenv && forge test -vvv",
+    "db:start": "docker compose up -d postgres",
+    "db:stop": "docker compose stop postgres",
+    "db:reset": "docker compose down -v postgres && docker compose up -d postgres",
+    "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "pnpm --filter @villa/api db:push",
+    "db:seed": "pnpm --filter @villa/api db:seed",
+    "db:studio": "pnpm --filter @villa/api db:studio",
+    "db:setup": "./scripts/db-setup.sh",
+    "api": "pnpm --filter @villa/api dev",
+    "api:docker": "pnpm --filter @villa/api dev:docker",
+    "test:api": "pnpm --filter @villa/api test"
   },
   "devDependencies": {
     "@types/node": "25.0.3",
