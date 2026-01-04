@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, isValidElement } from 'react';
+import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 
 interface EmptyStateProps {
