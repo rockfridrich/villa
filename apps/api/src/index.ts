@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { cors } from './middleware/cors'
 import { rateLimit } from './middleware/rateLimit'
 import health from './routes/health'
+import nicknames from './routes/nicknames'
+import avatars from './routes/avatars'
+import ens from './routes/ens'
 
 /**
  * Villa API
@@ -26,6 +29,9 @@ app.onError((err, c) => {
 
 // Routes
 app.route('/health', health)
+app.route('/nicknames', nicknames)
+app.route('/avatars', avatars)
+app.route('/ens', ens)
 
 // Root endpoint
 app.get('/', (c) => {
@@ -34,6 +40,9 @@ app.get('/', (c) => {
     version: '0.1.0',
     endpoints: {
       health: '/health',
+      nicknames: '/nicknames',
+      avatars: '/avatars',
+      ens: '/ens',
     },
   })
 })

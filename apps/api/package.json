@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "hono": "^4.0.0",
-    "drizzle-orm": "^0.30.0"
+    "drizzle-orm": "^0.30.0",
+    "viem": "^2.0.0"
   },
   "devDependencies": {
     "wrangler": "^3.0.0",
