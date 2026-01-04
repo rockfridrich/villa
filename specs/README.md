@@ -1,87 +1,59 @@
 # Specifications
 
-**Look in `active/` first** - that's what's being built now.
+## Directory Structure
 
 ```
 specs/
-├── active/       Currently developing - START HERE
-├── done/         Implemented - reference only
-├── reference/    Evergreen guides (vision, design)
-└── templates/    For creating new specs
+├── active/         # Current sprint - SDK delivery
+├── done/           # Completed and shipped
+├── backlog/        # Future work (not current priority)
+├── infrastructure/ # Infra, DB, security specs
+└── reference/      # Design principles, templates
 ```
 
 ---
 
-## Specs by Package
+## Active (Sprint 2 Focus)
 
-### @villa/sdk (packages/sdk/)
+| Spec | Description |
+|------|-------------|
+| [identity-sdk.md](active/identity-sdk.md) | SDK architecture and API |
+| [sdk-mlp-roadmap.md](active/sdk-mlp-roadmap.md) | Sprint tracking |
+| [auth-flow.md](active/auth-flow.md) | Authentication UX |
+| [nickname.md](active/nickname.md) | Nickname claiming |
 
-| Spec | Status | Description |
-|------|--------|-------------|
-| [identity-sdk.md](active/identity-sdk.md) | Active | SDK architecture and API |
-| [sdk-mlp-roadmap.md](active/sdk-mlp-roadmap.md) | Active | MLP sprint tracking |
-| [auth-flow.md](active/auth-flow.md) | Active | Authentication UX flows |
-
-**Key SDK Files:**
-- `packages/sdk/src/client.ts` - Villa class (main entry)
-- `packages/sdk/src/iframe.ts` - Auth iframe + postMessage
-- `packages/sdk/README.md` - SDK documentation
-
-### @villa/web (apps/web/)
-
-| Spec | Status | Description |
-|------|--------|-------------|
-| [returning-user-flow.md](active/returning-user-flow.md) | Active | Returning user experience |
-| [nickname.md](active/nickname.md) | Active | Nickname claiming |
-| [avatar-system.md](done/avatar-system.md) | Done | Avatar generation |
-| [avatar-selection.md](done/avatar-selection.md) | Done | Avatar picker UX |
-| [v1-passkey-login.md](done/v1-passkey-login.md) | Done | Passkey auth |
-
-**Key Web Files:**
-- `apps/web/src/app/developers/` - Developer portal
-- `apps/web/src/components/sdk/` - SDK auth screens
-
-### @villa/contracts (contracts/)
-
-| Spec | Status | Description |
-|------|--------|-------------|
-| [contracts-production-readiness.md](contracts-production-readiness.md) | Review | Production checklist |
-| [villa-biometric-recovery-spec.md](active/villa-biometric-recovery-spec.md) | Active | Biometric recovery |
-
-**Deployed Contracts (Base Sepolia):**
-- VillaNicknameResolverV2: `0xf4648423aC6b3f6328018c49B2102f4E9bA6D800`
-- BiometricRecoverySignerV2: `0xdFb55a363bdF549EE5C2e77D0aAaC39276ED5836`
-
-### Infrastructure
-
-| Spec | Status | Description |
-|------|--------|-------------|
-| [v2-architecture.md](active/v2-architecture.md) | Active | Monorepo structure |
-| [infrastructure-postgres.md](infrastructure-postgres.md) | Done | PostgreSQL setup |
-| [database-security.md](database-security.md) | Done | Security model |
+**Goal:** Ship SDK for external app integration
 
 ---
 
-## Current Sprint: Sprint 2
+## Done
 
-**Focus:** Iframe Integration & Developer Portal
-
-1. SDK iframe container with postMessage bridge
-2. Developer portal for app registration
-3. Wire SDK screens to Porto auth
-
-Progress: [sdk-mlp-roadmap.md](active/sdk-mlp-roadmap.md)
+| Spec | Shipped |
+|------|---------|
+| [v1-passkey-login.md](done/v1-passkey-login.md) | 2026-01 |
+| [avatar-system.md](done/avatar-system.md) | 2026-01 |
+| [v2-architecture.md](done/v2-architecture.md) | 2026-01 |
 
 ---
 
-## Done Specs
+## Backlog
 
-| Spec | Description | Shipped |
-|------|-------------|---------|
-| [v1-passkey-login.md](done/v1-passkey-login.md) | Passkey authentication | 2026-01 |
-| [avatar-system.md](done/avatar-system.md) | DiceBear avatars | 2026-01 |
-| [avatar-selection.md](done/avatar-selection.md) | Avatar picker | 2026-01 |
-| [identity-system.product.md](done/identity-system.product.md) | Identity product spec | 2026-01 |
+| Spec | Priority |
+|------|----------|
+| [villa-biometric-recovery-spec.md](backlog/villa-biometric-recovery-spec.md) | P2 |
+| [ui-component-rebuild.md](backlog/ui-component-rebuild.md) | P3 |
+| [returning-user-flow.md](backlog/returning-user-flow.md) | P2 |
+
+---
+
+## Infrastructure
+
+| Spec | Status |
+|------|--------|
+| [infrastructure-postgres.md](infrastructure/infrastructure-postgres.md) | Done |
+| [database-security.md](infrastructure/database-security.md) | Done |
+| [secrets-management.md](infrastructure/secrets-management.md) | Done |
+| [contracts-production-readiness.md](infrastructure/contracts-production-readiness.md) | Review |
 
 ---
 
@@ -91,16 +63,4 @@ Progress: [sdk-mlp-roadmap.md](active/sdk-mlp-roadmap.md)
 |-----|---------|
 | [vision.md](reference/vision.md) | Product vision |
 | [design-system.md](reference/design-system.md) | UI patterns |
-| [design-principles.md](reference/design-principles.md) | UX principles |
-| [tech-spec-guide.md](reference/tech-spec-guide.md) | How to write specs |
-
----
-
-## Creating New Specs
-
-1. Draft in Claude GUI (iterate conversationally)
-2. Copy to `specs/active/` with metadata
-3. Implement with `@build` agent
-4. Move to `specs/done/` when shipped
-
-See [spec-sync.md](reference/spec-sync.md) for workflow.
+| [design-principles.md](reference/design-principles.md) | UX philosophy |
