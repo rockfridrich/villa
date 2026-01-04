@@ -298,17 +298,30 @@ jobs:
             doctl apps update $APP_ID --spec .do/app-production.yaml
           fi
 
-          # Wait for deployment
+          # Wait for deployment (use JSON output - doctl --format returns <nil> for nested fields)
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
           for i in {1..30}; do
-            STATUS=$(doctl apps get $APP_ID --format ActiveDeployment.Phase --no-header 2>/dev/null || echo "PENDING")
-            if [ "$STATUS" = "ACTIVE" ]; then
-              APP_URL=$(doctl apps get $APP_ID --format DefaultIngress --no-header)
+            # Get app data as JSON and parse with jq
+            APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '{}')
+
+            # Check for in-progress deployment first
+            IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.in_progress_deployment.phase // empty')
+            if [ -n "$IN_PROGRESS" ]; then
+              echo "Building: $IN_PROGRESS ($i/30)"
+              sleep 10
+              continue
+            fi
+
+            # Check active deployment status
+            ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+            if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+              APP_URL=$(echo "$APP_JSON" | jq -r '.default_ingress // empty')
               echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
               echo "✅ Production deployed: https://${APP_URL}"
               exit 0
             fi
-            echo "Status: $STATUS ($i/30)"
+
+            echo "Status: ${ACTIVE_PHASE:-PENDING} ($i/30)"
             sleep 10
           done
           echo "❌ Deployment timeout"

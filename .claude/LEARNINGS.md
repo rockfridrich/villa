@@ -77,6 +77,7 @@ useEffect(() => () => {
 | Issue | Fix |
 |-------|-----|
 | `doctl --format Name` returns `<nil>` | Use `--format Spec.Name` |
+| `doctl --format *.Phase` returns `<nil>` | Use `--output json` + jq |
 | Buildpacks prune devDeps before build | Use Dockerfile for Next.js |
 | PR comments fail | Add `permissions: pull-requests: write` |
 
