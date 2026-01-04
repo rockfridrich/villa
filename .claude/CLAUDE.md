@@ -59,6 +59,20 @@ pnpm typecheck       # Type check all packages
 - ❌ Creating new files when editing existing works
 - ❌ Over-documenting process (this file should stay <200 lines)
 - ❌ Multiple PRs for same feature (iterate in one PR)
+- ❌ CI debugging loops without checking deployment health
+- ❌ Manual `gh run list` polling (use @ops background)
+
+---
+
+## Debugging Principles
+
+**Two-Strike Rule:** Same CI failure twice? STOP. Check deployment first:
+```bash
+curl -s https://beta.villa.cash/api/health | jq .timestamp
+# Old timestamp = deploy issue, not code issue → delegate to @ops
+```
+
+**Time-Box:** Max 10 min on CI debugging. Then delegate or move on.
 
 ---
 
