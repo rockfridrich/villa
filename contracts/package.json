@@ -8,7 +8,10 @@
     "test": "source ~/.zshenv && forge test",
     "test:coverage": "source ~/.zshenv && forge coverage",
     "typecheck": "echo 'Solidity contracts - no TypeScript'",
-    "clean": "source ~/.zshenv && forge clean"
+    "clean": "source ~/.zshenv && forge clean",
+    "deploy:local": "source ~/.zshenv && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:base-sepolia": "source ~/.zshenv && forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify",
+    "deploy:base": "source ~/.zshenv && forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --verify"
   },
   "keywords": ["solidity", "ethereum", "base", "biometric-recovery"]
 }

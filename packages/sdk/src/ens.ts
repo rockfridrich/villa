@@ -5,8 +5,9 @@
  * Supports mainnet ENS with CCIP-Read for L2 names like .base.eth.
  */
 
-import { createPublicClient, http, normalize } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { mainnet } from 'viem/chains'
+import { normalize } from 'viem/ens'
 
 /**
  * Creates a public client for ENS resolution

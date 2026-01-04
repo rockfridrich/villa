@@ -1,66 +1,139 @@
-## Foundry
+# Villa Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Villa's Solidity smart contracts for Base network, built with Foundry.
 
-Foundry consists of:
+## Overview
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This package contains:
 
-## Documentation
+- **BiometricRecoverySigner.sol** - Porto External Signer for face-based recovery
+- **MockGroth16Verifier.sol** - Mock ZK verifier for testing
+- **IExternalSigner.sol** - Porto External key type interface
+- **IGroth16Verifier.sol** - Bionetta liveness proof verifier interface
 
-https://book.getfoundry.sh/
+## Prerequisites
 
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 ```
 
-### Test
+## Quick Start
 
-```shell
-$ forge test
+```bash
+# Build contracts
+npm run build
+
+# Run tests
+npm run test
+
+# Test coverage
+npm run test:coverage
 ```
 
-### Format
+## Deployment
 
-```shell
-$ forge fmt
+### Local (Anvil)
+
+```bash
+# Terminal 1: Start Anvil
+anvil
+
+# Terminal 2: Deploy contracts
+npm run deploy:local
 ```
 
-### Gas Snapshots
+This deploys MockGroth16Verifier and BiometricRecoverySigner to local Anvil (chain ID 31337).
 
-```shell
-$ forge snapshot
+### Base Sepolia (Testnet)
+
+```bash
+# Set environment variables
+export DEPLOYER_PRIVATE_KEY="0x..."
+export GROTH16_VERIFIER_ADDRESS="0x..."  # Pre-deployed Bionetta verifier
+export BASE_SEPOLIA_RPC_URL="https://sepolia.base.org"
+
+# Deploy and verify
+npm run deploy:base-sepolia
 ```
 
-### Anvil
+### Base (Production)
 
-```shell
-$ anvil
+```bash
+# Set environment variables
+export DEPLOYER_PRIVATE_KEY="0x..."
+export GROTH16_VERIFIER_ADDRESS="0x..."  # Pre-deployed Bionetta verifier
+export BASE_RPC_URL="https://mainnet.base.org"
+
+# Deploy and verify
+npm run deploy:base
 ```
 
-### Deploy
+## Deployment Addresses
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+Deployed contract addresses are saved in `deployments/{chainId}.json`:
+
+```json
+{
+  "chainId": 8453,
+  "network": "base",
+  "deployer": "0x...",
+  "timestamp": 1234567890,
+  "contracts": {
+    "Groth16Verifier": "0x...",
+    "BiometricRecoverySigner": "0x..."
+  }
+}
 ```
 
-### Cast
+## Networks
 
-```shell
-$ cast <subcommand>
+| Network | Chain ID | RPC URL |
+|---------|----------|---------|
+| Anvil (local) | 31337 | http://127.0.0.1:8545 |
+| Base Sepolia | 84532 | https://sepolia.base.org |
+| Base | 8453 | https://mainnet.base.org |
+
+## Testing
+
+```bash
+# Run all tests
+forge test
+
+# Run with verbosity
+forge test -vvv
+
+# Run specific test
+forge test --match-test test_enrollFace_success
+
+# Gas report
+forge test --gas-report
 ```
 
-### Help
+## Architecture
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+### BiometricRecoverySigner
+
+External key type for Porto accounts that enables face-based recovery:
+
+1. **Enrollment** - User captures face, enrolls face-derived key hash
+2. **Recovery** - User proves liveness (ZK proof) + signs with face-derived key
+3. **Verification** - Contract verifies both proofs, Porto executes recovery
+
+### MockGroth16Verifier
+
+Testing-only verifier that accepts proofs with magic prefix `0xdeadbeef`.
+
+**DO NOT USE IN PRODUCTION**
+
+## Security
+
+- All contracts use Solidity 0.8.24 with overflow checks
+- External dependencies: OpenZeppelin v5.0.2, forge-std
+- Liveness proofs verified via Bionetta's Groth16 verifier
+- Nonce-based replay protection for recovery operations
+
+## License
+
+MIT
