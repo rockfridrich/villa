@@ -5,6 +5,7 @@ import health from './routes/health'
 import nicknames from './routes/nicknames'
 import avatars from './routes/avatars'
 import ens from './routes/ens'
+import developers from './routes/developers'
 
 /**
  * Villa API
@@ -32,6 +33,7 @@ app.route('/health', health)
 app.route('/nicknames', nicknames)
 app.route('/avatars', avatars)
 app.route('/ens', ens)
+app.route('/developers', developers)
 
 // Root endpoint
 app.get('/', (c) => {
@@ -43,6 +45,7 @@ app.get('/', (c) => {
       nicknames: '/nicknames',
       avatars: '/avatars',
       ens: '/ens',
+      developers: '/developers',
     },
   })
 })

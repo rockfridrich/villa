@@ -9,6 +9,13 @@
 
 // Main SDK client
 export { Villa } from './client'
+export type {
+  Scope,
+  SignInOptions,
+  SignInProgress,
+  SignInErrorCode,
+  SignInResult,
+} from './client'
 
 // Core utilities
 export { resolveEns, reverseEns } from './ens'

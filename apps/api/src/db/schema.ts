@@ -13,6 +13,7 @@ import {
   jsonb,
   inet,
   integer,
+  text,
 } from 'drizzle-orm/pg-core'
 
 /**
@@ -80,6 +81,38 @@ export const auditLog = pgTable('audit_log', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
+/**
+ * Developer apps - registered applications using Villa SDK
+ *
+ * Tracks third-party apps that integrate with Villa for identity services.
+ * Apps are tied to wallet addresses and authenticated via API keys.
+ */
+export const developerApps = pgTable('developer_apps', {
+  id: text('id').primaryKey(), // app_xxx format
+  name: text('name').notNull(),
+  description: text('description'),
+  ownerAddress: varchar('owner_address', { length: 42 }).notNull(),
+  apiKey: text('api_key').notNull().unique(),
+  allowedOrigins: text('allowed_origins').array(),
+  rateLimit: integer('rate_limit').default(100),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+/**
+ * App registration rate limits - prevent spam
+ *
+ * Tracks app registration attempts per wallet to prevent abuse.
+ * Limits are per-wallet, per-day.
+ */
+export const appRegistrationLimits = pgTable('app_registration_limits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  address: varchar('address', { length: 42 }).notNull(),
+  registrationsToday: integer('registrations_today').default(0).notNull(),
+  windowStartsAt: timestamp('window_starts_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
 // Type exports for use in routes
 export type Profile = typeof profiles.$inferSelect
 export type NewProfile = typeof profiles.$inferInsert
@@ -88,3 +121,7 @@ export type NewNicknameReservation = typeof nicknameReservations.$inferInsert
 export type EnsRegistration = typeof ensRegistrations.$inferSelect
 export type AuditEntry = typeof auditLog.$inferSelect
 export type NewAuditEntry = typeof auditLog.$inferInsert
+export type DeveloperApp = typeof developerApps.$inferSelect
+export type NewDeveloperApp = typeof developerApps.$inferInsert
+export type AppRegistrationLimit = typeof appRegistrationLimits.$inferSelect
+export type NewAppRegistrationLimit = typeof appRegistrationLimits.$inferInsert
