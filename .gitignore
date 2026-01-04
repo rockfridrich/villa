@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 
+# Foundry (Solidity)
+contracts/cache/
+contracts/out/
+contracts/lib/
+
 # Build outputs
 .next/
 out/

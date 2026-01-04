@@ -1,9 +1,11 @@
 # Villa Biometric Recovery & Social Guardians
 
-**Status:** DRAFT  
-**Design:** Pending  
-**Domain:** villa.cash  
+**Status:** DRAFT
+**Design:** Pending
+**Domain:** villa.cash
+**Network:** Base (Chain ID: 8453), Base Sepolia (Chain ID: 84532)
 **Updated:** January 4, 2026
+**Related:** [V2 Architecture](./v2-architecture.md)
 
 ---
 
@@ -72,6 +74,37 @@ Enable Villa residents to recover their passkey-based accounts using their face 
 │  │  └─────────────┘  └─────────────────┘  └────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Why Base Network
+
+| Factor | Benefit for Recovery |
+|--------|---------------------|
+| Gas costs (~$0.001) | Gasless recovery is cheap to sponsor |
+| 2s finality | Fast recovery confirmation |
+| Porto native support | EIP-7702 accounts work natively |
+| Coinbase ecosystem | Future: Base wallets as primary signers |
+| ENS CCIP-Read | Nickname resolution works cross-chain |
+
+### Future: Base Wallet as Primary Signer
+
+Porto accounts support multiple key types. In a future phase, users with existing Coinbase Wallet or Base wallets can:
+
+1. Connect their wallet as primary signer (instead of passkey)
+2. Use face recovery as backup (instead of wallet recovery phrase)
+3. Add village guardians for social recovery
+
+This gives wallet users better recovery UX while giving passkey users wallet interoperability.
+
+```typescript
+// Future Porto key configuration
+{
+  keys: [
+    { type: 'ecdsa', label: 'Coinbase Wallet', primary: true },
+    { type: 'webauthn', label: 'Backup Passkey', primary: false },
+    { type: 'external', label: 'Face Recovery', contract: BiometricRecoverySigner }
+  ]
+}
 ```
 
 ---

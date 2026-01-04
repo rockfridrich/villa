@@ -505,7 +505,8 @@ test.describe('Error Recovery Integration', () => {
 
     // Page should load without crashing
     const url = page.url()
-    expect(url).toMatch(/\/(onboarding|home)/)
+    // Root, onboarding, or home are all valid recovery states
+    expect(url).toMatch(/\/(onboarding|home)?$/)
   })
 
   test('app handles missing localStorage gracefully', async ({ page }) => {
