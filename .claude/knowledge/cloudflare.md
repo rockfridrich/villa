@@ -125,6 +125,15 @@ await cloudflare.zone.getStatus();
 **Cause:** CNAME content included `https://` prefix
 **Solution:** Strip protocol from CNAME target (hostname only)
 
+### 2026-01-04: WWW Domain Setup with DO
+**Problem:** www.villa.cash returning 404 through CloudFlare
+**Cause:** CNAME pointed to `villa.cash` but DO expects direct app URL
+**Solution:**
+1. Point www CNAME to `villa-production-xxx.ondigitalocean.app` (not villa.cash)
+2. Temporarily disable CF proxy for DO to verify domain
+3. Wait for DO to issue SSL certificate
+4. Re-enable CF proxy after verification
+
 ## Troubleshooting
 
 ### "Invalid request headers"
