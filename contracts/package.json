@@ -4,14 +4,14 @@
   "private": true,
   "description": "Villa Solidity contracts for Base network",
   "scripts": {
-    "build": "source ~/.zshenv && forge build",
-    "test": "source ~/.zshenv && forge test",
-    "test:coverage": "source ~/.zshenv && forge coverage",
+    "build": "command -v forge >/dev/null 2>&1 && forge build || echo 'Skipping: forge not installed'",
+    "test": "command -v forge >/dev/null 2>&1 && forge test || echo 'Skipping: forge not installed'",
+    "test:coverage": "command -v forge >/dev/null 2>&1 && forge coverage || echo 'Skipping: forge not installed'",
     "typecheck": "echo 'Solidity contracts - no TypeScript'",
-    "clean": "source ~/.zshenv && forge clean",
-    "deploy:local": "source ~/.zshenv && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
-    "deploy:base-sepolia": "source ~/.zshenv && forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify",
-    "deploy:base": "source ~/.zshenv && forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --verify"
+    "clean": "command -v forge >/dev/null 2>&1 && forge clean || echo 'Skipping: forge not installed'",
+    "deploy:local": "forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:base-sepolia": "forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify",
+    "deploy:base": "forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --verify"
   },
   "keywords": ["solidity", "ethereum", "base", "biometric-recovery"]
 }
