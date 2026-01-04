@@ -59,7 +59,7 @@ export function Avatar({ src, walletAddress, name, size = 'md', className }: Ava
   // Handle AvatarConfig - generate SVG from DiceBear
   if (src && typeof src === 'object' && 'selection' in src && walletAddress) {
     const svgString = generateAvatarFromSelection(walletAddress, src.selection, src.variant)
-    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`
+    const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`
     return (
       <img
         src={dataUrl}
