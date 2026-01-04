@@ -170,6 +170,132 @@ STATUS=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
 
 ---
 
+## Shell Script Security Patterns
+
+### 1. Input Validation Functions
+
+```bash
+# Always validate before using in commands
+validate_feature_name() {
+  local name="$1"
+  # Only allow safe characters
+  if [[ ! "$name" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+    echo "Error: Invalid characters" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Call validation early
+validate_feature_name "$input" || exit 1
+```
+
+**Standard validators:**
+| Function | Pattern | Use For |
+|----------|---------|---------|
+| `validate_port` | `^[0-9]+$` + 1-65535 | PORT env vars |
+| `validate_domain` | RFC domain chars | NGROK_DOMAIN, URLs |
+| `validate_url` | `^https?://...` | API responses |
+| `validate_path` | No `; \| & $ \`` or `..` | File paths |
+| `validate_app_id` | UUID format | doctl IDs |
+
+### 2. Safe Process Management
+
+```bash
+# ❌ Bad: kills ALL matching processes (dangerous!)
+pkill -f "next dev"
+
+# ✅ Good: track specific PIDs, verify before kill
+safe_kill_pid() {
+  local pid="$1"
+  local expected="$2"
+
+  if [[ ! "$pid" =~ ^[0-9]+$ ]]; then return 0; fi
+
+  # Verify process matches expected pattern
+  local cmd=$(ps -p "$pid" -o command= 2>/dev/null)
+  if [[ "$cmd" == *"$expected"* ]]; then
+    kill "$pid" 2>/dev/null || true
+  fi
+}
+
+# Save PIDs to project-specific file
+echo "$DEV_PID" > "$PROJECT_ROOT/.session.pid"
+```
+
+### 3. Safe JSON Parsing
+
+```bash
+# ❌ Bad: Python injection risk
+echo "$API_RESPONSE" | python3 -c "import json,sys; ..."
+
+# ✅ Good: jq is safer and faster
+TUNNEL_URL=$(echo "$API_RESPONSE" | jq -r '.tunnels[0].public_url // empty')
+```
+
+### 4. Output Sanitization
+
+```bash
+# Sanitize before display (remove control chars)
+sanitize_output() {
+  printf '%s' "$1" | tr -d '\000-\010\013-\037\177' | head -c 500
+}
+
+# Redact secrets in log output
+sanitize_log_line() {
+  printf '%s' "$1" | sed -E 's/(token|key|secret|password|auth)[=:][^ ]+/\1=[REDACTED]/gi'
+}
+```
+
+### 5. Strict Mode
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Always use for scripts
+
+# -e: exit on error
+# -u: error on undefined vars
+# -o pipefail: catch pipe failures
+```
+
+### 6. Path Handling
+
+```bash
+# ❌ Bad: hardcoded absolute path
+CONFIG="/Users/me/project/.config"
+
+# ✅ Good: dynamic path detection
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+CONFIG="$PROJECT_ROOT/.config"
+```
+
+### 7. Command Execution
+
+```bash
+# ❌ Bad: string interpolation (injection risk)
+NGROK_CMD="ngrok http $PORT --domain=$DOMAIN"
+$NGROK_CMD
+
+# ✅ Good: array expansion (safe)
+NGROK_ARGS=("http" "$PORT" "--domain=$DOMAIN")
+ngrok "${NGROK_ARGS[@]}"
+```
+
+### 8. Credential Protection
+
+```bash
+# ❌ Bad: shows authtoken
+cat "$CONFIG" | grep -E "authtoken"
+
+# ✅ Good: only check existence, never display
+if grep -q "authtoken" "$CONFIG" 2>/dev/null; then
+  echo "Auth token configured"
+fi
+```
+
+---
+
 ## Anti-Patterns
 
 - ❌ Sequential when parallel possible
@@ -180,6 +306,10 @@ STATUS=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
 - ❌ Implementing before spec is clear
 - ❌ `git add .` without reviewing changes
 - ❌ Batching unrelated changes in one commit
+- ❌ `pkill -f` without PID tracking
+- ❌ Python for JSON parsing in shell scripts
+- ❌ Displaying log contents without sanitization
+- ❌ Using `/tmp/` for project-specific files
 
 ---
 
