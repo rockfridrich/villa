@@ -5,23 +5,31 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened, closed, ready_for_review]
 
-# Permissions for PR commenting and deployment
 permissions:
   contents: read
   pull-requests: write
   deployments: write
 
-# Prevent concurrent deployments to same environment
 concurrency:
   group: deploy-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
   cancel-in-progress: true
 
+env:
+  # Delightful GIFs for bot messages
+  GIF_SHIP: "https://media.giphy.com/media/ule4vhcY1xEKQ/giphy.gif"
+  GIF_SUCCESS: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif"
+  GIF_THINKING: "https://media.giphy.com/media/3o7TKwmnDgQb5jemjK/giphy.gif"
+  GIF_CELEBRATE: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif"
+  GIF_ROCKET: "https://media.giphy.com/media/mi6DsSSNKDbUY/giphy.gif"
+
 jobs:
-  # CI tests - must pass before merge
-  ci:
-    name: CI Tests
+  # =============================================================================
+  # QUICK CI - Always runs for PRs (fast feedback ~30s)
+  # =============================================================================
+  quick-ci:
+    name: "⚡ Quick CI"
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -44,18 +52,77 @@ jobs:
       - name: Unit tests
         run: npx vitest run --config vitest.config.unit.ts
 
+  # =============================================================================
+  # FULL CI - Skip for drafts and [wip]/[skip e2e] commits
+  # =============================================================================
+  full-ci:
+    name: "🧪 E2E Tests"
+    needs: quick-ci
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.title, '[wip]') &&
+      !contains(github.event.pull_request.title, '[skip e2e]')
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.e2e.outcome == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if E2E needed
+        id: check-paths
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD 2>/dev/null || echo "src/")
+          if echo "$CHANGED" | grep -qE '^(src/|tests/|playwright|package)'; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+            echo "📝 Skipping E2E - only docs/config changes"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-paths.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.check-paths.outputs.run == 'true'
+        run: npm ci
+
       - name: Install Playwright
+        if: steps.check-paths.outputs.run == 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: E2E tests (local)
+      - name: Run E2E tests
+        id: e2e
+        if: steps.check-paths.outputs.run == 'true'
         run: npm run test:e2e:chromium
         env:
           CI: true
 
-  # Security check: only collaborators can trigger preview deploys
+      - name: Upload report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-pr-${{ github.event.pull_request.number }}
+          path: playwright-report/
+          retention-days: 7
+
+  # =============================================================================
+  # CHECK PERMISSION - For preview deploys
+  # =============================================================================
   check-permission:
-    name: Check Permission
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: "🔐 Check Permission"
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.title, '[skip deploy]')
     runs-on: ubuntu-latest
     outputs:
       is-collaborator: ${{ steps.check.outputs.is-collaborator }}
@@ -65,32 +132,26 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Fork PRs from non-collaborators should not trigger deploys
             const { data: permissionLevel } = await github.rest.repos.getCollaboratorPermissionLevel({
               owner: context.repo.owner,
               repo: context.repo.repo,
               username: context.payload.pull_request.user.login
             });
-
             const hasAccess = ['admin', 'write', 'maintain'].includes(permissionLevel.permission);
-            console.log(`User ${context.payload.pull_request.user.login} has permission: ${permissionLevel.permission}`);
-            console.log(`Is collaborator: ${hasAccess}`);
-
             core.setOutput('is-collaborator', hasAccess);
 
-            if (!hasAccess) {
-              core.notice('Preview deployments are only available for repository collaborators. External contributors can request a maintainer to deploy their PR for testing.');
-            }
-
-  # Deploy preview for PRs from collaborators (after CI passes)
+  # =============================================================================
+  # DEPLOY PREVIEW - With delightful messages!
+  # =============================================================================
   deploy-preview:
-    name: Deploy Preview
-    needs: [ci, check-permission]
+    name: "🚀 Deploy Preview"
+    needs: [quick-ci, check-permission]
     if: |
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
-      needs.ci.result == 'success' &&
-      needs.check-permission.outputs.is-collaborator == 'true'
+      github.event.pull_request.draft == false &&
+      needs.check-permission.outputs.is-collaborator == 'true' &&
+      !contains(github.event.pull_request.title, '[skip deploy]')
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
@@ -99,26 +160,38 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
+      - name: Get PR info
+        id: pr-info
+        run: |
+          # Get commit messages for changelog
+          COMMITS=$(git log --oneline origin/${{ github.base_ref }}..HEAD 2>/dev/null | head -5 || echo "Initial commit")
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Get short SHA
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Generate app spec
         run: |
           export PR_NUMBER="${{ github.event.pull_request.number }}"
           export BRANCH_NAME="${{ github.head_ref }}"
           envsubst < .do/app-preview.yaml > .do/app-preview-generated.yaml
-          echo "Generated spec:"
-          cat .do/app-preview-generated.yaml
 
       - name: Deploy to App Platform
         id: deploy
         run: |
           APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
+          START_TIME=$(date +%s)
 
-          # Use Spec.Name (not Name) - doctl returns <nil> for Name
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
 
           if [ -n "$APP_ID" ]; then
@@ -133,34 +206,51 @@ jobs:
           for i in {1..30}; do
             APP_URL=$(doctl apps list --format DefaultIngress,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
             if [ -n "$APP_URL" ] && [ "$APP_URL" != "null" ] && [ "$APP_URL" != "<nil>" ]; then
-              echo "url=${APP_URL}" >> $GITHUB_OUTPUT
-              echo "✅ Preview URL: ${APP_URL}"
+              END_TIME=$(date +%s)
+              DURATION=$((END_TIME - START_TIME))
+              echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
+              echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Waiting for URL... ($i/30)"
             sleep 10
           done
-          echo "❌ Timeout waiting for app URL"
           exit 1
 
-      - name: Comment PR
+      - name: Comment PR with preview URL
         uses: actions/github-script@v7
         with:
           script: |
-            const body = `## 🚀 Preview Deployed
+            const url = '${{ steps.deploy.outputs.url }}';
+            const duration = '${{ steps.deploy.outputs.duration }}';
+            const sha = '${{ steps.pr-info.outputs.sha }}';
+            const commits = `${{ steps.pr-info.outputs.commits }}`;
+            const branch = '${{ github.head_ref }}';
+            const prTitle = context.payload.pull_request.title;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            **URL:** ${{ steps.deploy.outputs.url }}
+            const body = `![Ship it!](https://media.giphy.com/media/ule4vhcY1xEKQ/giphy.gif)
 
-            | Info | Value |
-            |------|-------|
-            | Branch | \`${{ github.head_ref }}\` |
-            | Commit | \`${{ github.sha }}\` |
-            | Build | Buildpacks (cached) |
+            ## 🚀 Preview Ready!
 
-            Preview auto-deletes when PR closes.
+            ### **[🔗 Open Preview](${url})** ← Click to test!
+
+            | | |
+            |---|---|
+            | 🌿 **Branch** | \`${branch}\` |
+            | 📝 **Commit** | \`${sha}\` |
+            | ⏱️ **Deploy time** | ${duration} |
+
+            <details>
+            <summary>📋 Recent commits</summary>
+
+            \`\`\`
+            ${commits}
+            \`\`\`
+
+            </details>
 
             ---
-            *Deployed at ${new Date().toISOString()}*`;
+            <sub>🤖 Preview auto-deletes when PR closes • [View Logs](${runUrl})</sub>`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -168,7 +258,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('Preview Deployed'));
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('Preview Ready'));
 
             if (botComment) {
               await github.rest.issues.updateComment({
@@ -186,9 +276,11 @@ jobs:
               });
             }
 
-  # E2E tests against preview
+  # =============================================================================
+  # E2E PREVIEW - With result comment
+  # =============================================================================
   e2e-preview:
-    name: E2E Tests (Preview)
+    name: "🧪 E2E (Preview)"
     needs: deploy-preview
     if: needs.deploy-preview.outputs.url
     runs-on: ubuntu-latest
@@ -205,24 +297,101 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       - name: Wait for healthy deployment
+        id: health
         run: |
           URL="${{ needs.deploy-preview.outputs.url }}"
           for i in {1..20}; do
             if curl -sf "$URL/api/health" > /dev/null; then
-              echo "✅ Deployment healthy"
+              echo "healthy=true" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Waiting... ($i/20)"
             sleep 10
           done
-          echo "❌ Health check failed"
+          echo "healthy=false" >> $GITHUB_OUTPUT
           exit 1
 
       - name: Run E2E tests
-        run: npm run test:e2e:chromium
+        id: e2e
+        run: npm run test:e2e:chromium 2>&1 | tee e2e-output.txt
         env:
           BASE_URL: ${{ needs.deploy-preview.outputs.url }}
           CI: true
+        continue-on-error: true
+
+      - name: Comment E2E results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const passed = '${{ steps.e2e.outcome }}' === 'success';
+            const url = '${{ needs.deploy-preview.outputs.url }}';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let body;
+            if (passed) {
+              body = `![Tests passing](https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif)
+
+              ## ✅ E2E Tests Passing!
+
+              All tests passed against the preview deployment.
+
+              | | |
+              |---|---|
+              | 🌐 **Tested URL** | [${url}](${url}) |
+              | 📊 **Full Report** | [View Logs](${runUrl}) |
+
+              ---
+              <sub>🤖 Tests ran automatically on preview deploy</sub>`;
+            } else {
+              body = `![Tests need attention](https://media.giphy.com/media/3o7TKwmnDgQb5jemjK/giphy.gif)
+
+              ## ❌ E2E Tests Need Attention
+
+              Some tests failed on the preview deployment.
+
+              | | |
+              |---|---|
+              | 🌐 **Tested URL** | [${url}](${url}) |
+              | 📊 **Full Report** | [View Logs](${runUrl}) |
+              | 📥 **Artifacts** | Download from workflow run |
+
+              <details>
+              <summary>🔧 Quick fixes</summary>
+
+              - Check if the feature works manually at the preview URL
+              - Review the Playwright report artifact
+              - Run \`npm run test:e2e:ui\` locally to debug
+
+              </details>
+
+              ---
+              <sub>🤖 Don't worry, you can re-run tests after fixing!</sub>`;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('E2E Tests'));
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body
+              });
+            }
 
       - name: Upload report
         uses: actions/upload-artifact@v4
@@ -232,9 +401,15 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # CI for production (main branch)
+      - name: Fail if tests failed
+        if: steps.e2e.outcome != 'success'
+        run: exit 1
+
+  # =============================================================================
+  # PRODUCTION CI
+  # =============================================================================
   ci-production:
-    name: CI Tests (Production)
+    name: "🔒 CI (Production)"
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -247,29 +422,21 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-
-      - name: TypeScript check
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Unit tests
-        run: npx vitest run --config vitest.config.unit.ts
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: E2E tests (local)
-        run: npm run test:e2e:chromium
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run --config vitest.config.unit.ts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:chromium
         env:
           CI: true
 
-  # Deploy production (main branch only, after CI)
+  # =============================================================================
+  # DEPLOY PRODUCTION - With changelog!
+  # =============================================================================
   deploy-production:
-    name: Deploy Production
+    name: "🎉 Deploy Production"
     needs: ci-production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci-production.result == 'success'
+    if: needs.ci-production.result == 'success'
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
@@ -278,6 +445,24 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get release info
+        id: release-info
+        run: |
+          # Get recent commits for changelog
+          CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s" | head -10)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Get version from package.json
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          # Get short SHA
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
@@ -287,36 +472,91 @@ jobs:
       - name: Deploy to App Platform
         id: deploy
         run: |
-          # Use Spec.Name (not Name) - doctl returns <nil> for Name
+          START_TIME=$(date +%s)
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
 
           if [ -z "$APP_ID" ]; then
-            echo "Creating production app..."
             doctl apps create --spec .do/app-production.yaml
           else
-            echo "Updating production app: $APP_ID"
             doctl apps update $APP_ID --spec .do/app-production.yaml
           fi
 
-          # Wait for deployment
+          # Wait for deployment (JSON output for reliability)
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
           for i in {1..30}; do
-            STATUS=$(doctl apps get $APP_ID --format ActiveDeployment.Phase --no-header 2>/dev/null || echo "PENDING")
-            if [ "$STATUS" = "ACTIVE" ]; then
-              APP_URL=$(doctl apps get $APP_ID --format DefaultIngress --no-header)
+            APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '{}')
+
+            IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.in_progress_deployment.phase // empty')
+            if [ -n "$IN_PROGRESS" ]; then
+              echo "🔨 Building: $IN_PROGRESS ($i/30)"
+              sleep 10
+              continue
+            fi
+
+            ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+            if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+              APP_URL=$(echo "$APP_JSON" | jq -r '.default_ingress // empty')
+              END_TIME=$(date +%s)
+              DURATION=$((END_TIME - START_TIME))
               echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
-              echo "✅ Production deployed: https://${APP_URL}"
+              echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Status: $STATUS ($i/30)"
             sleep 10
           done
-          echo "❌ Deployment timeout"
           exit 1
 
-  # E2E tests against production
+      - name: Create GitHub Release comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const duration = '${{ steps.deploy.outputs.duration }}';
+            const version = '${{ steps.release-info.outputs.version }}';
+            const sha = '${{ steps.release-info.outputs.sha }}';
+            const changelog = `${{ steps.release-info.outputs.changelog }}`;
+            const actor = '${{ github.actor }}';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Find the merge commit message or PR title
+            const commitMsg = context.payload.head_commit?.message?.split('\n')[0] || 'Production deploy';
+
+            const body = `![Deployed!](https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif)
+
+            ## 🎉 Shipped to Production!
+
+            ### **[🌐 ${url}](${url})**
+
+            | | |
+            |---|---|
+            | 📦 **Version** | \`v${version}\` |
+            | 📝 **Commit** | \`${sha}\` - ${commitMsg} |
+            | ⏱️ **Deploy time** | ${duration} |
+            | 👤 **Deployed by** | @${actor} |
+
+            <details>
+            <summary>📋 What's in this release</summary>
+
+            ${changelog}
+
+            </details>
+
+            ---
+            <sub>🤖 [View deployment logs](${runUrl}) • Villa v${version}</sub>`;
+
+            // Post as a commit comment
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body
+            });
+
+  # =============================================================================
+  # E2E PRODUCTION
+  # =============================================================================
   e2e-production:
-    name: E2E Tests (Production)
+    name: "🧪 E2E (Production)"
     needs: deploy-production
     if: needs.deploy-production.outputs.url
     runs-on: ubuntu-latest
@@ -337,13 +577,11 @@ jobs:
           URL="${{ needs.deploy-production.outputs.url }}"
           for i in {1..20}; do
             if curl -sf "$URL/api/health" > /dev/null; then
-              echo "✅ Deployment healthy"
+              echo "✅ Production healthy"
               exit 0
             fi
-            echo "Waiting... ($i/20)"
             sleep 10
           done
-          echo "❌ Health check failed"
           exit 1
 
       - name: Run E2E tests
@@ -360,9 +598,11 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Cleanup preview on PR close
+  # =============================================================================
+  # CLEANUP PREVIEW
+  # =============================================================================
   cleanup-preview:
-    name: Cleanup Preview
+    name: "🗑️ Cleanup Preview"
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -374,12 +614,28 @@ jobs:
       - name: Delete preview app
         run: |
           APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
-          # Use Spec.Name (not Name) - doctl returns <nil> for Name
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
 
           if [ -n "$APP_ID" ]; then
-            echo "🗑️ Deleting preview app: ${APP_NAME} ($APP_ID)"
+            echo "🗑️ Deleting preview: ${APP_NAME}"
             doctl apps delete $APP_ID --force
-          else
-            echo "No preview app found for ${APP_NAME}"
           fi
+
+      - name: Comment cleanup
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const merged = context.payload.pull_request.merged;
+            const emoji = merged ? '🎉' : '👋';
+            const status = merged ? 'merged' : 'closed';
+
+            const body = `${emoji} **Preview cleaned up** - PR was ${status}.
+
+            ${merged ? 'Changes are now live in production!' : 'No changes were deployed.'}`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

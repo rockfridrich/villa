@@ -26,6 +26,44 @@ npm run verify       # Full check
 
 ---
 
+## Fast Development Workflow
+
+### PR Speed Tiers
+
+| PR Type | What Runs | Time |
+|---------|-----------|------|
+| **Draft PR** | Quick CI (typecheck, lint, unit) | ~30s |
+| **Ready PR** | Quick CI + E2E | ~3min |
+| **Ready PR (deploy)** | Quick CI + Deploy + E2E on preview | ~5min |
+
+### Skip Flags (in PR title)
+
+| Flag | Effect |
+|------|--------|
+| `[wip]` | Skip E2E tests |
+| `[skip e2e]` | Skip E2E tests |
+| `[skip deploy]` | Skip preview deploy |
+
+**Example:** `feat: add button [wip]` → Only runs Quick CI
+
+### Fast Local Development
+
+```bash
+npm run check        # TypeScript + lint (~10s)
+npm run test:unit    # Unit tests only (~15s)
+npm run verify       # Full check before push
+```
+
+### CI Bot Messages
+
+The CI bot posts delightful comments with:
+- 🎉 GIFs for deploys and test results
+- 📋 Clickable preview URLs
+- 📝 Commit changelog
+- 🔗 Links to logs and artifacts
+
+---
+
 ## Session Best Practices (Ultrathink)
 
 ### Before Starting Any Task
