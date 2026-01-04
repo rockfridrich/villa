@@ -248,3 +248,151 @@ If redeployment is ever needed:
 2. Users may need to re-register nicknames
 3. Users may need to re-enroll face recovery
 4. All of this can be done from the same Porto account
+
+---
+
+## Production Testing Strategy
+
+### Smoke Tests (Run Immediately After Deploy)
+
+```typescript
+// Test 1: Resolver returns gateway URL
+const resolver = getContract({
+  address: '0xf4648423aC6b3f6328018c49B2102f4E9bA6D800',
+  abi: nicknameResolverAbi,
+  client: publicClient
+})
+expect(await resolver.read.url()).toBe('https://api.villa.cash/ens/resolve')
+
+// Test 2: Resolver owner is deployer
+expect(await resolver.read.owner()).toBe('0x94E182DA81eCCa26D6ce6B29d99a460C11990725')
+
+// Test 3: Recovery signer has verifier set
+const signer = getContract({
+  address: '0xdFb55a363bdF549EE5C2e77D0aAaC39276ED5836',
+  abi: recoverySignerAbi,
+  client: publicClient
+})
+expect(await signer.read.livenessVerifier()).toBe('0x3a4C091500159901deB27D8F5559ACD8a643A12b')
+
+// Test 4: Contracts are not paused
+expect(await resolver.read.paused()).toBe(false)
+expect(await signer.read.paused()).toBe(false)
+```
+
+### Integration Tests (After API Ready)
+
+```typescript
+// Test 5: CCIP-Read resolution
+// This tests the full path: ENS query → contract → gateway → response
+const address = await publicClient.getEnsAddress({
+  name: normalize('test-user.villa'),
+  universalResolverAddress: '0x...'  // Base Sepolia universal resolver
+})
+
+// Test 6: Face enrollment flow (mock ZK proof)
+const mockProof = getMockLivenessProof()
+await signer.write.enrollFace([userAddress, faceHash, mockProof])
+expect(await signer.read.getFaceHash([userAddress])).toBe(faceHash)
+
+// Test 7: Recovery signature generation
+const sig = await signer.write.signRecovery([userAddress, newKey, faceHash, mockProof])
+// Verify signature is valid for account recovery
+```
+
+### Admin Tests (Owner Functions)
+
+```typescript
+// Test 8: Update gateway URL (owner only)
+await resolver.write.setUrl(['https://new-gateway.villa.cash'])
+expect(await resolver.read.url()).toBe('https://new-gateway.villa.cash')
+
+// Test 9: Pause/unpause
+await resolver.write.pause()
+expect(await resolver.read.paused()).toBe(true)
+await resolver.write.unpause()
+expect(await resolver.read.paused()).toBe(false)
+
+// Test 10: Ownership transfer (2-step)
+await resolver.write.transferOwnership([newOwner])
+// New owner must accept
+await resolver.write.acceptOwnership({ account: newOwner })
+```
+
+### Upgrade Tests (Before Mainnet)
+
+```typescript
+// Test 11: Deploy V3 implementation
+const v3Impl = await deployContract(client, {
+  abi: resolverV3Abi,
+  bytecode: resolverV3Bytecode
+})
+
+// Test 12: Upgrade proxy
+await resolver.write.upgradeToAndCall([v3Impl.address, '0x'])
+
+// Test 13: Verify state preserved
+expect(await resolver.read.url()).toBe('https://api.villa.cash/ens/resolve')
+expect(await resolver.read.owner()).toBe(deployer)
+
+// Test 14: New V3 functions available
+expect(await resolver.read.version()).toBe('3')
+```
+
+### Load Tests (Testnet Stress)
+
+```bash
+# Simulate 100 concurrent nickname lookups
+ab -n 1000 -c 100 "https://api.villa.cash/ens/resolve?name=test"
+
+# Monitor gas usage over time
+cast nonce 0x94E182DA81eCCa26D6ce6B29d99a460C11990725 --rpc-url base-sepolia
+```
+
+### Security Tests
+
+```typescript
+// Test 15: Non-owner cannot update URL
+await expect(
+  resolver.write.setUrl(['https://evil.com'], { account: attacker })
+).rejects.toThrow('OwnableUnauthorizedAccount')
+
+// Test 16: Cannot bypass ZK verification
+await expect(
+  signer.write.enrollFace([userAddress, faceHash, invalidProof])
+).rejects.toThrow('InvalidLivenessProof')
+
+// Test 17: Replay protection
+const nonce = await signer.read.nonces([userAddress])
+// Use nonce in signature
+// Try to replay - should fail
+```
+
+---
+
+## Monitoring & Alerts
+
+### Basescan Watchlist
+Add proxy contracts to Basescan watchlist for:
+- Ownership changes
+- Pause events
+- Upgrade events
+- Failed transactions
+
+### Key Events to Monitor
+```solidity
+event UrlUpdated(string newUrl)
+event Paused(address account)
+event Unpaused(address account)
+event FaceEnrolled(address indexed user, bytes32 faceHash)
+event RecoverySigned(address indexed user, address newKey)
+event Upgraded(address indexed implementation)
+```
+
+### Alert Thresholds
+| Event | Action |
+|-------|--------|
+| Ownership transfer initiated | Notify team immediately |
+| Contract paused | Investigate within 1 hour |
+| Upgrade executed | Verify new implementation |
+| Failed tx spike (>10/hour) | Check for attack/bug |
