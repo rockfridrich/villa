@@ -18,9 +18,12 @@ Core identity with passwordless auth via WebAuthn.
 - [x] Preview deployments for PRs
 - [x] E2E tests on deployed URLs
 - [x] Porto SDK integration verified on production
+- [x] Custom domain architecture (villa.cash + staging + dev slots)
+- [x] CloudFlare DNS configuration guide
+- [x] Bug bounty and security policy
 - [ ] Mobile testing (iOS Safari, Android Chrome)
-- [ ] Custom domain (villa.proofofretreat.me)
-- [ ] Porto iframe mode (requires domain registration)
+- [ ] Porto iframe mode (requires domain registration with Ithaca)
+- [ ] Register all domains with Ithaca for passkey support
 
 ## Phase 2: Recovery
 

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Villa domain configuration - managed in repo, DNS in CloudFlare",
+  "domains": {
+    "production": {
+      "domain": "villa.cash",
+      "alias": ["www.villa.cash"],
+      "provider": "digitalocean",
+      "dns": "cloudflare",
+      "deployTrigger": "release-tag",
+      "description": "Stable production releases only"
+    },
+    "staging": {
+      "domain": "beta.villa.cash",
+      "provider": "digitalocean",
+      "dns": "cloudflare",
+      "deployTrigger": "push-to-main",
+      "description": "Pre-release testing, mirrors production data"
+    },
+    "preview": {
+      "slots": [
+        {
+          "domain": "dev-1.villa.cash",
+          "provider": "digitalocean",
+          "dns": "cloudflare",
+          "usage": "pr-preview",
+          "description": "PR preview slot 1 (odd PR numbers)"
+        },
+        {
+          "domain": "dev-2.villa.cash",
+          "provider": "digitalocean",
+          "dns": "cloudflare",
+          "usage": "pr-preview",
+          "description": "PR preview slot 2 (even PR numbers)"
+        }
+      ]
+    },
+    "development": {
+      "domain": "dev-3.villa.cash",
+      "provider": "ngrok",
+      "dns": "cloudflare",
+      "usage": "local-tunnel",
+      "description": "Local development via ngrok custom domain"
+    }
+  },
+  "ithaca": {
+    "note": "These domains must be registered with Ithaca/Porto for passkey support",
+    "registeredDomains": [
+      "villa.cash",
+      "beta.villa.cash",
+      "dev-1.villa.cash",
+      "dev-2.villa.cash",
+      "dev-3.villa.cash"
+    ]
+  },
+  "security": {
+    "productionProtected": true,
+    "stagingProtected": false,
+    "previewProtected": false,
+    "note": "Production requires release tag, prevents accidental deploys"
+  }
+}

@@ -1,19 +1,19 @@
-# DigitalOcean App Platform - Preview Environment
-# Auto-created for PRs from collaborators
-# Domain: dev-1.villa.cash or dev-2.villa.cash (slot-based)
-# Note: ${DEV_SLOT} is replaced by CI workflow (1 or 2)
+# DigitalOcean App Platform - Staging Environment
+# Deployed on push to main branch
+# Domain: beta.villa.cash (CloudFlare DNS)
+# Purpose: Pre-release testing before production tags
 
-name: villa-dev-${DEV_SLOT}
+name: villa-staging
 
 domains:
-  - domain: dev-${DEV_SLOT}.villa.cash
+  - domain: beta.villa.cash
     type: PRIMARY
 
 services:
   - name: web
     github:
       repo: rockfridrich/villa
-      branch: ${BRANCH_NAME}
+      branch: main
       deploy_on_push: true
     dockerfile_path: Dockerfile
     http_port: 3000
@@ -25,16 +25,17 @@ services:
       http_path: /api/health
       initial_delay_seconds: 15
       period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
     envs:
       - key: NODE_ENV
-        value: preview
+        value: staging
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
       - key: NEXT_PUBLIC_ENV
-        value: preview
+        value: staging
       - key: NEXT_PUBLIC_DOMAIN
-        value: dev-${DEV_SLOT}.villa.cash
-      - key: PR_NUMBER
-        value: "${PR_NUMBER}"
+        value: beta.villa.cash
 
 region: nyc

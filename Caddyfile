@@ -22,16 +22,38 @@
     }
 }
 
-# Production domain
-proofofretreat.me {
+# =============================================================================
+# Production domain: villa.cash
+# DNS: CloudFlare → DigitalOcean (handled by DO, not Caddy)
+# =============================================================================
+villa.cash {
     import security_headers
     reverse_proxy app:3000
 }
 
-www.proofofretreat.me {
-    redir https://proofofretreat.me{uri} permanent
+www.villa.cash {
+    redir https://villa.cash{uri} permanent
 }
 
+# =============================================================================
+# Staging domain: beta.villa.cash
+# =============================================================================
+beta.villa.cash {
+    import security_headers
+    reverse_proxy app:3000
+}
+
+# =============================================================================
+# Dev domains: dev-1, dev-2, dev-3
+# =============================================================================
+dev-1.villa.cash, dev-2.villa.cash, dev-3.villa.cash {
+    import security_headers
+    reverse_proxy app:3000
+}
+
+# =============================================================================
+# Local development
+# =============================================================================
 localhost {
     import security_headers
     reverse_proxy app:3000
@@ -41,4 +63,11 @@ localhost {
 villa.local {
     import security_headers
     reverse_proxy app:3000
+}
+
+# =============================================================================
+# Legacy domain redirect
+# =============================================================================
+proofofretreat.me, www.proofofretreat.me {
+    redir https://villa.cash{uri} permanent
 }

@@ -1,8 +1,9 @@
-name: Deploy to DigitalOcean
+name: Deploy
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, closed, ready_for_review]
@@ -13,19 +14,22 @@ permissions:
   deployments: write
 
 concurrency:
-  group: deploy-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
+  group: deploy-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
   cancel-in-progress: true
 
 env:
-  # Production domain (CloudFlare DNS)
+  # Domain architecture (CloudFlare DNS → DigitalOcean)
   PRODUCTION_DOMAIN: villa.cash
-  PRODUCTION_URL: https://villa.cash
-  # Delightful GIFs for bot messages
+  STAGING_DOMAIN: beta.villa.cash
+  DEV_1_DOMAIN: dev-1.villa.cash
+  DEV_2_DOMAIN: dev-2.villa.cash
+  # GIFs for delightful bot messages
   GIF_SHIP: "https://media.giphy.com/media/ule4vhcY1xEKQ/giphy.gif"
   GIF_SUCCESS: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif"
   GIF_THINKING: "https://media.giphy.com/media/3o7TKwmnDgQb5jemjK/giphy.gif"
   GIF_CELEBRATE: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif"
   GIF_ROCKET: "https://media.giphy.com/media/mi6DsSSNKDbUY/giphy.gif"
+  GIF_STAGING: "https://media.giphy.com/media/3o7btNa0RUYa5E7iiQ/giphy.gif"
 
 jobs:
   # =============================================================================
@@ -37,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should-e2e: ${{ steps.check-paths.outputs.run }}
+      dev-slot: ${{ steps.slot.outputs.slot }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,23 +56,24 @@ jobs:
       - name: Cache Next.js build
         uses: actions/cache@v4
         with:
-          path: |
-            .next/cache
+          path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
           restore-keys: |
             nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
             nextjs-${{ runner.os }}-
 
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run --config vitest.config.unit.ts
 
-      - name: TypeScript check
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Unit tests
-        run: npx vitest run --config vitest.config.unit.ts
+      - name: Assign dev slot (1 or 2)
+        id: slot
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          SLOT=$(( (PR_NUM % 2) + 1 ))
+          echo "slot=${SLOT}" >> $GITHUB_OUTPUT
+          echo "📍 PR #${PR_NUM} assigned to dev-${SLOT}.villa.cash"
 
       - name: Check if E2E needed
         id: check-paths
@@ -100,74 +106,29 @@ jobs:
         shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Cache Playwright browsers
+      - uses: actions/cache@v4
         id: playwright-cache
-        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright deps (if cached)
+      - run: npx playwright install-deps chromium
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-
-      - name: Run E2E tests (shard ${{ matrix.shard }}/2)
-        run: npx playwright test --project=chromium --shard=${{ matrix.shard }}/2
+      - run: npx playwright test --project=chromium --shard=${{ matrix.shard }}/2
         env:
           CI: true
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report-shard-${{ matrix.shard }}
-          path: |
-            playwright-report/
-            test-results/
+          path: playwright-report/
           retention-days: 7
-
-  # =============================================================================
-  # E2E RESULTS - Merge sharded results
-  # =============================================================================
-  e2e-results:
-    name: "📊 E2E Results"
-    needs: e2e-tests
-    if: always() && needs.e2e-tests.result != 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all shard reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: playwright-report-shard-*
-          merge-multiple: true
-
-      - name: Merge reports
-        run: |
-          echo "📊 E2E Test Results"
-          echo "==================="
-          if [ -f test-results.json ]; then
-            cat test-results.json | jq -r '.suites[] | .title + ": " + (.specs | length | tostring) + " tests"' 2>/dev/null || echo "Results merged"
-          fi
-
-      - name: Check overall status
-        if: needs.e2e-tests.result == 'failure'
-        run: exit 1
 
   # =============================================================================
   # CHECK PERMISSION - For preview deploys
@@ -197,10 +158,10 @@ jobs:
             core.setOutput('is-collaborator', hasAccess);
 
   # =============================================================================
-  # DEPLOY PREVIEW - With delightful messages!
+  # DEPLOY PREVIEW - To dev-1 or dev-2 based on PR number
   # =============================================================================
   deploy-preview:
-    name: "🚀 Deploy Preview"
+    name: "🚀 Deploy Preview (dev-${{ needs.quick-ci.outputs.dev-slot }})"
     needs: [quick-ci, check-permission]
     if: |
       github.event_name == 'pull_request' &&
@@ -211,65 +172,74 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      slot: ${{ needs.quick-ci.outputs.dev-slot }}
     environment:
-      name: preview
+      name: preview-${{ needs.quick-ci.outputs.dev-slot }}
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Get PR info
         id: pr-info
         run: |
-          # Get commit messages for changelog
           COMMITS=$(git log --oneline origin/${{ github.base_ref }}..HEAD 2>/dev/null | head -5 || echo "Initial commit")
           echo "commits<<EOF" >> $GITHUB_OUTPUT
           echo "$COMMITS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-          # Get short SHA
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Generate app spec
         run: |
+          export DEV_SLOT="${{ needs.quick-ci.outputs.dev-slot }}"
           export PR_NUMBER="${{ github.event.pull_request.number }}"
           export BRANCH_NAME="${{ github.head_ref }}"
           envsubst < .do/app-preview.yaml > .do/app-preview-generated.yaml
+          cat .do/app-preview-generated.yaml
 
-      - name: Deploy to App Platform
+      - name: Deploy to dev-${{ needs.quick-ci.outputs.dev-slot }}.villa.cash
         id: deploy
+        env:
+          DEV_SLOT: ${{ needs.quick-ci.outputs.dev-slot }}
         run: |
-          APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
+          APP_NAME="villa-dev-${DEV_SLOT}"
+          DOMAIN="dev-${DEV_SLOT}.villa.cash"
           START_TIME=$(date +%s)
 
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
 
           if [ -n "$APP_ID" ]; then
-            echo "Updating existing preview app: $APP_ID"
+            echo "📦 Updating ${APP_NAME} (slot ${DEV_SLOT})..."
             doctl apps update $APP_ID --spec .do/app-preview-generated.yaml
           else
-            echo "Creating new preview app..."
+            echo "🆕 Creating ${APP_NAME}..."
             doctl apps create --spec .do/app-preview-generated.yaml
           fi
 
-          # Wait for URL
+          # Wait for deployment
           for i in {1..30}; do
-            APP_URL=$(doctl apps list --format DefaultIngress,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
-            if [ -n "$APP_URL" ] && [ "$APP_URL" != "null" ] && [ "$APP_URL" != "<nil>" ]; then
-              END_TIME=$(date +%s)
-              DURATION=$((END_TIME - START_TIME))
-              echo "url=https://${APP_URL}" >> $GITHUB_OUTPUT
-              echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
-              exit 0
+            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
+            if [ -n "$APP_ID" ]; then
+              APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '[]')
+              ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
+              if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                echo "url=https://${DOMAIN}" >> $GITHUB_OUTPUT
+                echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
+                echo "✅ Deployed to https://${DOMAIN}"
+                exit 0
+              fi
             fi
+            echo "⏳ Waiting for deployment... ($i/30)"
             sleep 10
           done
+          echo "❌ Deployment timeout"
           exit 1
 
       - name: Comment PR with preview URL
@@ -281,17 +251,18 @@ jobs:
             const sha = '${{ steps.pr-info.outputs.sha }}';
             const commits = `${{ steps.pr-info.outputs.commits }}`;
             const branch = '${{ github.head_ref }}';
-            const prTitle = context.payload.pull_request.title;
+            const slot = '${{ needs.quick-ci.outputs.dev-slot }}';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const body = `![Ship it!](https://media.giphy.com/media/ule4vhcY1xEKQ/giphy.gif)
 
-            ## 🚀 Preview Ready!
+            ## 🚀 Preview Ready on dev-${slot}!
 
-            ### **[🔗 Open Preview](${url})** ← Click to test!
+            ### **[🔗 ${url}](${url})** ← Click to test!
 
             | | |
             |---|---|
+            | 🏷️ **Slot** | \`dev-${slot}.villa.cash\` |
             | 🌿 **Branch** | \`${branch}\` |
             | 📝 **Commit** | \`${sha}\` |
             | ⏱️ **Deploy time** | ${duration} |
@@ -306,7 +277,7 @@ jobs:
             </details>
 
             ---
-            <sub>🤖 Preview auto-deletes when PR closes • [View Logs](${runUrl})</sub>`;
+            <sub>🤖 Slot reused on PR close • [View Logs](${runUrl})</sub>`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -333,37 +304,32 @@ jobs:
             }
 
   # =============================================================================
-  # E2E PREVIEW - With result comment
+  # E2E PREVIEW - Test on dev slot
   # =============================================================================
   e2e-preview:
-    name: "🧪 E2E (Preview)"
+    name: "🧪 E2E (dev-${{ needs.deploy-preview.outputs.slot }})"
     needs: deploy-preview
     if: needs.deploy-preview.outputs.url
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
       - run: npm ci
       - run: npx playwright install --with-deps chromium
 
       - name: Wait for healthy deployment
-        id: health
         run: |
           URL="${{ needs.deploy-preview.outputs.url }}"
           for i in {1..20}; do
             if curl -sf "$URL/api/health" > /dev/null; then
-              echo "healthy=true" >> $GITHUB_OUTPUT
+              echo "✅ Preview healthy"
               exit 0
             fi
             sleep 10
           done
-          echo "healthy=false" >> $GITHUB_OUTPUT
           exit 1
 
       - name: Run E2E tests
@@ -379,18 +345,18 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const passed = '${{ steps.e2e.outcome }}' === 'success';
             const url = '${{ needs.deploy-preview.outputs.url }}';
+            const slot = '${{ needs.deploy-preview.outputs.slot }}';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             let body;
             if (passed) {
               body = `![Tests passing](https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif)
 
-              ## ✅ E2E Tests Passing!
+              ## ✅ E2E Tests Passing on dev-${slot}!
 
-              All tests passed against the preview deployment.
+              All tests passed.
 
               | | |
               |---|---|
@@ -400,29 +366,17 @@ jobs:
               ---
               <sub>🤖 Tests ran automatically on preview deploy</sub>`;
             } else {
-              body = `![Tests need attention](https://media.giphy.com/media/3o7TKwmnDgQb5jemjK/giphy.gif)
+              body = `## ❌ E2E Tests Need Attention
 
-              ## ❌ E2E Tests Need Attention
-
-              Some tests failed on the preview deployment.
+              Some tests failed on dev-${slot}.
 
               | | |
               |---|---|
               | 🌐 **Tested URL** | [${url}](${url}) |
               | 📊 **Full Report** | [View Logs](${runUrl}) |
-              | 📥 **Artifacts** | Download from workflow run |
-
-              <details>
-              <summary>🔧 Quick fixes</summary>
-
-              - Check if the feature works manually at the preview URL
-              - Review the Playwright report artifact
-              - Run \`npm run test:e2e:ui\` locally to debug
-
-              </details>
 
               ---
-              <sub>🤖 Don't worry, you can re-run tests after fixing!</sub>`;
+              <sub>🤖 Run \`npm run test:e2e:ui\` locally to debug</sub>`;
             }
 
             const { data: comments } = await github.rest.issues.listComments({
@@ -449,11 +403,10 @@ jobs:
               });
             }
 
-      - name: Upload report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-pr-${{ github.event.pull_request.number }}
+          name: playwright-report-preview
           path: playwright-report/
           retention-days: 7
 
@@ -462,64 +415,222 @@ jobs:
         run: exit 1
 
   # =============================================================================
-  # PRODUCTION CI - With caching for speed
+  # STAGING CI - Runs on push to main (not tags)
   # =============================================================================
-  ci-production:
-    name: "🔒 CI (Production)"
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  ci-staging:
+    name: "🔒 CI (Staging)"
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
-            nextjs-${{ runner.os }}-
-
-      - name: Cache Playwright browsers
+      - uses: actions/cache@v4
         id: playwright-cache
-        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
       - run: npm ci
-
-      - name: Quick checks (parallel)
-        run: |
-          npm run typecheck &
-          npm run lint &
-          wait
-
+      - run: npm run typecheck & npm run lint & wait
       - run: npx vitest run --config vitest.config.unit.ts
-
-      - name: Install Playwright browsers
+      - run: npx playwright install --with-deps chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright deps (if cached)
+      - run: npx playwright install-deps chromium
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-
-      - name: E2E tests (parallel shards)
-        run: npx playwright test --project=chromium
+      - run: npx playwright test --project=chromium
         env:
           CI: true
 
   # =============================================================================
-  # DEPLOY PRODUCTION - With changelog!
+  # DEPLOY STAGING - To beta.villa.cash on push to main
+  # =============================================================================
+  deploy-staging:
+    name: "🎯 Deploy Staging"
+    needs: ci-staging
+    if: needs.ci-staging.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    environment:
+      name: staging
+      url: https://beta.villa.cash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Get staging info
+        id: staging-info
+        run: |
+          CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s" | head -10)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Deploy to beta.villa.cash
+        id: deploy
+        run: |
+          START_TIME=$(date +%s)
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
+
+          if [ -z "$APP_ID" ]; then
+            echo "🆕 Creating staging app..."
+            doctl apps create --spec .do/app-staging.yaml
+          else
+            echo "📦 Updating staging app..."
+            doctl apps update $APP_ID --spec .do/app-staging.yaml
+          fi
+
+          # Wait for deployment
+          for i in {1..30}; do
+            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
+            if [ -n "$APP_ID" ]; then
+              APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '[]')
+              IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
+              if [ -n "$IN_PROGRESS" ]; then
+                echo "🔨 Building: $IN_PROGRESS ($i/30)"
+                sleep 10
+                continue
+              fi
+              ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
+              if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
+                echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Create staging comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = 'https://beta.villa.cash';
+            const duration = '${{ steps.deploy.outputs.duration }}';
+            const version = '${{ steps.staging-info.outputs.version }}';
+            const sha = '${{ steps.staging-info.outputs.sha }}';
+            const changelog = `${{ steps.staging-info.outputs.changelog }}`;
+            const actor = '${{ github.actor }}';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const commitMsg = context.payload.head_commit?.message?.split('\n')[0] || 'Staging deploy';
+
+            const body = `![Staging!](https://media.giphy.com/media/3o7btNa0RUYa5E7iiQ/giphy.gif)
+
+            ## 🎯 Deployed to Staging!
+
+            ### **[🔗 beta.villa.cash](${url})** ← Test before release
+
+            | | |
+            |---|---|
+            | 📦 **Version** | \`v${version}\` |
+            | 📝 **Commit** | \`${sha}\` - ${commitMsg} |
+            | ⏱️ **Deploy time** | ${duration} |
+            | 👤 **Deployed by** | @${actor} |
+
+            <details>
+            <summary>📋 What's in staging</summary>
+
+            ${changelog}
+
+            </details>
+
+            **Next:** Test on staging, then create release tag \`git tag v${version} && git push --tags\`
+
+            ---
+            <sub>🤖 [View logs](${runUrl}) • Staging auto-deploys on merge to main</sub>`;
+
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body
+            });
+
+  # =============================================================================
+  # E2E STAGING - Test on beta.villa.cash
+  # =============================================================================
+  e2e-staging:
+    name: "🧪 E2E (Staging)"
+    needs: deploy-staging
+    if: needs.deploy-staging.outputs.url
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Wait for healthy staging
+        run: |
+          for i in {1..20}; do
+            if curl -sf "https://beta.villa.cash/api/health" > /dev/null; then
+              echo "✅ Staging healthy"
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Run E2E tests on staging
+        run: npm run test:e2e:chromium
+        env:
+          BASE_URL: https://beta.villa.cash
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-staging
+          path: playwright-report/
+          retention-days: 7
+
+  # =============================================================================
+  # PRODUCTION CI - Runs on release tags (v*)
+  # =============================================================================
+  ci-production:
+    name: "🔒 CI (Production)"
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
+      - run: npm run typecheck & npm run lint & wait
+      - run: npx vitest run --config vitest.config.unit.ts
+      - run: npx playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - run: npx playwright install-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      - run: npx playwright test --project=chromium
+        env:
+          CI: true
+
+  # =============================================================================
+  # DEPLOY PRODUCTION - To villa.cash on release tags only
   # =============================================================================
   deploy-production:
     name: "🎉 Deploy Production"
@@ -530,120 +641,105 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: https://villa.cash
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
       - name: Get release info
         id: release-info
         run: |
-          # Get recent commits for changelog
+          TAG_NAME="${{ github.ref_name }}"
           CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s" | head -10)
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-          # Get version from package.json
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-          # Get short SHA
+          echo "version=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Deploy to App Platform
+      - name: Deploy to villa.cash
         id: deploy
         run: |
           START_TIME=$(date +%s)
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
 
           if [ -z "$APP_ID" ]; then
+            echo "🆕 Creating production app..."
             doctl apps create --spec .do/app-production.yaml
           else
+            echo "📦 Updating production app..."
             doctl apps update $APP_ID --spec .do/app-production.yaml
           fi
 
-          # Wait for deployment (JSON output for reliability)
-          # Note: doctl apps get returns an array, use .[0] to access the app object
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
+          # Wait for deployment
           for i in {1..30}; do
-            APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '[]')
-
-            IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
-            if [ -n "$IN_PROGRESS" ]; then
-              echo "🔨 Building: $IN_PROGRESS ($i/30)"
-              sleep 10
-              continue
-            fi
-
-            ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
-            if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
-              # default_ingress already includes https://
-              APP_URL=$(echo "$APP_JSON" | jq -r '.[0].default_ingress // empty')
-              END_TIME=$(date +%s)
-              DURATION=$((END_TIME - START_TIME))
-              echo "url=${APP_URL}" >> $GITHUB_OUTPUT
-              echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
-              exit 0
+            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
+            if [ -n "$APP_ID" ]; then
+              APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null || echo '[]')
+              IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
+              if [ -n "$IN_PROGRESS" ]; then
+                echo "🔨 Building: $IN_PROGRESS ($i/30)"
+                sleep 10
+                continue
+              fi
+              ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
+              if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                echo "url=https://villa.cash" >> $GITHUB_OUTPUT
+                echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
+                exit 0
+              fi
             fi
             sleep 10
           done
           exit 1
 
-      - name: Create GitHub Release comment
+      - name: Create GitHub Release
         uses: actions/github-script@v7
         with:
           script: |
-            const url = '${{ steps.deploy.outputs.url }}';
-            const duration = '${{ steps.deploy.outputs.duration }}';
+            const tag = '${{ steps.release-info.outputs.tag }}';
             const version = '${{ steps.release-info.outputs.version }}';
-            const sha = '${{ steps.release-info.outputs.sha }}';
             const changelog = `${{ steps.release-info.outputs.changelog }}`;
+            const sha = '${{ steps.release-info.outputs.sha }}';
+            const duration = '${{ steps.deploy.outputs.duration }}';
             const actor = '${{ github.actor }}';
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            // Find the merge commit message or PR title
-            const commitMsg = context.payload.head_commit?.message?.split('\n')[0] || 'Production deploy';
+            const body = `## 🎉 Villa ${tag}
 
-            const body = `![Deployed!](https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif)
+            **Live at [villa.cash](https://villa.cash)**
 
-            ## 🎉 Shipped to Production!
-
-            ### **[🌐 ${url}](${url})**
-
-            | | |
-            |---|---|
-            | 📦 **Version** | \`v${version}\` |
-            | 📝 **Commit** | \`${sha}\` - ${commitMsg} |
-            | ⏱️ **Deploy time** | ${duration} |
-            | 👤 **Deployed by** | @${actor} |
-
-            <details>
-            <summary>📋 What's in this release</summary>
-
+            ### What's Changed
             ${changelog}
 
-            </details>
+            ### Deployment Info
+            - **Commit:** \`${sha}\`
+            - **Deploy time:** ${duration}
+            - **Deployed by:** @${actor}
 
             ---
-            <sub>🤖 [View deployment logs](${runUrl}) • Villa v${version}</sub>`;
+            Full changelog: https://github.com/${context.repo.owner}/${context.repo.repo}/compare/...${tag}`;
 
-            // Post as a commit comment
-            await github.rest.repos.createCommitComment({
+            // Create GitHub Release
+            await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              commit_sha: context.sha,
-              body
+              tag_name: tag,
+              name: `Villa ${tag}`,
+              body,
+              draft: false,
+              prerelease: false
             });
 
   # =============================================================================
-  # E2E PRODUCTION
+  # E2E PRODUCTION - Test on villa.cash
   # =============================================================================
   e2e-production:
     name: "🧪 E2E (Production)"
@@ -652,21 +748,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
       - run: npm ci
       - run: npx playwright install --with-deps chromium
 
-      - name: Wait for healthy deployment
+      - name: Wait for healthy production
         run: |
-          URL="${{ needs.deploy-production.outputs.url }}"
           for i in {1..20}; do
-            if curl -sf "$URL/api/health" > /dev/null; then
+            if curl -sf "https://villa.cash/api/health" > /dev/null; then
               echo "✅ Production healthy"
               exit 0
             fi
@@ -674,14 +766,13 @@ jobs:
           done
           exit 1
 
-      - name: Run E2E tests
+      - name: Run E2E tests on production
         run: npm run test:e2e:chromium
         env:
-          BASE_URL: ${{ needs.deploy-production.outputs.url }}
+          BASE_URL: https://villa.cash
           CI: true
 
-      - name: Upload report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report-production
@@ -689,39 +780,32 @@ jobs:
           retention-days: 7
 
   # =============================================================================
-  # CLEANUP PREVIEW
+  # CLEANUP PREVIEW - Frees up dev slot
   # =============================================================================
   cleanup-preview:
     name: "🗑️ Cleanup Preview"
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Delete preview app
+      - name: Calculate slot
+        id: slot
         run: |
-          APP_NAME="villa-pr-${{ github.event.pull_request.number }}"
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "${APP_NAME}$" | awk '{print $1}')
-
-          if [ -n "$APP_ID" ]; then
-            echo "🗑️ Deleting preview: ${APP_NAME}"
-            doctl apps delete $APP_ID --force
-          fi
+          PR_NUM=${{ github.event.pull_request.number }}
+          SLOT=$(( (PR_NUM % 2) + 1 ))
+          echo "slot=${SLOT}" >> $GITHUB_OUTPUT
 
       - name: Comment cleanup
         uses: actions/github-script@v7
         with:
           script: |
             const merged = context.payload.pull_request.merged;
+            const slot = '${{ steps.slot.outputs.slot }}';
             const emoji = merged ? '🎉' : '👋';
             const status = merged ? 'merged' : 'closed';
 
-            const body = `${emoji} **Preview cleaned up** - PR was ${status}.
+            const body = `${emoji} **PR ${status}** - dev-${slot}.villa.cash slot freed.
 
-            ${merged ? 'Changes are now live in production!' : 'No changes were deployed.'}`;
+            ${merged ? '✅ Changes are now on [beta.villa.cash](https://beta.villa.cash) (staging).\n\nCreate release tag to deploy to production.' : 'No changes deployed.'}`;
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,

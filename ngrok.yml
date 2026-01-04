@@ -1,0 +1,31 @@
+# ngrok configuration for Villa development
+# Place in ~/.config/ngrok/ngrok.yml or use with: ngrok start --config ngrok.yml
+#
+# Setup:
+# 1. Sign up at https://ngrok.com
+# 2. Get authtoken from https://dashboard.ngrok.com/get-started/your-authtoken
+# 3. For custom domain, upgrade to paid plan and claim dev-3.villa.cash
+# 4. Run: ngrok config add-authtoken YOUR_TOKEN
+
+version: "2"
+authtoken: # Add your authtoken here or use: ngrok config add-authtoken
+
+# Custom domain for local development (requires ngrok paid plan)
+# This domain must be registered with Ithaca/Porto for passkey support
+tunnels:
+  villa-dev:
+    proto: http
+    addr: 3000
+    domain: dev-3.villa.cash  # Custom domain (paid ngrok feature)
+    inspect: true
+
+  # Fallback: random ngrok URL (free tier)
+  villa-free:
+    proto: http
+    addr: 3000
+    inspect: true
+
+# To start:
+#   With custom domain: ngrok start villa-dev --config ngrok.yml
+#   Free tier (random): ngrok start villa-free --config ngrok.yml
+#   Or simply: ngrok http 3000 (uses default config)

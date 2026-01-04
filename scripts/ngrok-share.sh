@@ -117,8 +117,18 @@ fi
 # ═══════════════════════════════════════════════════════════════
 echo -e "${Y}■${N} Starting ngrok tunnel..."
 
+# Check if custom domain is configured (paid ngrok feature)
+NGROK_DOMAIN="${NGROK_DOMAIN:-}"
+if [ -n "$NGROK_DOMAIN" ]; then
+  NGROK_CMD="ngrok http $PORT --domain=$NGROK_DOMAIN --log=stdout"
+  echo -e "${D}Using custom domain: ${NGROK_DOMAIN}${N}"
+else
+  NGROK_CMD="ngrok http $PORT --log=stdout"
+  echo -e "${D}Using random ngrok URL (set NGROK_DOMAIN=dev-3.villa.cash for custom)${N}"
+fi
+
 for ((i=1; i<=MAX_RETRIES; i++)); do
-  ngrok http $PORT --log=stdout > /tmp/villa-ngrok.log 2>&1 &
+  $NGROK_CMD > /tmp/villa-ngrok.log 2>&1 &
   NGROK_PID=$!
 
   sleep 4

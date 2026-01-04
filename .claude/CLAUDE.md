@@ -709,13 +709,19 @@ await page.goto(BASE_URL)  // NO!
 
 ### Environment Matrix
 
-| Environment | URL Source | Passkeys | Use For |
-|-------------|------------|----------|---------|
+| Environment | Domain | Passkeys | Use For |
+|-------------|--------|----------|---------|
 | Local HTTP | `localhost:3000` | ❌ | UI development |
 | Local HTTPS | `localhost:3000` (mkcert) | ✅ | Passkey development |
-| ngrok | Dynamic URL | ✅ | Mobile QA |
-| Preview | `villa-pr-N.ondigitalocean.app` | ✅ | PR testing |
-| Production | `villa-production-*.ondigitalocean.app` | ✅ | Live |
+| Local ngrok | `dev-3.villa.cash` | ✅ | Mobile QA with passkeys |
+| Preview | `dev-1.villa.cash` / `dev-2.villa.cash` | ✅ | PR testing |
+| Staging | `beta.villa.cash` | ✅ | Pre-release testing |
+| Production | `villa.cash` | ✅ | Live |
+
+**Test against any environment:**
+```bash
+BASE_URL=https://beta.villa.cash npm run test:e2e:chromium
+```
 
 ### Open Source Considerations
 
@@ -729,4 +735,6 @@ await page.goto(BASE_URL)  // NO!
 - [Porto SDK](https://porto.sh/sdk) — Passkey infrastructure
 - [Porto Theming](https://porto.sh/sdk/guides/theming) — Theme customization
 - [Unforgettable](https://docs.unforgettable.app/sdk/) — Face recovery (Phase 2)
+- [CloudFlare DNS Guide](../docs/cloudflare-dns.md) — Domain setup
+- [Security Policy](../SECURITY.md) — Bug bounty program
 - [Telegram](https://t.me/proofofretreat) — Community chat

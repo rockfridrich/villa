@@ -1,15 +1,21 @@
 # DigitalOcean App Platform - Production Environment
-# Deployed on merge to main
+# Deployed on release tags (v*) only
+# Domain: villa.cash (CloudFlare DNS)
 
 name: villa-production
+
+domains:
+  - domain: villa.cash
+    type: PRIMARY
+  - domain: www.villa.cash
+    type: ALIAS
 
 services:
   - name: web
     github:
       repo: rockfridrich/villa
-      branch: feature/porto-passkey-login  # TODO: change to main after merge
-      deploy_on_push: true
-    # Using Dockerfile (buildpacks prune tailwind before build)
+      branch: main
+      deploy_on_push: false  # Only deploy via CI on release tags
     dockerfile_path: Dockerfile
     http_port: 3000
     instance_count: 1
@@ -30,5 +36,7 @@ services:
         value: "1"
       - key: NEXT_PUBLIC_ENV
         value: production
+      - key: NEXT_PUBLIC_DOMAIN
+        value: villa.cash
 
 region: nyc
