@@ -1,148 +1,186 @@
 # Reflection Agent
 
-Analyzes project history to identify workflow improvements and velocity optimizations.
+Analyzes sessions for anti-patterns, token waste, and improvement opportunities. Produces **actionable fixes**, not just reports.
 
 ## When to Use
 
-Run after completing a major feature or phase:
-```
-@reflect "Analyze Phase 1 completion"
-```
-
-## Analysis Scope
-
-### 1. Git History Analysis
 ```bash
-# Commits and patterns
-git log --oneline -50
-git log --format='%s' | head -30  # Message patterns
-git shortlog -sn  # Contributors
+@reflect "Analyze this session"           # Current session
+@reflect "Analyze biometric PR #14"       # Specific PR/feature
+@reflect "Cross-session patterns"         # Multi-terminal analysis
+```
 
-# Time between commits
-git log --format='%ci' | head -20
+**Auto-trigger:** After merging PRs, major features, or 2+ hours of work.
 
-# Files most changed
+---
+
+## Anti-Pattern Detection (PRIORITY)
+
+Scan for these token-burning patterns:
+
+### 1. Manual Polling (Critical)
+```bash
+# DETECT: sleep + gh commands in conversation
+# FIX: Should have been
+@ops "Monitor deploy X, report when complete" --background
+```
+
+### 2. Agent Under-Utilization
+```
+DETECT:
+- Manual `npx playwright test` → Should be @test
+- Manual `gh run view` loops → Should be @ops
+- Manual file searches → Should be @explore
+- Sequential debugging → Should be parallel @explore + @test
+
+FIX: Add to LEARNINGS.md under "Agent Delegation"
+```
+
+### 3. Git State Drift
+```bash
+# DETECT: Branch confusion patterns
+git reflog | grep -c "checkout\|reset\|stash"  # High count = issues
+
+# WARNING SIGNS:
+- "Switched to branch X" when expecting Y
+- Stash operations losing files
+- Force pushes needed
+- Working tree needing restoration
+```
+
+### 4. CI Iteration Loops
+```bash
+# DETECT: Multiple pushes for same issue
+gh run list --json conclusion,headBranch | jq 'group_by(.headBranch) | .[] | select(length > 2)'
+
+# CATEGORIES:
+- Lint/type errors (should catch locally)
+- Security scanner (need allowlist upfront)
+- Flaky tests (need flexible assertions)
+```
+
+### 5. Context Loss Recovery
+```
+DETECT: In resumed sessions:
+- Files referenced but don't exist
+- Stash entries that don't restore cleanly
+- Recreating code from memory
+
+FIX: Before resuming, run:
+git status && ls -la key/directories/
+```
+
+### 6. File Churn
+```bash
+# Files changed 4+ times = design issue
+git log --name-only --format= --since="1 day ago" | sort | uniq -c | sort -rn | head -10
+```
+
+---
+
+## Analysis Commands
+
+Run these in parallel:
+
+```bash
+# Git patterns
+git log --oneline -30
+git log --format='%s' | grep -iE "fix|revert|amend" | head -10
 git log --name-only --format= | sort | uniq -c | sort -rn | head -10
+
+# CI patterns
+gh run list --limit 20 --json conclusion,name | jq 'group_by(.conclusion)'
+gh pr list --state merged --limit 10 --json number,additions,deletions,mergedAt
 ```
 
-### 2. Workflow Runs
-```bash
-# Recent runs
-gh run list --limit 20
-
-# Failure patterns
-gh run list --status failure --limit 10
-
-# Duration trends
-gh run list --json databaseId,conclusion,createdAt,updatedAt
-```
-
-### 3. PR Analysis
-```bash
-# PR cycle time
-gh pr list --state merged --json number,createdAt,mergedAt
-
-# Review patterns
-gh pr view N --json reviews
-```
+---
 
 ## Output Format
 
 ```markdown
-## Reflection: [Phase/Feature Name]
+## Reflection: [Session/Feature Name]
 
-### Velocity Metrics
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Commits | N | - | - |
-| Pivots | N | 0-1 | ✅/❌ |
-| CI failures | N | 0 | ✅/❌ |
-| Avg CI time | Nm | <5m | ✅/❌ |
+### Token Efficiency Score
+| Category | Actual | Target | Score |
+|----------|--------|--------|-------|
+| Agent delegation | X/Y tasks | 80%+ | ✅/❌ |
+| CI success rate | X% | 100% | ✅/❌ |
+| File churn | X files 4+ | <2 | ✅/❌ |
+| Manual polling | X calls | 0 | ✅/❌ |
 
-### What Went Well
-- [Pattern that worked]
-- [Efficiency gained]
+### Anti-Patterns Detected
 
-### What Slowed Us Down
-- [Blocker and root cause]
-- [Time lost and why]
+| Pattern | Count | Time Lost | Fix |
+|---------|-------|-----------|-----|
+| Manual CI polling | 6 | ~8min | @ops background |
+| Git state confusion | 3 | ~10min | Branch verify |
+| File recreation | 8 | ~15min | Check files on resume |
 
-### Recommendations
-1. **[Category]**: [Specific action]
-2. **[Category]**: [Specific action]
+### What Burned Tokens
+1. **[Issue]**: [Root cause] → [Immediate fix]
 
-### Spec Improvements
-- [ ] Add section for [X]
-- [ ] Clarify [Y]
+### What Saved Tokens
+1. [Pattern that worked]
 
-### Workflow Improvements
-- [ ] Add step for [X]
-- [ ] Parallelize [Y]
+### Immediate Actions (apply now)
+- [ ] Add to `.gitleaks.toml`: [patterns]
+- [ ] Add to LEARNINGS.md: [pattern]
+- [ ] Fix flaky test: [file:line]
+
+### LEARNINGS.md Updates
+```diff
++ ### [New Pattern Name]
++ [Description]
+```
 ```
 
-## Reflection Categories
+---
 
-### Code Quality
-- Test coverage gaps
-- Type safety issues
-- Security vulnerabilities found
+## Actionable Output Requirements
 
-### Development Velocity
-- Build time optimizations
-- Test parallelization opportunities
-- CI pipeline improvements
+**Every reflection MUST produce:**
 
-### Documentation
-- Missing specs
-- Outdated docs
-- Unclear instructions
+1. **Immediate fix** (apply in this session)
+2. **LEARNINGS.md update** (if pattern saves >10min)
+3. **Workflow change** (if issue occurred 2+ times)
 
-### Agent Workflow
-- Model selection accuracy
-- Parallel execution opportunities
-- Context efficiency
+**DO NOT produce:**
+- Generic observations without fixes
+- Metrics without action items
+- Analysis that doesn't update docs
 
-## Example Analysis
+---
 
-```markdown
-## Reflection: Phase 1 - Passkey Login
+## Quick Reflection (< 2 min)
 
-### Velocity Metrics
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Commits | 25 | - | - |
-| Pivots | 2 | 0-1 | ❌ |
-| CI failures | 3 | 0 | ❌ |
-| Avg CI time | 3m | <5m | ✅ |
-
-### What Went Well
-- Parallel test execution (unit + E2E)
-- Preview deploys for quick feedback
-- Porto SDK theming worked first try
-
-### What Slowed Us Down
-- doctl --format Name bug (2 CI failures)
-- Missing spec for session behavior (1 pivot)
-- Buildpacks vs Dockerfile decision (30min)
-
-### Recommendations
-1. **CI**: Add doctl format validation test
-2. **Specs**: Always include session behavior section
-3. **Docker**: Default to Dockerfile for Next.js apps
-4. **Agents**: Run @review after every @build
-
-### Spec Template Updates
-- [ ] Add "Session Behavior" section
-- [ ] Add "Deployment Considerations" section
-- [ ] Add "Known Platform Quirks" section
-```
-
-## Integration
-
-After reflection, create improvement PR:
 ```bash
-git checkout -b improvement/[area]
-# Apply recommendations
-git commit -m "improvement: [summary]"
-gh pr create --title "Improvement: [Area]" --body "[Reflection output]"
+echo "Commits: $(git log --oneline --since='4 hours ago' | wc -l)"
+echo "CI: $(gh run list --limit 10 --json conclusion | jq '[.[] | .conclusion] | group_by(.)')"
+echo "Files churned: $(git log --name-only --format= --since='4 hours ago' | sort | uniq -c | sort -rn | head -3)"
 ```
+
+Output:
+```markdown
+## Quick Reflection
+- **Commits:** X
+- **CI:** X pass / Y fail
+- **Token saver:** [One thing that worked]
+- **Token burner:** [One thing to fix]
+```
+
+---
+
+## Cross-Session Analysis
+
+```bash
+git log --all --oneline --graph | head -50
+cat .claude/coordination/state.json 2>/dev/null || echo "No coordination state"
+```
+
+### Cross-Session Anti-Patterns
+
+| Pattern | Symptom | Fix |
+|---------|---------|-----|
+| Duplicate work | Same files in multiple PRs | Use @architect for WBS |
+| Lock conflicts | Merge conflicts | Claim files via coordinate.sh |
+| Stale branches | PRs >24h old | Close or merge same day |
