@@ -27,11 +27,11 @@ export const displayNameSchema = z
   .transform(sanitize)
   .refine((val) => val.length > 0, 'Name cannot be empty after sanitization')
 
-// Avatar style selection (user-facing gender choice)
-export const avatarStyleSelectionSchema = z.enum(['male', 'female'])
+// Avatar style selection (user-facing choice: male, female, or other)
+export const avatarStyleSelectionSchema = z.enum(['male', 'female', 'other'])
 
-// Avatar style (DiceBear style name - always avataaars for nice human avatars)
-export const avatarStyleSchema = z.enum(['avataaars'])
+// Avatar style (DiceBear style names)
+export const avatarStyleSchema = z.enum(['avataaars', 'bottts'])
 
 // Avatar configuration (new format)
 export const avatarConfigSchema = z.object({

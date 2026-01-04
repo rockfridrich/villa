@@ -4,7 +4,7 @@
  */
 
 import { createAvatar } from '@dicebear/core'
-import { avataaars } from '@dicebear/collection'
+import { avataaars, bottts } from '@dicebear/collection'
 import type { AvatarStyleSelection, AvatarConfig } from '@/types'
 import { AVATAR_STYLE_MAP } from '@/types'
 import { avatarStyleSelectionSchema } from '@/lib/validation'
@@ -100,10 +100,20 @@ function generateSeed(
 }
 
 /**
- * Generate avatar SVG string using avataaars with gender-specific options
- * Same wallet + gender + variant = identical avatar forever (deterministic)
+ * Generate avatar SVG string based on selection
+ * Same wallet + selection + variant = identical avatar forever (deterministic)
  */
-function generateAvatarByGender(selection: AvatarStyleSelection, seed: string): string {
+function generateAvatarBySelection(selection: AvatarStyleSelection, seed: string): string {
+  // "Other" uses bottts (cute robots) - gender-neutral and fun
+  if (selection === 'other') {
+    const avatar = createAvatar(bottts, {
+      seed,
+      size: 128,
+    })
+    return avatar.toString()
+  }
+
+  // Male/Female use avataaars with gender-specific options
   const isMale = selection === 'male'
 
   const avatar = createAvatar(avataaars, {
@@ -151,7 +161,7 @@ export function generateAvatarFromSelection(
 
   const seed = generateSeed(validAddress, validSelection, validVariant)
 
-  return generateAvatarByGender(validSelection, seed)
+  return generateAvatarBySelection(validSelection, seed)
 }
 
 /**

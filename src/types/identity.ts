@@ -3,11 +3,11 @@
  * WU-0: Shared types - read-only after commit
  */
 
-/** Avatar style - always avataaars for nice human avatars */
-export type AvatarStyle = 'avataaars'
+/** Avatar style - avataaars for gendered, bottts for neutral */
+export type AvatarStyle = 'avataaars' | 'bottts'
 
-/** User-facing gender selection for avatar */
-export type AvatarStyleSelection = 'male' | 'female'
+/** User-facing avatar style selection */
+export type AvatarStyleSelection = 'male' | 'female' | 'other'
 
 /** Avatar configuration stored in profile */
 export interface AvatarConfig {
@@ -70,6 +70,7 @@ export type DataScope = 'nickname' | 'avatar' | 'wallet' | 'appData'
 export const AVATAR_STYLE_MAP: Record<AvatarStyleSelection, AvatarStyle> = {
   male: 'avataaars',
   female: 'avataaars',
+  other: 'bottts',
 } as const
 
 /** Default avatar configuration */

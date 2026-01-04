@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test'
 
 /**
  * E2E Test Suite: Avatar Selection
- * Tests the avatar selection flow with Male/Female options
+ * Tests the avatar selection flow with Male/Female/Other options
  */
 
-// Helper to get gender buttons by exact span text (avoids SVG text matching issues)
-function getGenderButton(page: import('@playwright/test').Page, gender: 'Male' | 'Female') {
-  return page.locator('button', { has: page.locator('span', { hasText: new RegExp(`^${gender}$`) }) })
+// Helper to get style buttons by exact span text (avoids SVG text matching issues)
+function getStyleButton(page: import('@playwright/test').Page, style: 'Male' | 'Female' | 'Other') {
+  return page.locator('button', { has: page.locator('span', { hasText: new RegExp(`^${style}$`) }) })
 }
 
 test.describe('Avatar Selection Flow', () => {
@@ -22,8 +22,6 @@ test.describe('Avatar Selection Flow', () => {
   })
 
   test('Scenario 1: Quick selection (<5s)', async ({ page }) => {
-    // Avatar selection screen should be visible
-
     // Wait for avatar selection screen
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
@@ -42,17 +40,18 @@ test.describe('Avatar Selection Flow', () => {
     await expect(page.getByRole('button', { name: 'Saving...' })).toBeVisible()
   })
 
-  test('Scenario 2: Gender selection changes avatar', async ({ page }) => {
+  test('Scenario 2: Style selection changes avatar', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully hydrated
     await page.waitForLoadState('networkidle')
 
     // Use exact span text selectors for reliable button selection
-    const femaleButton = getGenderButton(page, 'Female')
-    const maleButton = getGenderButton(page, 'Male')
+    const femaleButton = getStyleButton(page, 'Female')
+    const maleButton = getStyleButton(page, 'Male')
+    const otherButton = getStyleButton(page, 'Other')
 
-    // Default gender should be Female (selected)
+    // Default should be Female (selected)
     await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
 
     // Avatar preview should be visible (the large one with shadow-lg class)
@@ -69,11 +68,26 @@ test.describe('Avatar Selection Flow', () => {
     // Male button should now be selected
     await expect(maleButton).toHaveClass(/bg-accent-yellow/)
     await expect(femaleButton).toHaveClass(/bg-cream-100/)
+    await expect(otherButton).toHaveClass(/bg-cream-100/)
 
     // Avatar should change (different src)
     await page.waitForTimeout(100) // Brief wait for avatar regeneration
-    const newSrc = await avatarPreview.getAttribute('src')
-    expect(newSrc).not.toBe(initialSrc)
+    const maleSrc = await avatarPreview.getAttribute('src')
+    expect(maleSrc).not.toBe(initialSrc)
+
+    // Click Other button (robots!)
+    await otherButton.click()
+    await page.waitForTimeout(200) // Wait for state update
+
+    // Other button should now be selected
+    await expect(otherButton).toHaveClass(/bg-accent-yellow/)
+    await expect(femaleButton).toHaveClass(/bg-cream-100/)
+    await expect(maleButton).toHaveClass(/bg-cream-100/)
+
+    // Avatar should change to robot style
+    await page.waitForTimeout(100)
+    const otherSrc = await avatarPreview.getAttribute('src')
+    expect(otherSrc).not.toBe(maleSrc)
 
     // Click back to Female
     await femaleButton.click()
@@ -82,39 +96,49 @@ test.describe('Avatar Selection Flow', () => {
     // Female button should now be selected
     await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
     await expect(maleButton).toHaveClass(/bg-cream-100/)
+    await expect(otherButton).toHaveClass(/bg-cream-100/)
 
     // Avatar should change again
     await page.waitForTimeout(100)
     const femaleSrc = await avatarPreview.getAttribute('src')
-    expect(femaleSrc).not.toBe(newSrc)
+    expect(femaleSrc).not.toBe(otherSrc)
   })
 
-  test('Scenario 3: Randomize shows different variants', async ({ page }) => {
+  test('Scenario 3: Roll the dice shows different variants', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
-    const randomizeButton = page.getByRole('button', { name: /Randomize/i })
+    const rollButton = page.getByRole('button', { name: /Roll the dice/i })
 
     // Get initial avatar
     const initialSrc = await avatarPreview.getAttribute('src')
 
-    // Click randomize
-    await randomizeButton.click()
+    // Click roll button
+    await rollButton.click()
     await page.waitForTimeout(100) // Brief wait for regeneration
     const variant1Src = await avatarPreview.getAttribute('src')
     expect(variant1Src).not.toBe(initialSrc)
 
-    // Click randomize again
-    await randomizeButton.click()
+    // Roll count badge should appear
+    await expect(rollButton.locator('span.bg-white\\/20')).toHaveText('1')
+
+    // Click roll again
+    await rollButton.click()
     await page.waitForTimeout(100)
     const variant2Src = await avatarPreview.getAttribute('src')
     expect(variant2Src).not.toBe(variant1Src)
 
-    // Click randomize a third time
-    await randomizeButton.click()
+    // Roll count should increment
+    await expect(rollButton.locator('span.bg-white\\/20')).toHaveText('2')
+
+    // Click roll a third time
+    await rollButton.click()
     await page.waitForTimeout(100)
     const variant3Src = await avatarPreview.getAttribute('src')
     expect(variant3Src).not.toBe(variant2Src)
+
+    // Roll count should increment
+    await expect(rollButton.locator('span.bg-white\\/20')).toHaveText('3')
 
     // All three variants should be distinct
     expect(new Set([initialSrc, variant1Src, variant2Src, variant3Src]).size).toBe(4)
@@ -134,7 +158,6 @@ test.describe('Avatar Selection Flow', () => {
     expect(initialText).toMatch(/0:(30|29|28)/)
 
     // Wait for timer to reach 0:00 and auto-navigate to home
-    // The component calls onSelect which navigates to /home
     await expect(page).toHaveURL('/home', { timeout: 35000 })
 
     // Verify we're on home page (avatar auto-selected)
@@ -184,12 +207,12 @@ test.describe('Avatar Selection Flow', () => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Select Male
-    await getGenderButton(page, 'Male').click()
+    await getStyleButton(page, 'Male').click()
 
-    // Randomize to variant 5
-    const randomizeButton = page.getByRole('button', { name: /Randomize/i })
+    // Roll to variant 5
+    const rollButton = page.getByRole('button', { name: /Roll the dice/i })
     for (let i = 0; i < 5; i++) {
-      await randomizeButton.click()
+      await rollButton.click()
       await page.waitForTimeout(100)
     }
 
@@ -229,7 +252,7 @@ test.describe('Avatar Selection Flow', () => {
     expect(variant5Src).toBeTruthy()
   })
 
-  test('Timer continues counting during gender changes', async ({ page }) => {
+  test('Timer continues counting during style changes', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     const timer = page.locator('text=/0:\\d{2}/')
@@ -241,8 +264,8 @@ test.describe('Avatar Selection Flow', () => {
     const initialTimerText = await timer.textContent()
     const initialSeconds = parseInt(initialTimerText?.split(':')[1] || '30', 10)
 
-    // Change gender
-    await getGenderButton(page, 'Male').click()
+    // Change style
+    await getStyleButton(page, 'Male').click()
 
     // Wait 2 seconds
     await page.waitForTimeout(2000)
@@ -254,17 +277,20 @@ test.describe('Avatar Selection Flow', () => {
     expect(newSeconds).toBeLessThan(initialSeconds)
   })
 
-  test('Both gender buttons are clickable and functional', async ({ page }) => {
+  test('All style buttons are clickable and functional', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
-    const femaleButton = getGenderButton(page, 'Female')
-    const maleButton = getGenderButton(page, 'Male')
+    const femaleButton = getStyleButton(page, 'Female')
+    const maleButton = getStyleButton(page, 'Male')
+    const otherButton = getStyleButton(page, 'Other')
 
-    // Both buttons should be visible and enabled
+    // All buttons should be visible and enabled
     await expect(femaleButton).toBeVisible()
     await expect(femaleButton).toBeEnabled()
     await expect(maleButton).toBeVisible()
     await expect(maleButton).toBeEnabled()
+    await expect(otherButton).toBeVisible()
+    await expect(otherButton).toBeEnabled()
 
     // Female should be selected by default
     await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
@@ -274,12 +300,21 @@ test.describe('Avatar Selection Flow', () => {
     await page.waitForTimeout(200) // Wait for state update
     await expect(maleButton).toHaveClass(/bg-accent-yellow/)
     await expect(femaleButton).toHaveClass(/bg-cream-100/)
+    await expect(otherButton).toHaveClass(/bg-cream-100/)
+
+    // Click Other and verify selection
+    await otherButton.click()
+    await page.waitForTimeout(200) // Wait for state update
+    await expect(otherButton).toHaveClass(/bg-accent-yellow/)
+    await expect(femaleButton).toHaveClass(/bg-cream-100/)
+    await expect(maleButton).toHaveClass(/bg-cream-100/)
 
     // Click Female and verify selection
     await femaleButton.click()
     await page.waitForTimeout(200) // Wait for state update
     await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
     await expect(maleButton).toHaveClass(/bg-cream-100/)
+    await expect(otherButton).toHaveClass(/bg-cream-100/)
   })
 
   test('Buttons disable during selection', async ({ page }) => {
@@ -289,12 +324,12 @@ test.describe('Avatar Selection Flow', () => {
     await page.waitForLoadState('networkidle')
 
     const selectButton = page.getByRole('button', { name: 'Select' }).first()
-    const randomizeButton = page.getByRole('button', { name: /Randomize/i }).first()
-    const maleButton = getGenderButton(page, 'Male')
+    const rollButton = page.getByRole('button', { name: /Roll the dice/i }).first()
+    const maleButton = getStyleButton(page, 'Male')
 
     // All buttons should be enabled initially
     await expect(selectButton).toBeEnabled()
-    await expect(randomizeButton).toBeEnabled()
+    await expect(rollButton).toBeEnabled()
     await expect(maleButton).toBeEnabled()
 
     // Click select and immediately check for the Saving... state
@@ -304,7 +339,7 @@ test.describe('Avatar Selection Flow', () => {
     // Now buttons should be disabled
     const savingButton = page.getByRole('button', { name: 'Saving...' }).first()
     await expect(savingButton).toBeDisabled()
-    await expect(randomizeButton).toBeDisabled()
+    await expect(rollButton).toBeDisabled()
     await expect(maleButton).toBeDisabled()
   })
 })
@@ -325,9 +360,10 @@ test.describe('Avatar Selection - Mobile Responsiveness', () => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeInViewport()
 
-    // Gender buttons should be visible
-    await expect(getGenderButton(page, 'Female')).toBeVisible()
-    await expect(getGenderButton(page, 'Male')).toBeVisible()
+    // Style buttons should be visible
+    await expect(getStyleButton(page, 'Female')).toBeVisible()
+    await expect(getStyleButton(page, 'Male')).toBeVisible()
+    await expect(getStyleButton(page, 'Other')).toBeVisible()
 
     // Avatar preview should be visible (the large one)
     await expect(page.locator('img[alt="Avatar"].shadow-lg')).toBeVisible()
@@ -338,35 +374,41 @@ test.describe('Avatar Selection - Mobile Responsiveness', () => {
     await expect(selectButton).toBeInViewport()
   })
 
-  test('Gender buttons have adequate touch targets', async ({ page }) => {
-    const femaleButton = getGenderButton(page, 'Female')
-    const maleButton = getGenderButton(page, 'Male')
+  test('Style buttons have adequate touch targets', async ({ page }) => {
+    const femaleButton = getStyleButton(page, 'Female')
+    const maleButton = getStyleButton(page, 'Male')
+    const otherButton = getStyleButton(page, 'Other')
 
     // Check button sizes (should be at least 44px height for touch targets)
     const femaleBox = await femaleButton.boundingBox()
     const maleBox = await maleButton.boundingBox()
+    const otherBox = await otherButton.boundingBox()
 
     expect(femaleBox?.height).toBeGreaterThanOrEqual(36) // Allowing for some CSS differences
     expect(maleBox?.height).toBeGreaterThanOrEqual(36)
+    expect(otherBox?.height).toBeGreaterThanOrEqual(36)
 
     // Buttons should be clickable
-    await maleButton.click()
-    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
+    await otherButton.click()
+    await expect(otherButton).toHaveClass(/bg-accent-yellow/)
   })
 
-  test('Randomize button is tappable on mobile', async ({ page }) => {
-    const randomizeButton = page.getByRole('button', { name: /Randomize/i })
-    await expect(randomizeButton).toBeVisible()
+  test('Roll button is tappable on mobile', async ({ page }) => {
+    const rollButton = page.getByRole('button', { name: /Roll the dice/i })
+    await expect(rollButton).toBeVisible()
 
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
     const initialSrc = await avatarPreview.getAttribute('src')
 
-    // Click randomize
-    await randomizeButton.click()
+    // Click roll
+    await rollButton.click()
     await page.waitForTimeout(100)
 
     const newSrc = await avatarPreview.getAttribute('src')
     expect(newSrc).not.toBe(initialSrc)
+
+    // Roll count badge should appear
+    await expect(rollButton.locator('span.bg-white\\/20')).toHaveText('1')
   })
 })
 
@@ -379,22 +421,22 @@ test.describe('Avatar Selection - Accessibility', () => {
     await page.goto(`/onboarding?step=avatar&address=${MOCK_WALLET}&displayName=${MOCK_NICKNAME}`)
   })
 
-  test('Gender buttons are keyboard navigable', async ({ page }) => {
+  test('Style buttons are keyboard navigable', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
 
-    // Focus on the Male button directly and activate it
-    const maleButton = getGenderButton(page, 'Male')
-    await maleButton.focus()
-    await expect(maleButton).toBeFocused()
+    // Focus on the Other button directly and activate it
+    const otherButton = getStyleButton(page, 'Other')
+    await otherButton.focus()
+    await expect(otherButton).toBeFocused()
 
     // Press Enter to select it
     await page.keyboard.press('Enter')
 
-    // Male button should now be selected
-    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
+    // Other button should now be selected
+    await expect(otherButton).toHaveClass(/bg-accent-yellow/)
   })
 
   test('Select button is keyboard accessible', async ({ page }) => {

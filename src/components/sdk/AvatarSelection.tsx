@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Shuffle } from 'lucide-react'
+import { Dices } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { AvatarPreview } from './AvatarPreview'
 import { createAvatarConfig } from '@/lib/avatar'
@@ -16,9 +16,10 @@ interface AvatarSelectionProps {
   timerDuration?: number
 }
 
-const GENDER_OPTIONS: { value: AvatarStyleSelection; label: string }[] = [
-  { value: 'female', label: 'Female' },
-  { value: 'male', label: 'Male' },
+const STYLE_OPTIONS: { value: AvatarStyleSelection; label: string; description: string }[] = [
+  { value: 'female', label: 'Female', description: 'Long hair styles' },
+  { value: 'male', label: 'Male', description: 'Short hair styles' },
+  { value: 'other', label: 'Other', description: 'Fun robots' },
 ]
 
 /**
@@ -34,6 +35,8 @@ export function AvatarSelection({
   const [variant, setVariant] = useState(0)
   const [timer, setTimer] = useState(timerDuration)
   const [isSelecting, setIsSelecting] = useState(false)
+  const [rollCount, setRollCount] = useState(0)
+  const [isRolling, setIsRolling] = useState(false)
 
   // Track if component is mounted to prevent state updates after unmount
   const isMounted = useRef(true)
@@ -86,12 +89,17 @@ export function AvatarSelection({
   }, [selection, variant, onSelect, isSelecting])
 
   const handleRandomize = () => {
+    setIsRolling(true)
     setVariant((v) => v + 1)
+    setRollCount((c) => c + 1)
+
+    // Reset rolling animation
+    setTimeout(() => setIsRolling(false), 300)
   }
 
-  const handleGenderChange = (newSelection: AvatarStyleSelection) => {
+  const handleStyleChange = (newSelection: AvatarStyleSelection) => {
     setSelection(newSelection)
-    // Reset variant when changing gender for fresh look
+    // Reset variant when changing style for fresh look
     setVariant(0)
   }
 
@@ -109,28 +117,28 @@ export function AvatarSelection({
         </p>
       </div>
 
-      {/* Gender selector - 2 buttons side by side */}
-      <div className="flex gap-4 justify-center max-w-xs mx-auto">
-        {GENDER_OPTIONS.map((option) => (
+      {/* Style selector - 3 options */}
+      <div className="flex gap-3 justify-center max-w-sm mx-auto">
+        {STYLE_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => handleGenderChange(option.value)}
+            onClick={() => handleStyleChange(option.value)}
             disabled={isSelecting}
             className={`
-              flex-1 flex flex-col items-center gap-3 p-4 rounded-xl transition-all
+              flex-1 flex flex-col items-center gap-2 p-3 rounded-xl transition-all
               ${selection === option.value
-                ? 'bg-accent-yellow border-2 border-accent-brown shadow-md'
-                : 'bg-cream-100 border-2 border-transparent hover:border-cream-300'
+                ? 'bg-accent-yellow border-2 border-accent-brown shadow-md scale-105'
+                : 'bg-cream-100 border-2 border-transparent hover:border-cream-300 hover:scale-102'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-cream-200 shadow-sm">
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-cream-200 shadow-sm">
               <AvatarPreview
                 walletAddress={walletAddress}
                 selection={option.value}
                 variant={0}
-                size={64}
+                size={56}
               />
             </div>
             <span className="text-sm font-medium text-ink">
@@ -140,8 +148,8 @@ export function AvatarSelection({
         ))}
       </div>
 
-      {/* Avatar preview */}
-      <div className="flex justify-center">
+      {/* Avatar preview with randomize */}
+      <div className="flex flex-col items-center gap-4">
         <div className="relative">
           <AvatarPreview
             walletAddress={walletAddress}
@@ -151,22 +159,37 @@ export function AvatarSelection({
             className="shadow-lg"
           />
         </div>
-      </div>
 
-      {/* Randomize and timer row */}
-      <div className="flex items-center justify-between px-4">
-        <Button
-          variant="ghost"
-          size="sm"
+        {/* Playful Randomize Button */}
+        <button
           onClick={handleRandomize}
           disabled={isSelecting}
-          className="text-ink-muted hover:text-ink"
+          className={`
+            group flex items-center gap-3 px-6 py-3
+            bg-gradient-to-r from-purple-500 to-pink-500
+            hover:from-purple-600 hover:to-pink-600
+            text-white font-semibold rounded-full
+            shadow-lg hover:shadow-xl
+            transition-all duration-200
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${isRolling ? 'scale-95' : 'hover:scale-105'}
+          `}
         >
-          <Shuffle className="w-4 h-4 mr-2" />
-          Randomize
-        </Button>
+          <Dices
+            className={`w-5 h-5 transition-transform ${isRolling ? 'animate-spin' : 'group-hover:rotate-12'}`}
+          />
+          <span>Roll the dice!</span>
+          {rollCount > 0 && (
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">
+              {rollCount}
+            </span>
+          )}
+        </button>
+      </div>
 
-        <span className={`font-mono text-lg ${timerColor} ${timerPulse}`}>
+      {/* Timer */}
+      <div className="text-center">
+        <span className={`font-mono text-2xl ${timerColor} ${timerPulse}`}>
           0:{timer.toString().padStart(2, '0')}
         </span>
       </div>
