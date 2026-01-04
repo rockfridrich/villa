@@ -3,11 +3,11 @@
  * WU-0: Shared types - read-only after commit
  */
 
-/** Avatar style options */
-export type AvatarStyle = 'adventurer' | 'avataaars' | 'bottts' | 'lorelei' | 'notionists-neutral' | 'thumbs'
+/** Avatar style - always avataaars for nice human avatars */
+export type AvatarStyle = 'avataaars'
 
-/** User-facing style selection */
-export type AvatarStyleSelection = 'adventurer' | 'avataaars' | 'bottts' | 'lorelei' | 'notionists' | 'thumbs'
+/** User-facing gender selection for avatar */
+export type AvatarStyleSelection = 'male' | 'female'
 
 /** Avatar configuration stored in profile */
 export interface AvatarConfig {
@@ -68,17 +68,13 @@ export type DataScope = 'nickname' | 'avatar' | 'wallet' | 'appData'
 
 /** Style mapping from user selection to DiceBear style */
 export const AVATAR_STYLE_MAP: Record<AvatarStyleSelection, AvatarStyle> = {
-  adventurer: 'adventurer',
-  avataaars: 'avataaars',
-  bottts: 'bottts',
-  lorelei: 'lorelei',
-  notionists: 'notionists-neutral',
-  thumbs: 'thumbs',
+  male: 'avataaars',
+  female: 'avataaars',
 } as const
 
 /** Default avatar configuration */
 export const DEFAULT_AVATAR: AvatarConfig = {
-  style: 'lorelei',
-  selection: 'lorelei',
+  style: 'avataaars',
+  selection: 'female',
   variant: 0,
 }

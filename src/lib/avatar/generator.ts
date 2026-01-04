@@ -1,17 +1,10 @@
 /**
- * Avatar Generator using DiceBear
- * WU-4: Deterministic avatar generation from wallet address
+ * Avatar Generator using DiceBear avataaars
+ * WU-4: Deterministic avatar generation from wallet address with explicit Male/Female
  */
 
 import { createAvatar } from '@dicebear/core'
-import {
-  adventurer,
-  avataaars,
-  bottts,
-  lorelei,
-  notionistsNeutral,
-  thumbs
-} from '@dicebear/collection'
+import { avataaars } from '@dicebear/collection'
 import type { AvatarStyleSelection, AvatarConfig } from '@/types'
 import { AVATAR_STYLE_MAP } from '@/types'
 import { avatarStyleSelectionSchema } from '@/lib/validation'
@@ -21,6 +14,40 @@ const MAX_VARIANT = 10000
 const ETHEREUM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/
 const FALLBACK_ADDRESS = '0x0000000000000000000000000000000000000000'
 const FALLBACK_VARIANT = 0
+
+// Gender-specific hair options for avataaars
+const MALE_HAIR = [
+  'shortRound',
+  'shortWaved',
+  'shortCurly',
+  'shortFlat',
+  'dreads01',
+  'dreads02',
+  'frizzle',
+  'shaggy',
+  'shaggyMullet',
+  'shavedSides',
+  'sides',
+  'theCaesar',
+  'theCaesarAndSidePart',
+] as const
+
+const FEMALE_HAIR = [
+  'bob',
+  'bun',
+  'curly',
+  'curvy',
+  'dreads',
+  'frida',
+  'fro',
+  'froBand',
+  'longButNotTooLong',
+  'miaWallace',
+  'straight01',
+  'straight02',
+  'straightAndStrand',
+  'bigHair',
+] as const
 
 /**
  * Validate wallet address format
@@ -39,8 +66,8 @@ function validateWalletAddress(address: string): string {
 function validateSelection(selection: AvatarStyleSelection): AvatarStyleSelection {
   const result = avatarStyleSelectionSchema.safeParse(selection)
   if (!result.success) {
-    console.warn(`Invalid avatar selection: ${selection}, using fallback 'lorelei'`)
-    return 'lorelei'
+    console.warn(`Invalid avatar selection: ${selection}, using fallback 'female'`)
+    return 'female'
   }
   return result.data
 }
@@ -62,7 +89,7 @@ function validateVariant(variant: number): number {
 
 /**
  * Generate a deterministic seed from wallet address, selection, and variant
- * Including selection ensures different styles generate different avatars
+ * Including selection ensures different genders generate different avatars
  */
 function generateSeed(
   walletAddress: string,
@@ -73,35 +100,36 @@ function generateSeed(
 }
 
 /**
- * Generate avatar SVG string using the specified style
- * Same wallet + style + variant = identical avatar forever (deterministic)
+ * Generate avatar SVG string using avataaars with gender-specific options
+ * Same wallet + gender + variant = identical avatar forever (deterministic)
  */
-function generateAvatarByStyle(selection: AvatarStyleSelection, seed: string): string {
-  let avatar
+function generateAvatarByGender(selection: AvatarStyleSelection, seed: string): string {
+  const isMale = selection === 'male'
 
-  switch (selection) {
-    case 'adventurer':
-      avatar = createAvatar(adventurer, { seed, size: 128 })
-      break
-    case 'avataaars':
-      avatar = createAvatar(avataaars, { seed, size: 128 })
-      break
-    case 'bottts':
-      avatar = createAvatar(bottts, { seed, size: 128 })
-      break
-    case 'lorelei':
-      avatar = createAvatar(lorelei, { seed, size: 128 })
-      break
-    case 'notionists':
-      avatar = createAvatar(notionistsNeutral, { seed, size: 128 })
-      break
-    case 'thumbs':
-      avatar = createAvatar(thumbs, { seed, size: 128 })
-      break
-    default:
-      // Fallback to lorelei
-      avatar = createAvatar(lorelei, { seed, size: 128 })
-  }
+  const avatar = createAvatar(avataaars, {
+    seed,
+    size: 128,
+    // Gender-specific hair
+    top: isMale ? [...MALE_HAIR] : [...FEMALE_HAIR],
+    // Facial hair only for male (50% probability)
+    facialHair: isMale
+      ? ['beardLight', 'beardMajestic', 'beardMedium', 'moustacheFancy', 'moustacheMagnum']
+      : [],
+    facialHairProbability: isMale ? 50 : 0,
+    // Accessories for variety
+    accessories: ['prescription01', 'prescription02', 'round', 'sunglasses', 'wayfarers'],
+    accessoriesProbability: 30,
+    // Clothing options
+    clothing: [
+      'blazerAndShirt',
+      'blazerAndSweater',
+      'collarAndSweater',
+      'hoodie',
+      'shirtCrewNeck',
+      'shirtScoopNeck',
+      'shirtVNeck',
+    ],
+  })
 
   return avatar.toString()
 }
@@ -123,7 +151,7 @@ export function generateAvatarFromSelection(
 
   const seed = generateSeed(validAddress, validSelection, validVariant)
 
-  return generateAvatarByStyle(validSelection, seed)
+  return generateAvatarByGender(validSelection, seed)
 }
 
 /**

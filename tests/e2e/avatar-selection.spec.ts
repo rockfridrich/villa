@@ -2,8 +2,13 @@ import { test, expect } from '@playwright/test'
 
 /**
  * E2E Test Suite: Avatar Selection
- * Tests the avatar selection flow per specs/product/avatar-selection.product.md
+ * Tests the avatar selection flow with Male/Female options
  */
+
+// Helper to get gender buttons by exact span text (avoids SVG text matching issues)
+function getGenderButton(page: import('@playwright/test').Page, gender: 'Male' | 'Female') {
+  return page.locator('button', { has: page.locator('span', { hasText: new RegExp(`^${gender}$`) }) })
+}
 
 test.describe('Avatar Selection Flow', () => {
   // Mock wallet address for deterministic testing
@@ -37,18 +42,18 @@ test.describe('Avatar Selection Flow', () => {
     await expect(page.getByRole('button', { name: 'Saving...' })).toBeVisible()
   })
 
-  test('Scenario 2: Style selection changes avatar', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
+  test('Scenario 2: Gender selection changes avatar', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully hydrated
     await page.waitForLoadState('networkidle')
 
-    // Default style should be selected (Lorelei)
-    const loreleiButton = page.getByRole('button', { name: 'Lorelei' }).first()
-    await expect(loreleiButton).toHaveClass(/bg-accent-yellow/)
+    // Use exact span text selectors for reliable button selection
+    const femaleButton = getGenderButton(page, 'Female')
+    const maleButton = getGenderButton(page, 'Male')
+
+    // Default gender should be Female (selected)
+    await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
 
     // Avatar preview should be visible (the large one with shadow-lg class)
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
@@ -57,37 +62,34 @@ test.describe('Avatar Selection Flow', () => {
     // Get initial avatar src
     const initialSrc = await avatarPreview.getAttribute('src')
 
-    // Click Bottts style
-    const botttsButton = page.getByRole('button', { name: 'Bottts' }).first()
-    await botttsButton.click()
+    // Click Male button
+    await maleButton.click()
+    await page.waitForTimeout(200) // Wait for state update
 
-    // Bottts button should now be selected
-    await expect(botttsButton).toHaveClass(/bg-accent-yellow/)
-    await expect(loreleiButton).not.toHaveClass(/bg-accent-yellow/)
+    // Male button should now be selected
+    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
+    await expect(femaleButton).toHaveClass(/bg-cream-100/)
 
     // Avatar should change (different src)
     await page.waitForTimeout(100) // Brief wait for avatar regeneration
     const newSrc = await avatarPreview.getAttribute('src')
     expect(newSrc).not.toBe(initialSrc)
 
-    // Click Thumbs style
-    const thumbsButton = page.getByRole('button', { name: 'Thumbs' }).first()
-    await thumbsButton.click()
+    // Click back to Female
+    await femaleButton.click()
+    await page.waitForTimeout(200) // Wait for state update
 
-    // Thumbs button should now be selected
-    await expect(thumbsButton).toHaveClass(/bg-accent-yellow/)
-    await expect(botttsButton).not.toHaveClass(/bg-accent-yellow/)
+    // Female button should now be selected
+    await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
+    await expect(maleButton).toHaveClass(/bg-cream-100/)
 
     // Avatar should change again
     await page.waitForTimeout(100)
-    const thumbsSrc = await avatarPreview.getAttribute('src')
-    expect(thumbsSrc).not.toBe(newSrc)
+    const femaleSrc = await avatarPreview.getAttribute('src')
+    expect(femaleSrc).not.toBe(newSrc)
   })
 
   test('Scenario 3: Randomize shows different variants', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
@@ -121,9 +123,6 @@ test.describe('Avatar Selection Flow', () => {
   test('Scenario 4: Timer auto-select at 0:00', async ({ page }) => {
     test.setTimeout(60000) // Need 60s timeout for 30s timer + delays
 
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Timer should be visible
@@ -145,9 +144,6 @@ test.describe('Avatar Selection Flow', () => {
   test('Scenario 5: Timer warning states', async ({ page }) => {
     test.setTimeout(50000) // Need 50s timeout to wait ~22 seconds for warning state
 
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     const timer = page.locator('span.font-mono')
@@ -160,8 +156,6 @@ test.describe('Avatar Selection Flow', () => {
     expect(initialTimer).toMatch(/0:(30|29|28)/)
 
     // Wait for timer to reach amber warning state (<=10s remaining)
-    // This takes ~20-22 seconds from start
-    // Poll manually with a longer timeout
     let timerReachedWarning = false
     const startTime = Date.now()
     const maxWaitTime = 30000 // 30 seconds
@@ -187,13 +181,10 @@ test.describe('Avatar Selection Flow', () => {
   })
 
   test('Scenario 6: Consistent avatar across sessions', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
-    // Select Avataaars style
-    await page.getByRole('button', { name: 'Avataaars' }).first().click()
+    // Select Male
+    await getGenderButton(page, 'Male').click()
 
     // Randomize to variant 5
     const randomizeButton = page.getByRole('button', { name: /Randomize/i })
@@ -221,7 +212,7 @@ test.describe('Avatar Selection Flow', () => {
             nickname: nickname,
             avatar: {
               style: 'avataaars',
-              selection: 'avataaars',
+              selection: 'male',
               variant: 5,
             },
             isNewUser: false,
@@ -235,15 +226,10 @@ test.describe('Avatar Selection Flow', () => {
     await page.reload()
 
     // Avatar should be the same
-    // Note: This would need to check where the avatar is displayed after selection
-    // For now, we verify the deterministic generation works
     expect(variant5Src).toBeTruthy()
   })
 
-  test('Timer continues counting during style changes', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
+  test('Timer continues counting during gender changes', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     const timer = page.locator('text=/0:\\d{2}/')
@@ -255,8 +241,8 @@ test.describe('Avatar Selection Flow', () => {
     const initialTimerText = await timer.textContent()
     const initialSeconds = parseInt(initialTimerText?.split(':')[1] || '30', 10)
 
-    // Change style
-    await page.getByRole('button', { name: 'Bottts' }).first().click()
+    // Change gender
+    await getGenderButton(page, 'Male').click()
 
     // Wait 2 seconds
     await page.waitForTimeout(2000)
@@ -268,41 +254,35 @@ test.describe('Avatar Selection Flow', () => {
     expect(newSeconds).toBeLessThan(initialSeconds)
   })
 
-  test('All style buttons are clickable and functional', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
+  test('Both gender buttons are clickable and functional', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
-    const adventurerButton = page.getByRole('button', { name: 'Adventurer' }).first()
-    const avataaarsButton = page.getByRole('button', { name: 'Avataaars' }).first()
-    const botttsButton = page.getByRole('button', { name: 'Bottts' }).first()
+    const femaleButton = getGenderButton(page, 'Female')
+    const maleButton = getGenderButton(page, 'Male')
 
-    // All buttons should be visible and enabled
-    await expect(adventurerButton).toBeVisible()
-    await expect(adventurerButton).toBeEnabled()
-    await expect(avataaarsButton).toBeVisible()
-    await expect(avataaarsButton).toBeEnabled()
-    await expect(botttsButton).toBeVisible()
-    await expect(botttsButton).toBeEnabled()
+    // Both buttons should be visible and enabled
+    await expect(femaleButton).toBeVisible()
+    await expect(femaleButton).toBeEnabled()
+    await expect(maleButton).toBeVisible()
+    await expect(maleButton).toBeEnabled()
 
-    // Click each button and verify selection
-    await adventurerButton.click()
-    await expect(adventurerButton).toHaveClass(/bg-accent-yellow/)
+    // Female should be selected by default
+    await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
 
-    await avataaarsButton.click()
-    await expect(avataaarsButton).toHaveClass(/bg-accent-yellow/)
-    await expect(adventurerButton).not.toHaveClass(/bg-accent-yellow/)
+    // Click Male and verify selection
+    await maleButton.click()
+    await page.waitForTimeout(200) // Wait for state update
+    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
+    await expect(femaleButton).toHaveClass(/bg-cream-100/)
 
-    await botttsButton.click()
-    await expect(botttsButton).toHaveClass(/bg-accent-yellow/)
-    await expect(avataaarsButton).not.toHaveClass(/bg-accent-yellow/)
+    // Click Female and verify selection
+    await femaleButton.click()
+    await page.waitForTimeout(200) // Wait for state update
+    await expect(femaleButton).toHaveClass(/bg-accent-yellow/)
+    await expect(maleButton).toHaveClass(/bg-cream-100/)
   })
 
   test('Buttons disable during selection', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully loaded
@@ -310,23 +290,22 @@ test.describe('Avatar Selection Flow', () => {
 
     const selectButton = page.getByRole('button', { name: 'Select' }).first()
     const randomizeButton = page.getByRole('button', { name: /Randomize/i }).first()
-    const adventurerButton = page.getByRole('button', { name: 'Adventurer' }).first()
+    const maleButton = getGenderButton(page, 'Male')
 
     // All buttons should be enabled initially
     await expect(selectButton).toBeEnabled()
     await expect(randomizeButton).toBeEnabled()
-    await expect(adventurerButton).toBeEnabled()
+    await expect(maleButton).toBeEnabled()
 
     // Click select and immediately check for the Saving... state
     await selectButton.click()
     await expect(page.getByRole('button', { name: 'Saving...' }).first()).toBeVisible()
 
     // Now buttons should be disabled
-    // Note: The component changes text from "Select" to "Saving..." so we check the "Saving..." button
     const savingButton = page.getByRole('button', { name: 'Saving...' }).first()
     await expect(savingButton).toBeDisabled()
     await expect(randomizeButton).toBeDisabled()
-    await expect(adventurerButton).toBeDisabled()
+    await expect(maleButton).toBeDisabled()
   })
 })
 
@@ -342,17 +321,13 @@ test.describe('Avatar Selection - Mobile Responsiveness', () => {
   })
 
   test('Avatar selection fits mobile viewport', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     // All elements should be visible and in viewport
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeInViewport()
 
-    // Style buttons should be visible
-    await expect(page.getByRole('button', { name: 'Adventurer' }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Avataaars' }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Bottts' }).first()).toBeVisible()
+    // Gender buttons should be visible
+    await expect(getGenderButton(page, 'Female')).toBeVisible()
+    await expect(getGenderButton(page, 'Male')).toBeVisible()
 
     // Avatar preview should be visible (the large one)
     await expect(page.locator('img[alt="Avatar"].shadow-lg')).toBeVisible()
@@ -363,39 +338,30 @@ test.describe('Avatar Selection - Mobile Responsiveness', () => {
     await expect(selectButton).toBeInViewport()
   })
 
-  test('Style buttons have adequate touch targets', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
-    const adventurerButton = page.getByRole('button', { name: 'Adventurer' }).first()
-    const avataaarsButton = page.getByRole('button', { name: 'Avataaars' }).first()
-    const botttsButton = page.getByRole('button', { name: 'Bottts' }).first()
+  test('Gender buttons have adequate touch targets', async ({ page }) => {
+    const femaleButton = getGenderButton(page, 'Female')
+    const maleButton = getGenderButton(page, 'Male')
 
     // Check button sizes (should be at least 44px height for touch targets)
-    const adventurerBox = await adventurerButton.boundingBox()
-    const avataaarsBox = await avataaarsButton.boundingBox()
-    const botttsBox = await botttsButton.boundingBox()
+    const femaleBox = await femaleButton.boundingBox()
+    const maleBox = await maleButton.boundingBox()
 
-    expect(adventurerBox?.height).toBeGreaterThanOrEqual(36) // Allowing for some CSS differences
-    expect(avataaarsBox?.height).toBeGreaterThanOrEqual(36)
-    expect(botttsBox?.height).toBeGreaterThanOrEqual(36)
+    expect(femaleBox?.height).toBeGreaterThanOrEqual(36) // Allowing for some CSS differences
+    expect(maleBox?.height).toBeGreaterThanOrEqual(36)
 
-    // Buttons should be clickable (use click instead of tap for desktop chromium)
-    await adventurerButton.click()
-    await expect(adventurerButton).toHaveClass(/bg-accent-yellow/)
+    // Buttons should be clickable
+    await maleButton.click()
+    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
   })
 
   test('Randomize button is tappable on mobile', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     const randomizeButton = page.getByRole('button', { name: /Randomize/i })
     await expect(randomizeButton).toBeVisible()
 
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
     const initialSrc = await avatarPreview.getAttribute('src')
 
-    // Click randomize (use click instead of tap for desktop chromium)
+    // Click randomize
     await randomizeButton.click()
     await page.waitForTimeout(100)
 
@@ -413,31 +379,25 @@ test.describe('Avatar Selection - Accessibility', () => {
     await page.goto(`/onboarding?step=avatar&address=${MOCK_WALLET}&displayName=${MOCK_NICKNAME}`)
   })
 
-  test('Style buttons are keyboard navigable', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
+  test('Gender buttons are keyboard navigable', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
 
-    // Focus on the Adventurer button directly and activate it
-    const adventurerButton = page.getByRole('button', { name: 'Adventurer' }).first()
-    await adventurerButton.focus()
-    await expect(adventurerButton).toBeFocused()
+    // Focus on the Male button directly and activate it
+    const maleButton = getGenderButton(page, 'Male')
+    await maleButton.focus()
+    await expect(maleButton).toBeFocused()
 
     // Press Enter to select it
     await page.keyboard.press('Enter')
 
-    // Adventurer button should now be selected
-    await expect(adventurerButton).toHaveClass(/bg-accent-yellow/)
+    // Male button should now be selected
+    await expect(maleButton).toHaveClass(/bg-accent-yellow/)
   })
 
   test('Select button is keyboard accessible', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
 
     // Wait for page to be fully loaded
@@ -458,9 +418,6 @@ test.describe('Avatar Selection - Accessibility', () => {
   })
 
   test('Avatar has appropriate alt text', async ({ page }) => {
-    // Already at avatar step from beforeEach
-    // await page.goto() not needed
-
     const avatarPreview = page.locator('img[alt="Avatar"].shadow-lg')
     await expect(avatarPreview).toBeVisible()
 

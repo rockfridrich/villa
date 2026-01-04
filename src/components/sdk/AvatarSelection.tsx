@@ -16,13 +16,9 @@ interface AvatarSelectionProps {
   timerDuration?: number
 }
 
-const STYLE_OPTIONS: { value: AvatarStyleSelection; label: string }[] = [
-  { value: 'adventurer', label: 'Adventurer' },
-  { value: 'avataaars', label: 'Avataaars' },
-  { value: 'bottts', label: 'Bottts' },
-  { value: 'lorelei', label: 'Lorelei' },
-  { value: 'notionists', label: 'Notionists' },
-  { value: 'thumbs', label: 'Thumbs' },
+const GENDER_OPTIONS: { value: AvatarStyleSelection; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
 ]
 
 /**
@@ -34,7 +30,7 @@ export function AvatarSelection({
   onSelect,
   timerDuration = 30,
 }: AvatarSelectionProps) {
-  const [selection, setSelection] = useState<AvatarStyleSelection>('lorelei')
+  const [selection, setSelection] = useState<AvatarStyleSelection>('female')
   const [variant, setVariant] = useState(0)
   const [timer, setTimer] = useState(timerDuration)
   const [isSelecting, setIsSelecting] = useState(false)
@@ -93,9 +89,9 @@ export function AvatarSelection({
     setVariant((v) => v + 1)
   }
 
-  const handleStyleChange = (newSelection: AvatarStyleSelection) => {
+  const handleGenderChange = (newSelection: AvatarStyleSelection) => {
     setSelection(newSelection)
-    // Reset variant when changing style for fresh look
+    // Reset variant when changing gender for fresh look
     setVariant(0)
   }
 
@@ -113,31 +109,31 @@ export function AvatarSelection({
         </p>
       </div>
 
-      {/* Style selector - 3x2 grid */}
-      <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-        {STYLE_OPTIONS.map((option) => (
+      {/* Gender selector - 2 buttons side by side */}
+      <div className="flex gap-4 justify-center max-w-xs mx-auto">
+        {GENDER_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => handleStyleChange(option.value)}
+            onClick={() => handleGenderChange(option.value)}
             disabled={isSelecting}
             className={`
-              flex flex-col items-center gap-2 p-3 rounded-lg transition-all
+              flex-1 flex flex-col items-center gap-3 p-4 rounded-xl transition-all
               ${selection === option.value
-                ? 'bg-accent-yellow border-2 border-accent-brown'
+                ? 'bg-accent-yellow border-2 border-accent-brown shadow-md'
                 : 'bg-cream-100 border-2 border-transparent hover:border-cream-300'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-cream-200">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-cream-200 shadow-sm">
               <AvatarPreview
                 walletAddress={walletAddress}
                 selection={option.value}
                 variant={0}
-                size={48}
+                size={64}
               />
             </div>
-            <span className="text-xs font-medium text-ink">
+            <span className="text-sm font-medium text-ink">
               {option.label}
             </span>
           </button>

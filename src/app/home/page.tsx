@@ -2,15 +2,23 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Copy, Check } from 'lucide-react'
-import { Button, Card, CardContent, Avatar } from '@/components/ui'
+import { LogOut, Copy, Check, Pencil, X } from 'lucide-react'
+import { Button, Card, CardContent, Avatar, Input, Spinner } from '@/components/ui'
 import { useIdentityStore } from '@/lib/store'
 import { disconnectPorto } from '@/lib/porto'
+import { displayNameSchema } from '@/lib/validation'
 
 export default function HomePage() {
   const router = useRouter()
-  const { identity, clearIdentity } = useIdentityStore()
+  const { identity, clearIdentity, updateProfile } = useIdentityStore()
   const [copied, setCopied] = useState(false)
+
+  // Nickname editing state
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Ref for tracking timeout to prevent memory leaks
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -59,6 +67,60 @@ export default function HomePage() {
     }
   }
 
+  const handleStartEdit = () => {
+    setEditValue(identity.displayName)
+    setEditError(null)
+    setIsEditing(true)
+    // Focus input after render
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditValue('')
+    setEditError(null)
+  }
+
+  const handleSaveEdit = async () => {
+    // Remove @ prefix if user typed it
+    const cleanValue = editValue.startsWith('@') ? editValue.slice(1) : editValue
+
+    // Validate
+    const result = displayNameSchema.safeParse(cleanValue)
+    if (!result.success) {
+      setEditError(result.error.errors[0]?.message || 'Invalid nickname')
+      return
+    }
+
+    // Check if actually changed
+    if (result.data === identity.displayName) {
+      setIsEditing(false)
+      return
+    }
+
+    setIsSaving(true)
+    setEditError(null)
+
+    // Update via store
+    const success = updateProfile(result.data)
+
+    if (success) {
+      setIsEditing(false)
+      setEditValue('')
+    } else {
+      setEditError('Failed to update nickname')
+    }
+    setIsSaving(false)
+  }
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit()
+    } else if (e.key === 'Escape') {
+      handleCancelEdit()
+    }
+  }
+
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
@@ -90,7 +152,48 @@ export default function HomePage() {
               size="lg"
             />
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-serif text-ink">@{identity.displayName}</h2>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink text-base">@</span>
+                    <Input
+                      ref={inputRef}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
+                      onKeyDown={handleEditKeyDown}
+                      className="pl-8 pr-10 text-center"
+                      maxLength={30}
+                      disabled={isSaving}
+                    />
+                    <button
+                      onClick={handleCancelEdit}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                      disabled={isSaving}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {editError && (
+                    <p className="text-xs text-red-500">{editError}</p>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={isSaving || !editValue}
+                    className="w-full"
+                  >
+                    {isSaving ? <Spinner className="w-4 h-4" /> : 'Save'}
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleStartEdit}
+                  className="group inline-flex items-center gap-2 text-xl font-serif text-ink hover:text-accent-brown transition-colors"
+                >
+                  <span>@{identity.displayName}</span>
+                  <Pencil className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              )}
               <button
                 onClick={handleCopyAddress}
                 className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
