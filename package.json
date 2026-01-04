@@ -41,6 +41,13 @@
     "db:seed": "pnpm --filter @villa/api db:seed",
     "db:studio": "pnpm --filter @villa/api db:studio",
     "db:setup": "./scripts/db-setup.sh",
+    "db:tunnel": "./scripts/db-tunnel.sh",
+    "env": "./scripts/env-sync.sh",
+    "env:init": "./scripts/env-sync.sh init",
+    "env:validate": "./scripts/env-sync.sh validate",
+    "env:diff": "./scripts/env-sync.sh diff",
+    "env:push:github": "./scripts/env-sync.sh push github",
+    "env:list": "./scripts/env-sync.sh list github",
     "api": "pnpm --filter @villa/api dev",
     "api:docker": "pnpm --filter @villa/api dev:docker",
     "test:api": "pnpm --filter @villa/api test"
