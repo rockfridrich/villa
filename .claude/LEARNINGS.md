@@ -81,6 +81,16 @@ useEffect(() => () => {
 | Buildpacks prune devDeps before build | Use Dockerfile for Next.js |
 | PR comments fail | Add `permissions: pull-requests: write` |
 
+**doctl JSON pattern (reliable):**
+```bash
+# ❌ Unreliable for nested fields
+STATUS=$(doctl apps get $ID --format ActiveDeployment.Phase)
+
+# ✅ Always works
+APP_JSON=$(doctl apps get $ID --output json)
+STATUS=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+```
+
 ### CI/CD Workflow
 
 | Pattern | Benefit |
@@ -141,6 +151,7 @@ useEffect(() => () => {
 
 Historical session notes in `.claude/archive/`:
 - `REFLECTION-PHASE1.md` - Phase 1 retrospective
+- `REFLECTION-SESSION-2026-01-04.md` - CI/CD optimization session
 
 Full session logs preserved in git history for reference.
 
