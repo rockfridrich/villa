@@ -89,6 +89,9 @@ useEffect(() => () => {
 | `[wip]` in PR title | Skip E2E explicitly |
 | GIFs in bot comments | Delightful contributor experience |
 | Clickable preview URLs | Easy manual testing |
+| E2E sharding (2 shards) | 50% faster E2E tests |
+| Playwright browser cache | 90% faster browser setup |
+| Next.js build cache | Faster incremental builds |
 
 ### Porto SDK
 
