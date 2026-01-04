@@ -23,12 +23,10 @@ FROM node:20-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 WORKDIR /app
 
-# Copy deps
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages/sdk/node_modules ./packages/sdk/node_modules 2>/dev/null || true
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules 2>/dev/null || true
-COPY --from=deps /app/packages/config/node_modules ./packages/config/node_modules 2>/dev/null || true
+# Copy all installed deps from deps stage
+COPY --from=deps /app/node_modules ./node_modules/
+COPY --from=deps /app/apps ./apps/
+COPY --from=deps /app/packages ./packages/
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
