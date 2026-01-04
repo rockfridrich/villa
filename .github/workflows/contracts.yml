@@ -277,6 +277,39 @@ Slither found potential issues. Review the SARIF report.
         with:
           version: nightly
 
+      - name: Check deployer balance
+        id: balance
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          # Get deployer address from private key
+          DEPLOYER_ADDRESS=$(cast wallet address $DEPLOYER_PRIVATE_KEY)
+          echo "deployer=$DEPLOYER_ADDRESS" >> $GITHUB_OUTPUT
+
+          # Check balance
+          BALANCE=$(cast balance $DEPLOYER_ADDRESS --rpc-url $BASE_SEPOLIA_RPC_URL)
+          BALANCE_ETH=$(cast from-wei $BALANCE)
+          echo "balance=$BALANCE_ETH ETH" >> $GITHUB_OUTPUT
+
+          echo "## Deployer Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Address:** \`$DEPLOYER_ADDRESS\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Balance:** $BALANCE_ETH ETH" >> $GITHUB_STEP_SUMMARY
+          echo "- **Network:** Base Sepolia" >> $GITHUB_STEP_SUMMARY
+
+          # Check if balance is sufficient (need at least 0.01 ETH)
+          MIN_BALANCE=10000000000000000  # 0.01 ETH in wei
+          if [ "$BALANCE" -lt "$MIN_BALANCE" ]; then
+            echo "::error::Insufficient balance. Need at least 0.01 ETH for deployment."
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Insufficient Balance" >> $GITHUB_STEP_SUMMARY
+            echo "Fund the deployer address with Base Sepolia ETH:" >> $GITHUB_STEP_SUMMARY
+            echo "- https://www.alchemy.com/faucets/base-sepolia" >> $GITHUB_STEP_SUMMARY
+            echo "- https://faucet.quicknode.com/base/sepolia" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "✅ Balance sufficient for deployment" >> $GITHUB_STEP_SUMMARY
+
       - name: Install dependencies
         working-directory: contracts
         run: forge install
