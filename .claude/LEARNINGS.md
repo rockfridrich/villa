@@ -510,6 +510,72 @@ fi
 - ❌ Manual `sleep && gh run view` polling (use @ops background)
 - ❌ Running tests manually when @test exists
 - ❌ Sequential debugging instead of parallel @explore + @test
+- ❌ Committing without running `pnpm typecheck` first
+- ❌ Adding exports in index.ts without staging the source file
+
+---
+
+## SDK Development Patterns
+
+### 18. Pre-Commit Typecheck for SDK
+
+Before committing SDK changes, verify imports resolve:
+
+```bash
+pnpm --filter @villa/sdk typecheck
+```
+
+**Why:** index.ts exports can reference files that aren't staged. Session 2026-01-05 lost 15min to missing contracts.ts that was referenced but not committed.
+
+### 19. Contract Address Constants Pattern
+
+Store deployed contract addresses in SDK for easy access:
+
+```typescript
+// packages/sdk/src/contracts.ts
+export const CONTRACTS: Record<number, ChainContracts> = {
+  [baseSepolia.id]: {
+    nicknameResolver: { proxy: '0x...', implementation: '0x...' },
+    recoverySigner: { proxy: '0x...', implementation: '0x...' },
+  },
+}
+
+export function getContracts(chainId: number): ChainContracts | null
+export function getNicknameResolverAddress(chainId: number): Address | null
+```
+
+**Benefits:**
+- Centralizes deployment info
+- Avoids hardcoding addresses in multiple places
+- Easy chain switching (testnet vs mainnet)
+- SDK consumers can import addresses directly
+
+### 20. SDK Auth Screen Pattern
+
+SDK screens should follow this structure:
+
+```typescript
+// Framer Motion + accessibility
+const prefersReducedMotion = useReducedMotion()
+const variants = prefersReducedMotion ? {} : fadeInVariants
+
+// Touch targets
+<button className="min-h-[44px] min-w-[44px]">
+
+// Debounced availability check
+const [debouncedValue] = useDebounce(value, 300)
+useEffect(() => {
+  if (debouncedValue) checkAvailability(debouncedValue)
+}, [debouncedValue])
+```
+
+**Standard screens:**
+| Screen | Purpose |
+|--------|---------|
+| SignInWelcome | Entry point with Sign In / Create buttons |
+| ConsentRequest | Permission consent with Allow/Deny |
+| NicknameSelection | Real-time availability checking |
+| AvatarSelection | Style picker with timer |
 
 ---
 
@@ -564,6 +630,7 @@ Historical session notes in `.claude/archive/` and `.claude/reflections/`:
 - `reflections/2026-01-04-avatar-session.md` - Agent delegation failure analysis
 - `reflections/2026-01-04-biometric-session.md` - Context recovery + git state drift patterns
 - `reflections/2026-01-05-celebration-animation.md` - CI timing race + dev server conflicts
+- `reflections/2026-01-05-mlp-sprint-1.md` - MLP Sprint 1 (SDK screens, API infra, contracts)
 
 Full session logs preserved in git history for reference.
 
