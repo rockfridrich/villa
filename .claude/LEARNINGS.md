@@ -163,6 +163,59 @@ When tests fail with unclear cause:
 # Merge insights from all three
 ```
 
+### 12. Context Recovery on Resume
+
+When resuming from summarized session:
+```bash
+# ALWAYS run before editing anything
+git status
+git stash list
+ls -la src/lib/biometric/  # Check key directories exist
+
+# If files referenced in summary don't exist:
+# 1. Check git stash (may have been stashed)
+# 2. Check git reflog (may be on different branch)
+# 3. Recreate from memory as last resort
+```
+
+**Root cause:** Context summarization mentions files that may not be on disk (stashed, different branch, or never committed).
+
+### 13. Security Scanner Allowlists
+
+Well-known test keys trigger security scanners. Pre-configure allowlists:
+
+```toml
+# .gitleaks.toml
+[allowlist]
+description = "Anvil/Foundry default test private keys"
+regexTarget = "match"
+regexes = [
+    '''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+]
+```
+
+**Common false positives:**
+- Anvil private keys (0xac0974...)
+- Foundry test mnemonics
+- Example API keys in documentation
+
+### 14. Flexible Test Assertions
+
+Navigation tests should handle multiple valid outcomes:
+
+```typescript
+// ❌ Brittle: Fails if redirect goes to different valid page
+expect(url).toMatch(/\/(onboarding|home)/)
+
+// ✅ Flexible: Accepts root as valid destination
+expect(url).toMatch(/\/(onboarding|home)?$/)
+
+// ✅ Better: Assert on behavior, not exact URL
+await expect(page.locator('[data-testid="auth-content"]')).toBeVisible()
+```
+
+**Why:** Navigation can legitimately end at different pages depending on state. Test the behavior (user sees correct content), not the exact path.
+
 ---
 
 ## Platform Quirks
@@ -403,6 +456,7 @@ Historical session notes in `.claude/archive/` and `.claude/reflections/`:
 - `archive/REFLECTION-PHASE1.md` - Phase 1 retrospective
 - `archive/REFLECTION-SESSION-2026-01-04.md` - CI/CD optimization session
 - `reflections/2026-01-04-avatar-session.md` - Agent delegation failure analysis
+- `reflections/2026-01-04-biometric-session.md` - Context recovery + git state drift patterns
 
 Full session logs preserved in git history for reference.
 
