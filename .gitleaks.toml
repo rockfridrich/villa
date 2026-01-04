@@ -1,0 +1,12 @@
+# Gitleaks configuration for Villa
+# These are well-known Anvil/Foundry test keys - NOT production secrets
+
+[allowlist]
+description = "Anvil/Foundry default test private keys (well-known, safe to commit)"
+regexTarget = "match"
+regexes = [
+    # Anvil default private key (account 0) - used in all Foundry projects
+    '''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+    # Anvil default private key (account 1) - used for testing
+    '''0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
+]
