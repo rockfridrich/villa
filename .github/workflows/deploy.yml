@@ -199,12 +199,14 @@ jobs:
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Generate app spec
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           export DEV_SLOT="${{ needs.quick-ci.outputs.dev-slot }}"
           export PR_NUMBER="${{ github.event.pull_request.number }}"
           export BRANCH_NAME="${{ github.head_ref }}"
           envsubst < .do/app-preview.yaml > .do/app-preview-generated.yaml
-          cat .do/app-preview-generated.yaml
+          echo "📝 Generated preview spec with DATABASE_URL injected"
 
       - name: Deploy to dev-${{ needs.quick-ci.outputs.dev-slot }}.villa.cash
         id: deploy
@@ -482,6 +484,13 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Generate staging spec
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          envsubst < .do/app-staging.yaml > .do/app-staging-generated.yaml
+          echo "📝 Generated staging spec with DATABASE_URL injected"
+
       - name: Deploy to beta.villa.cash
         id: deploy
         run: |
@@ -490,10 +499,10 @@ jobs:
 
           if [ -z "$APP_ID" ]; then
             echo "🆕 Creating staging app..."
-            doctl apps create --spec .do/app-staging.yaml
+            doctl apps create --spec .do/app-staging-generated.yaml
           else
             echo "📦 Updating staging app..."
-            doctl apps update $APP_ID --spec .do/app-staging.yaml
+            doctl apps update $APP_ID --spec .do/app-staging-generated.yaml
 
             # Force rebuild to ensure new code is deployed (fixes cache issues)
             echo "🔨 Forcing rebuild with --force-rebuild..."
@@ -698,6 +707,13 @@ jobs:
           echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Generate production spec
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          envsubst < .do/app-production.yaml > .do/app-production-generated.yaml
+          echo "📝 Generated production spec with DATABASE_URL injected"
+
       - name: Deploy to villa.cash
         id: deploy
         run: |
@@ -706,10 +722,10 @@ jobs:
 
           if [ -z "$APP_ID" ]; then
             echo "🆕 Creating production app..."
-            doctl apps create --spec .do/app-production.yaml
+            doctl apps create --spec .do/app-production-generated.yaml
           else
             echo "📦 Updating production app..."
-            doctl apps update $APP_ID --spec .do/app-production.yaml
+            doctl apps update $APP_ID --spec .do/app-production-generated.yaml
 
             # Force rebuild to ensure new code is deployed (fixes cache issues)
             echo "🔨 Forcing rebuild with --force-rebuild..."

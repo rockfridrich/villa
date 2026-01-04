@@ -38,5 +38,8 @@ services:
         value: production
       - key: NEXT_PUBLIC_DOMAIN
         value: villa.cash
+      - key: DATABASE_URL
+        value: "${DATABASE_URL}"
+        type: SECRET
 
 region: nyc

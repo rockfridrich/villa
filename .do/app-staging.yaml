@@ -37,5 +37,8 @@ services:
         value: staging
       - key: NEXT_PUBLIC_DOMAIN
         value: beta.villa.cash
+      - key: DATABASE_URL
+        value: "${DATABASE_URL}"
+        type: SECRET
 
 region: nyc
