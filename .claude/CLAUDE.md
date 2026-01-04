@@ -19,10 +19,49 @@ npm run verify       # Full check
 |-------|-------|---------|
 | @spec | opus | Architecture |
 | @build | sonnet | Implementation |
+| @ops | haiku | Git/GitHub/Deploy |
 | @test | haiku | Run tests |
 | @review | sonnet | Code review |
 
 **See also:** [rules.md](rules.md) for code quality standards
+
+---
+
+## Fast Development Workflow
+
+### PR Speed Tiers
+
+| PR Type | What Runs | Time |
+|---------|-----------|------|
+| **Draft PR** | Quick CI (typecheck, lint, unit) | ~30s |
+| **Ready PR** | Quick CI + E2E | ~3min |
+| **Ready PR (deploy)** | Quick CI + Deploy + E2E on preview | ~5min |
+
+### Skip Flags (in PR title)
+
+| Flag | Effect |
+|------|--------|
+| `[wip]` | Skip E2E tests |
+| `[skip e2e]` | Skip E2E tests |
+| `[skip deploy]` | Skip preview deploy |
+
+**Example:** `feat: add button [wip]` → Only runs Quick CI
+
+### Fast Local Development
+
+```bash
+npm run check        # TypeScript + lint (~10s)
+npm run test:unit    # Unit tests only (~15s)
+npm run verify       # Full check before push
+```
+
+### CI Bot Messages
+
+The CI bot posts delightful comments with:
+- 🎉 GIFs for deploys and test results
+- 📋 Clickable preview URLs
+- 📝 Commit changelog
+- 🔗 Links to logs and artifacts
 
 ---
 
@@ -188,6 +227,7 @@ This project uses **Claude Code agents** for implementation. Humans focus on spe
 | **spec** | `opus` | Needs deep reasoning for architecture decisions | $$$ |
 | **architect** | `opus` | Task decomposition requires deep reasoning about dependencies | $$$ |
 | **build** | `sonnet` | Fast iteration, good code quality | $$ |
+| **ops** | `haiku` | Procedural git/gh/doctl commands, speed over reasoning | $ |
 | **test** | `haiku` | Running commands, checking output | $ |
 | **review** | `sonnet` | Security analysis needs quality, not speed | $$ |
 | **explore** | `haiku` | Quick file searches, codebase navigation | $ |
@@ -234,7 +274,9 @@ Run these in parallel:
 [Continue chatting while it works]
 ```
 
-### Agent Workflow
+### Agent Workflow (Orchestrated)
+
+**Claude Code orchestrates sub-agents.** Main Claude directs specialized agents and coordinates handoffs.
 
 ```
 PHASE 1: Specification (human + opus)
@@ -248,22 +290,39 @@ PHASE 2: Architecture (opus) — REQUIRED for multi-terminal work
 ├── Defines shared interfaces (created first)
 └── Outputs: specs/{feature}.wbs.md
 
-PHASE 3: Implementation (parallel, sonnet)
-├── WU-0: Shared types (one agent, blocking)
-├── WU-1..N: Build agents work in parallel (file ownership enforced)
-├── Each agent only edits files assigned to their WU
-└── Commit after each WU: "feat(WU-X): Complete {task}"
+PHASE 3: Implementation (sonnet + haiku)
+├── @build implements code changes
+├── @ops commits atomically (one logical change per commit)
+└── Repeat for each WU
 
 PHASE 4: Validation (parallel, haiku/sonnet)
 ├── @test agent runs E2E (haiku - just running commands)
 ├── @review agent checks code (sonnet - needs analysis)
 └── Both run simultaneously
 
-PHASE 5: Ship
-├── Fix any issues from review
-├── Re-run tests
-└── Merge
+PHASE 5: Ship (haiku)
+├── @ops creates PR with details and test plan
+├── Human reviews and merges
+├── @ops verifies deploy health
+└── Report completion
 ```
+
+### Orchestration Pattern
+
+**Claude Code as conductor:**
+
+```
+Human request
+    ↓
+Claude Code (orchestrator)
+    ├── @spec → defines what to build
+    ├── @build → writes code
+    ├── @ops → commits + creates PR
+    ├── @test + @review (parallel)
+    └── @ops → verifies deploy
+```
+
+**Key principle:** Each agent does ONE thing well. Orchestrator coordinates.
 
 ### Quick Agent Commands
 
@@ -273,6 +332,9 @@ PHASE 5: Ship
 | Decompose for parallel work | `@architect "Decompose Feature X"` | opus |
 | Implement spec | `@build "Implement X"` | sonnet |
 | Implement work unit | `@build "Implement WU-1: Task name"` | sonnet |
+| Commit changes | `@ops "Commit auth changes"` | haiku |
+| Create PR | `@ops "Create PR for feature X"` | haiku |
+| Verify deploy | `@ops "Verify production deploy"` | haiku |
 | Run tests | `@test "Run E2E"` | haiku |
 | Review PR | `@review "Review PR #1"` | sonnet |
 | Find files | `@explore "Where is auth handled?"` | haiku |
@@ -285,6 +347,7 @@ All agents are defined in `.claude/agents/`:
 - **spec.md** — Creates feature specs with Why, UI Boundaries, Tasks (opus)
 - **architect.md** — Decomposes specs into parallel Work Units with file ownership (opus)
 - **build.md** — Implements code following specs (sonnet)
+- **ops.md** — Git commits, GitHub PRs/comments, deploy verification (haiku)
 - **test.md** — E2E, integration, security tests (haiku)
 - **review.md** — Code review for security, quality, spec compliance (sonnet)
 

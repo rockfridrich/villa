@@ -77,8 +77,31 @@ useEffect(() => () => {
 | Issue | Fix |
 |-------|-----|
 | `doctl --format Name` returns `<nil>` | Use `--format Spec.Name` |
+| `doctl --format *.Phase` returns `<nil>` | Use `--output json` + jq |
 | Buildpacks prune devDeps before build | Use Dockerfile for Next.js |
 | PR comments fail | Add `permissions: pull-requests: write` |
+
+**doctl JSON pattern (reliable):**
+```bash
+# ❌ Unreliable for nested fields
+STATUS=$(doctl apps get $ID --format ActiveDeployment.Phase)
+
+# ✅ Always works
+APP_JSON=$(doctl apps get $ID --output json)
+STATUS=$(echo "$APP_JSON" | jq -r '.active_deployment.phase // empty')
+```
+
+### CI/CD Workflow
+
+| Pattern | Benefit |
+|---------|---------|
+| Draft PRs skip E2E | Fast iteration (~30s vs ~3min) |
+| `[wip]` in PR title | Skip E2E explicitly |
+| GIFs in bot comments | Delightful contributor experience |
+| Clickable preview URLs | Easy manual testing |
+| E2E sharding (2 shards) | 50% faster E2E tests |
+| Playwright browser cache | 90% faster browser setup |
+| Next.js build cache | Faster incremental builds |
 
 ### Porto SDK
 
@@ -98,6 +121,28 @@ useEffect(() => () => {
 - ❌ setTimeout without cleanup ref
 - ❌ Multiple builds without @architect
 - ❌ Implementing before spec is clear
+- ❌ `git add .` without reviewing changes
+- ❌ Batching unrelated changes in one commit
+
+---
+
+## Agent Orchestration
+
+**Claude Code as conductor:** Main Claude directs specialized agents, each doing ONE thing well.
+
+```
+Human request → Claude Code (orchestrator)
+    ├── @spec → defines what
+    ├── @build → writes code
+    ├── @ops → commits + PR + deploy verify
+    ├── @test + @review (parallel)
+    └── Report to human
+```
+
+**Key separation:**
+- @build writes code, never commits
+- @ops commits atomically, never writes app code
+- Each agent has clear responsibility boundary
 
 ---
 
@@ -128,6 +173,7 @@ useEffect(() => () => {
 
 Historical session notes in `.claude/archive/`:
 - `REFLECTION-PHASE1.md` - Phase 1 retrospective
+- `REFLECTION-SESSION-2026-01-04.md` - CI/CD optimization session
 
 Full session logs preserved in git history for reference.
 
