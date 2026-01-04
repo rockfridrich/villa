@@ -31,7 +31,7 @@ export function AvatarPreview({
   const dataUrl = useMemo(() => {
     if (!walletAddress) return ''
     const svgString = generateAvatarFromSelection(walletAddress, selection, variant)
-    return `data:image/svg+xml;base64,${btoa(svgString)}`
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`
   }, [walletAddress, selection, variant])
 
   if (!dataUrl) {
