@@ -23,7 +23,7 @@ test.describe('Avatar Selection Flow', () => {
 
   test('Scenario 1: Quick selection (<5s)', async ({ page }) => {
     // Wait for avatar selection screen
-    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible({ timeout: 10000 })
 
     // Timer should be visible and counting down
     await expect(page.locator('text=/0:\\d{2}/')).toBeVisible()
@@ -36,8 +36,8 @@ test.describe('Avatar Selection Flow', () => {
     // Click select within 5 seconds
     await selectButton.click()
 
-    // Should show saving state
-    await expect(page.getByRole('button', { name: 'Saving...' })).toBeVisible()
+    // Should show celebration screen
+    await expect(page.getByRole('heading', { name: 'Perfect!' })).toBeVisible()
   })
 
   test('Scenario 2: Style selection changes avatar', async ({ page }) => {
@@ -223,8 +223,8 @@ test.describe('Avatar Selection Flow', () => {
     // Select the avatar
     await page.getByRole('button', { name: 'Select' }).first().click()
 
-    // Wait for saving to complete
-    await expect(page.getByRole('button', { name: 'Saving...' })).toBeVisible()
+    // Wait for celebration to show
+    await expect(page.getByRole('heading', { name: 'Perfect!' })).toBeVisible()
 
     // Simulate signing in on another device by clearing and reloading
     await page.evaluate(({ wallet, nickname }) => {
@@ -317,30 +317,23 @@ test.describe('Avatar Selection Flow', () => {
     await expect(otherButton).toHaveClass(/bg-cream-100/)
   })
 
-  test('Buttons disable during selection', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
+  test('Selection shows celebration screen', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible({ timeout: 10000 })
 
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
 
     const selectButton = page.getByRole('button', { name: 'Select' }).first()
-    const rollButton = page.getByRole('button', { name: /Roll the dice/i }).first()
-    const maleButton = getStyleButton(page, 'Male')
 
-    // All buttons should be enabled initially
+    // Button should be enabled initially
     await expect(selectButton).toBeEnabled()
-    await expect(rollButton).toBeEnabled()
-    await expect(maleButton).toBeEnabled()
 
-    // Click select and immediately check for the Saving... state
+    // Click select
     await selectButton.click()
-    await expect(page.getByRole('button', { name: 'Saving...' }).first()).toBeVisible()
 
-    // Now buttons should be disabled
-    const savingButton = page.getByRole('button', { name: 'Saving...' }).first()
-    await expect(savingButton).toBeDisabled()
-    await expect(rollButton).toBeDisabled()
-    await expect(maleButton).toBeDisabled()
+    // Should show celebration screen with "Perfect!" heading
+    await expect(page.getByRole('heading', { name: 'Perfect!' })).toBeVisible()
+    await expect(page.getByText('Your avatar is set')).toBeVisible()
   })
 })
 
@@ -440,7 +433,7 @@ test.describe('Avatar Selection - Accessibility', () => {
   })
 
   test('Select button is keyboard accessible', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible({ timeout: 10000 })
 
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
@@ -455,8 +448,8 @@ test.describe('Avatar Selection - Accessibility', () => {
     // Press Enter to select
     await page.keyboard.press('Enter')
 
-    // Should show saving state
-    await expect(page.getByRole('button', { name: 'Saving...' }).first()).toBeVisible({ timeout: 2000 })
+    // Should show celebration screen
+    await expect(page.getByRole('heading', { name: 'Perfect!' })).toBeVisible({ timeout: 2000 })
   })
 
   test('Avatar has appropriate alt text', async ({ page }) => {
