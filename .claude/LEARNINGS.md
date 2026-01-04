@@ -68,7 +68,28 @@ useEffect(() => () => {
 }, [])
 ```
 
-### 6. btoa() Unicode Encoding
+### 6. Foundry Script Naming Convention
+
+```solidity
+// ❌ Bad: Multiple run() overloads (ABI conflict)
+function run() external { ... }
+function run(string url, address owner) external { ... }
+
+// ✅ Good: Distinct function names
+function run() external { ... }  // Default entry point
+function deployWithParams(string url, address owner) external { ... }
+```
+
+**Why:** Foundry's `forge script` command resolves by function name. Multiple `run()` overloads cause "Multiple functions with the same name found in the ABI" errors, even with different signatures.
+
+**Standard entry points:**
+| Function | Purpose |
+|----------|---------|
+| `run()` | Default deployment (reads env vars) |
+| `deployWithParams(...)` | Configurable deployment |
+| `deployTo(address)` | Deploy to specific address |
+
+### 7. btoa() Unicode Encoding
 
 ```typescript
 // ❌ Bad: btoa() fails on Unicode (emojis, non-ASCII)
@@ -289,6 +310,30 @@ pnpm --filter @villa/web test:e2e:chromium  # Local pass?
 | `doctl --format *.Phase` returns `<nil>` | Use `--output json` + jq |
 | Buildpacks prune devDeps before build | Use Dockerfile for Next.js |
 | PR comments fail | Add `permissions: pull-requests: write` |
+| `doctl apps update` doesn't rebuild | Use `doctl apps create-deployment --force-rebuild` |
+
+**CRITICAL: Stale Deployment Bug (2026-01-05)**
+
+`doctl apps update $APP_ID --spec ...` only updates the spec, it **does not trigger a rebuild** if the source hasn't changed from DO's perspective. This causes:
+- Deploy "succeeds" but serves old code
+- buildId stays the same across multiple "deploys"
+- Tests pass locally but fail on staging with identical assertions
+
+**Fix:**
+```bash
+# After spec update, force a new build
+doctl apps update $APP_ID --spec .do/app-staging.yaml
+doctl apps create-deployment $APP_ID --force-rebuild --wait=false
+```
+
+**Verification:**
+```bash
+# Before E2E tests, verify buildId changed
+OLD_BUILD=$(curl -s site.com | grep -o 'buildId":"[^"]*')
+# Deploy...
+NEW_BUILD=$(curl -s site.com | grep -o 'buildId":"[^"]*')
+[ "$OLD_BUILD" != "$NEW_BUILD" ] || echo "WARNING: Build unchanged!"
+```
 
 **doctl JSON pattern (reliable):**
 ```bash

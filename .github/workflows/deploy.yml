@@ -494,6 +494,10 @@ jobs:
           else
             echo "📦 Updating staging app..."
             doctl apps update $APP_ID --spec .do/app-staging.yaml
+
+            # Force rebuild to ensure new code is deployed (fixes cache issues)
+            echo "🔨 Forcing rebuild with --force-rebuild..."
+            doctl apps create-deployment $APP_ID --force-rebuild --wait=false
           fi
 
           # Wait for deployment
@@ -696,6 +700,10 @@ jobs:
           else
             echo "📦 Updating production app..."
             doctl apps update $APP_ID --spec .do/app-production.yaml
+
+            # Force rebuild to ensure new code is deployed (fixes cache issues)
+            echo "🔨 Forcing rebuild with --force-rebuild..."
+            doctl apps create-deployment $APP_ID --force-rebuild --wait=false
           fi
 
           # Wait for deployment
