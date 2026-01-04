@@ -14,6 +14,116 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# =============================================================================
+# Input Validation (Security)
+# =============================================================================
+
+# Validate feature name - only allow safe characters
+# Allowed: alphanumeric, dash, underscore, dot
+validate_feature_name() {
+  local name="$1"
+  if [[ -z "$name" ]]; then
+    echo -e "${RED}Error: Feature name cannot be empty${NC}"
+    return 1
+  fi
+  if [[ ! "$name" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+    echo -e "${RED}Error: Feature name contains invalid characters${NC}"
+    echo -e "${RED}Allowed: letters, numbers, dash, underscore, dot${NC}"
+    return 1
+  fi
+  if [[ ${#name} -gt 100 ]]; then
+    echo -e "${RED}Error: Feature name too long (max 100 chars)${NC}"
+    return 1
+  fi
+  return 0
+}
+
+# Validate work unit ID - must be WU-N format
+validate_wu_id() {
+  local wu_id="$1"
+  if [[ -z "$wu_id" ]]; then
+    echo -e "${RED}Error: Work unit ID cannot be empty${NC}"
+    return 1
+  fi
+  if [[ ! "$wu_id" =~ ^WU-[0-9]+$ ]]; then
+    echo -e "${RED}Error: Invalid work unit ID format${NC}"
+    echo -e "${RED}Expected: WU-0, WU-1, WU-2, etc.${NC}"
+    return 1
+  fi
+  return 0
+}
+
+# Validate terminal name - only allow safe characters
+validate_terminal_name() {
+  local name="$1"
+  if [[ -z "$name" ]]; then
+    return 0  # Empty is OK, will use default
+  fi
+  if [[ ! "$name" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+    echo -e "${RED}Error: Terminal name contains invalid characters${NC}"
+    echo -e "${RED}Allowed: letters, numbers, dash, underscore, dot${NC}"
+    return 1
+  fi
+  if [[ ${#name} -gt 50 ]]; then
+    echo -e "${RED}Error: Terminal name too long (max 50 chars)${NC}"
+    return 1
+  fi
+  return 0
+}
+
+# Validate file path - reject dangerous patterns
+validate_file_path() {
+  local path="$1"
+  if [[ -z "$path" ]]; then
+    echo -e "${RED}Error: File path cannot be empty${NC}"
+    return 1
+  fi
+
+  # Reject shell metacharacters
+  if [[ "$path" =~ [\;\|\&\$\`\(\)\{\}\<\>\!\\] ]]; then
+    echo -e "${RED}Error: File path contains shell metacharacters${NC}"
+    return 1
+  fi
+
+  # Reject absolute paths (must be relative to project)
+  if [[ "$path" =~ ^/ ]]; then
+    echo -e "${RED}Error: Absolute paths not allowed (use relative paths)${NC}"
+    return 1
+  fi
+
+  # Reject path traversal attempts
+  if [[ "$path" =~ \.\. ]]; then
+    echo -e "${RED}Error: Path traversal (..) not allowed${NC}"
+    return 1
+  fi
+
+  # Note: Null byte check removed - bash strings cannot contain null bytes,
+  # so this is not a practical attack vector for shell script arguments.
+
+  return 0
+}
+
+# Validate commit hash - only hex characters
+validate_commit_hash() {
+  local hash="$1"
+  if [[ -z "$hash" ]]; then
+    return 0  # Empty is OK, will use default
+  fi
+  # Allow 'unknown' as special value
+  if [[ "$hash" == "unknown" ]]; then
+    return 0
+  fi
+  if [[ ! "$hash" =~ ^[a-fA-F0-9]+$ ]]; then
+    echo -e "${RED}Error: Invalid commit hash format${NC}"
+    return 1
+  fi
+  return 0
+}
+
+# =============================================================================
+# State Management
+# =============================================================================
+
 # Ensure state file exists
 ensure_state() {
   if [ ! -f "$STATE_FILE" ]; then
@@ -38,6 +148,12 @@ init() {
   if [ -z "$feature" ]; then
     echo -e "${RED}Usage: coordinate.sh init <feature-name> [wbs-path]${NC}"
     exit 1
+  fi
+
+  # Validate inputs to prevent command injection
+  validate_feature_name "$feature" || exit 1
+  if [ -n "$wbs_path" ]; then
+    validate_file_path "$wbs_path" || exit 1
   fi
 
   wbs_path="${wbs_path:-$WBS_DIR/${feature}.wbs.md}"
@@ -76,12 +192,22 @@ init() {
 # Claim a work unit
 claim() {
   local wu_id="$1"
-  local terminal="${2:-$(tty | sed 's/.*\///')}"
+  local terminal_input
+  terminal_input=$(tty 2>/dev/null | sed 's/.*\///')
+  # Default to 'script' if not in a tty (e.g., running in CI/tests)
+  if [[ -z "$terminal_input" || "$terminal_input" == "not a tty" ]]; then
+    terminal_input="script"
+  fi
+  local terminal="${2:-$terminal_input}"
 
   if [ -z "$wu_id" ]; then
     echo -e "${RED}Usage: coordinate.sh claim <WU-ID> [terminal-name]${NC}"
     exit 1
   fi
+
+  # Validate inputs to prevent command injection
+  validate_wu_id "$wu_id" || exit 1
+  validate_terminal_name "$terminal" || exit 1
 
   ensure_state
 
@@ -137,6 +263,12 @@ lock() {
     exit 1
   fi
 
+  # Validate inputs to prevent command injection
+  validate_wu_id "$wu_id" || exit 1
+  for file in "${files[@]}"; do
+    validate_file_path "$file" || exit 1
+  done
+
   ensure_state
 
   local now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -181,6 +313,12 @@ check() {
     exit 1
   fi
 
+  # Validate inputs to prevent command injection
+  validate_file_path "$file" || exit 1
+  if [ -n "$wu_id" ]; then
+    validate_wu_id "$wu_id" || exit 1
+  fi
+
   ensure_state
 
   # Check read-only
@@ -217,6 +355,10 @@ complete() {
     echo -e "${RED}Usage: coordinate.sh complete <WU-ID> [commit-hash]${NC}"
     exit 1
   fi
+
+  # Validate inputs to prevent command injection
+  validate_wu_id "$wu_id" || exit 1
+  validate_commit_hash "$commit_hash" || exit 1
 
   ensure_state
 
@@ -295,6 +437,11 @@ readonly_add() {
     echo -e "${RED}Usage: coordinate.sh readonly <file1> [file2] ...${NC}"
     exit 1
   fi
+
+  # Validate inputs to prevent command injection
+  for file in "${files[@]}"; do
+    validate_file_path "$file" || exit 1
+  done
 
   ensure_state
 
