@@ -118,12 +118,50 @@ Main agent:
 - Tests → @test (haiku)
 - Code review → @review (sonnet)
 - Git operations → @ops (haiku)
+- CI/CD monitoring → @ops (haiku, background)
+- Codebase investigation → @explore (haiku)
 
 **When main agent works directly:**
 - Orchestration decisions
 - Synthesizing results from agents
 - Quick clarifications with human
 - Reading specs/docs to plan
+
+### 9. CI/CD Monitoring Anti-Pattern (CRITICAL)
+
+```
+❌ TERRIBLE: Manual polling
+sleep 60 && gh run view ...  # Repeat 6x = burns 6 tool calls + 6 min
+
+✅ CORRECT: Background agent
+@ops "Monitor deploy (run ID: X), report when staging live"
+     --run_in_background
+# Continue working, check TaskOutput when needed
+```
+
+**Session 2026-01-04 wasted ~5x tokens doing manual CI polling.**
+
+### 10. Test Execution Delegation
+
+```
+❌ Bad: Manual test run + parse output
+npx playwright test ... 2>&1  # 30 failing tests = wall of text
+
+✅ Good: Delegate to @test
+@test "Run avatar E2E against beta.villa.cash, summarize failures"
+# Gets analyzed summary, not raw output
+```
+
+### 11. Debug Parallelism Pattern
+
+When tests fail with unclear cause:
+```
+✅ Launch in parallel:
+1. @explore "Why does selector X find 6 elements?" (background)
+2. @test "Run single test with verbose output" (background)
+3. Continue analyzing locally
+# Merge insights from all three
+```
 
 ---
 
@@ -310,6 +348,9 @@ fi
 - ❌ Python for JSON parsing in shell scripts
 - ❌ Displaying log contents without sanitization
 - ❌ Using `/tmp/` for project-specific files
+- ❌ Manual `sleep && gh run view` polling (use @ops background)
+- ❌ Running tests manually when @test exists
+- ❌ Sequential debugging instead of parallel @explore + @test
 
 ---
 
@@ -358,9 +399,10 @@ Human request → Claude Code (orchestrator)
 
 ## Session Archive
 
-Historical session notes in `.claude/archive/`:
-- `REFLECTION-PHASE1.md` - Phase 1 retrospective
-- `REFLECTION-SESSION-2026-01-04.md` - CI/CD optimization session
+Historical session notes in `.claude/archive/` and `.claude/reflections/`:
+- `archive/REFLECTION-PHASE1.md` - Phase 1 retrospective
+- `archive/REFLECTION-SESSION-2026-01-04.md` - CI/CD optimization session
+- `reflections/2026-01-04-avatar-session.md` - Agent delegation failure analysis
 
 Full session logs preserved in git history for reference.
 
