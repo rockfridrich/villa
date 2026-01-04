@@ -1,0 +1,27 @@
+#!/bin/bash
+# Pre-push hook: Run verification before pushing
+# Prevents CI failures by catching issues locally first
+
+set -e
+
+echo "🔍 Running pre-push verification..."
+echo ""
+
+# Check if we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Not in project root, skipping verification"
+    exit 0
+fi
+
+# Run verification
+if npm run verify; then
+    echo ""
+    echo "✅ All checks passed. Pushing..."
+    exit 0
+else
+    echo ""
+    echo "❌ Verification failed. Fix issues before pushing."
+    echo ""
+    echo "To bypass (not recommended): git push --no-verify"
+    exit 1
+fi

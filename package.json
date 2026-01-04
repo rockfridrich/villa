@@ -36,14 +36,17 @@
     "test:watch": "vitest --config vitest.config.unit.ts",
     "clean": "rm -rf .next node_modules/.cache",
     "clean:all": "rm -rf .next node_modules/.cache dist coverage",
-    "prepare": "husky install",
+    "prepare": "git config core.hooksPath .githooks || true",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "npm run check && npm run build && npm run test:e2e:chromium",
     "infra": "npx tsx src/lib/infra/cli.ts",
     "infra:cache:purge": "npx tsx src/lib/infra/cli.ts cloudflare cache purge-all",
     "infra:dns:list": "npx tsx src/lib/infra/cli.ts cloudflare dns list",
-    "infra:status": "npx tsx src/lib/infra/cli.ts cloudflare zone status"
+    "infra:status": "npx tsx src/lib/infra/cli.ts cloudflare zone status",
+    "anvil": "anvil --mnemonic 'test test test test test test test test test test test junk'",
+    "deploy:local": "cd contracts && source ~/.zshenv && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
+    "test:contracts": "cd contracts && source ~/.zshenv && forge test -vvv"
   },
   "dependencies": {
     "@dicebear/adventurer": "^9.2.4",

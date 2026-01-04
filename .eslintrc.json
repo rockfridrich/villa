@@ -16,6 +16,7 @@
     ".next/",
     "out/",
     "coverage/",
+    "contracts/",
     "*.config.js",
     "*.config.ts"
   ]
