@@ -54,10 +54,15 @@ function validateVariant(variant: number): number {
 }
 
 /**
- * Generate a deterministic seed from wallet address and variant
+ * Generate a deterministic seed from wallet address, selection, and variant
+ * Including selection ensures male/female/other generate different avatars
  */
-function generateSeed(walletAddress: string, variant: number): string {
-  return `${walletAddress.toLowerCase()}-${variant}`
+function generateSeed(
+  walletAddress: string,
+  selection: AvatarStyleSelection,
+  variant: number
+): string {
+  return `${walletAddress.toLowerCase()}-${selection}-${variant}`
 }
 
 /**
@@ -98,7 +103,7 @@ export function generateAvatarFromSelection(
   const validSelection = validateSelection(selection)
   const validVariant = validateVariant(variant)
 
-  const seed = generateSeed(validAddress, validVariant)
+  const seed = generateSeed(validAddress, validSelection, validVariant)
 
   // Use notionists-neutral for "other", lorelei for male/female
   if (validSelection === 'other') {

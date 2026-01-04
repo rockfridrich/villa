@@ -39,12 +39,37 @@ export default function OnboardingPage() {
   const router = useRouter()
   const { identity, setIdentity } = useIdentityStore()
 
-  const [step, setStep] = useState<Step>('welcome')
-  const [displayName, setDisplayName] = useState('')
+  // Support direct navigation to steps via URL params (for testing)
+  const [step, setStep] = useState<Step>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const testStep = params.get('step') as Step | null
+      const testAddress = params.get('address')
+      if (testStep && testAddress) {
+        // For test mode, initialize address state
+        return testStep
+      }
+    }
+    return 'welcome'
+  })
+
+  const [displayName, setDisplayName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('displayName') || ''
+    }
+    return ''
+  })
   const [nameError, setNameError] = useState<string>()
   const [error, setError] = useState<ErrorState | null>(null)
-  const [address, setAddress] = useState<string | null>(null)
-    const [isSupported, setIsSupported] = useState(true)
+  const [address, setAddress] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('address')
+    }
+    return null
+  })
+  const [isSupported, setIsSupported] = useState(true)
   const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserInfo | null>(null)
 
   // Ref for inline Porto container
@@ -86,9 +111,12 @@ export default function OnboardingPage() {
     }
   }, [])
 
-  // Redirect if already has identity
+  // Redirect if already has identity (skip in test mode)
   useEffect(() => {
-    if (identity) {
+    const params = new URLSearchParams(window.location.search)
+    const isTestMode = params.has('step') && params.has('address')
+
+    if (identity && !isTestMode) {
       router.replace('/home')
     }
   }, [identity, router])
