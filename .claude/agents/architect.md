@@ -240,17 +240,38 @@ When decomposition is complete:
 
 1. Save WBS to `specs/{feature-name}.wbs.md`
 2. Update `specs/STATUS.md` with decomposition status
-3. Suggest parallel build commands:
+3. **Initialize runtime coordination:**
+
+```bash
+./scripts/coordinate.sh init {feature-name}
+```
+
+4. Suggest parallel build commands:
 
 ```
 Ready for parallel implementation:
 
+# First, each terminal claims a WU:
+Terminal 1: ./scripts/coordinate.sh claim WU-1
+Terminal 2: ./scripts/coordinate.sh claim WU-2
+Terminal 3: ./scripts/coordinate.sh claim WU-3
+
+# Then implement:
 Terminal 1: @build "Implement WU-1: {task}"
 Terminal 2: @build "Implement WU-2: {task}"
 Terminal 3: @build "Implement WU-3: {task}"
 
-After all complete:
+# After each WU commits:
+./scripts/coordinate.sh complete WU-N
+
+# After all complete:
 @build "Implement WU-4: Integration"
+```
+
+5. Mark shared interfaces as read-only:
+
+```bash
+./scripts/coordinate.sh readonly src/types/{feature}.ts
 ```
 
 ## Example: Decomposing "User Profile Settings"

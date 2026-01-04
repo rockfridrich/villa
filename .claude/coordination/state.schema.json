@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CoordinationState",
+  "description": "Runtime state for multi-terminal coordination",
+  "type": "object",
+  "required": ["version", "feature", "wbsPath", "workUnits", "lockedFiles"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "State version, increment on every update"
+    },
+    "feature": {
+      "type": "string",
+      "description": "Feature being implemented"
+    },
+    "wbsPath": {
+      "type": "string",
+      "description": "Path to WBS document"
+    },
+    "workUnits": {
+      "type": "object",
+      "description": "Work unit status by ID",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "files"],
+        "properties": {
+          "terminal": {
+            "type": "string",
+            "description": "Terminal identifier (human-assigned)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "blocked"]
+          },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files owned by this work unit"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Work unit IDs that must complete first"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "commitHash": {
+            "type": "string",
+            "description": "Commit hash when completed"
+          }
+        }
+      }
+    },
+    "lockedFiles": {
+      "type": "object",
+      "description": "File path -> work unit ID owning the lock",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["workUnit", "terminal", "lockedAt"],
+        "properties": {
+          "workUnit": { "type": "string" },
+          "terminal": { "type": "string" },
+          "lockedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "sharedReadOnly": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Files that are read-only after WU-0 completes"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

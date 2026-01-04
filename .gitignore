@@ -42,3 +42,6 @@ certificates/
 
 # Docker
 .docker/
+
+# Coordination state (runtime, per-machine)
+.claude/coordination/state.json

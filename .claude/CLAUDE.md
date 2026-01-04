@@ -6,6 +6,24 @@ Privacy-first passkey authentication. Porto SDK wrapper with Villa theming.
 
 ---
 
+## Domain Architecture
+
+| Domain | Environment | Deploy Trigger |
+|--------|-------------|----------------|
+| `villa.cash` | Production | Release tag `v*` |
+| `beta.villa.cash` | Staging | Push to `main` |
+| `dev-1.villa.cash` | Preview | PR (slot 1) |
+| `dev-2.villa.cash` | Preview | PR (slot 2) |
+| `dev-3.villa.cash` | Local dev | ngrok tunnel |
+
+**DNS:** CloudFlare (DNS only, no proxy) → DigitalOcean App Platform
+
+**Release workflow:** PR → merge to main (staging) → test → `git tag v*` (production)
+
+**Config files:** `domains.json`, `.do/app-*.yaml`, `docs/cloudflare-dns.md`
+
+---
+
 ## Quick Reference
 
 ```bash
@@ -443,6 +461,116 @@ Other terminals check for dependent WU commits before starting blocked work.
 # Any terminal:
 @build "Implement WU-N: Integration and E2E tests"
 ```
+
+---
+
+## Runtime Coordination Protocol
+
+Runtime enforcement for multi-terminal work. Prevents conflicts **before** they happen.
+
+### Why Runtime Coordination?
+
+The WBS defines **ownership intent**. Runtime coordination enforces it:
+- Agents check state before editing (no silent conflicts)
+- Locked files block other agents immediately
+- Dependency completion is tracked, not guessed
+
+### Coordination Script
+
+```bash
+./scripts/coordinate.sh <command> [args]
+```
+
+| Command | Description |
+|---------|-------------|
+| `init <feature>` | Initialize coordination for a feature |
+| `claim <WU-ID>` | Claim a work unit (checks dependencies) |
+| `lock <WU-ID> <files>` | Lock files before editing |
+| `check <file>` | Check if file can be edited |
+| `complete <WU-ID>` | Mark work unit complete, release locks |
+| `status` | Show current coordination state |
+| `readonly <files>` | Mark shared interfaces as read-only |
+| `reset` | Clear all coordination state |
+
+### Agent Pre-Edit Protocol
+
+**Every agent MUST check before editing:**
+
+```bash
+# Before editing any file:
+./scripts/coordinate.sh check src/path/to/file.ts
+
+# If OK: proceed with Edit tool
+# If BLOCKED: stop and report which WU owns the file
+```
+
+### Workflow with Runtime Coordination
+
+```bash
+# 1. Human runs architect
+@architect "Decompose feature X"
+
+# 2. Initialize coordination (any terminal)
+./scripts/coordinate.sh init feature-x
+
+# 3. Each terminal claims a WU
+# Terminal 1:
+./scripts/coordinate.sh claim WU-1
+./scripts/coordinate.sh lock WU-1 src/components/Feature/
+
+# Terminal 2:
+./scripts/coordinate.sh claim WU-2
+./scripts/coordinate.sh lock WU-2 src/hooks/useFeature.ts
+
+# 4. Work in parallel (state prevents conflicts)
+
+# 5. Complete and release
+./scripts/coordinate.sh complete WU-1
+
+# 6. Dependent WUs now unblocked
+```
+
+### State File
+
+Coordination state lives in `.claude/coordination/state.json` (git-ignored):
+
+```json
+{
+  "version": 5,
+  "feature": "user-settings",
+  "wbsPath": "specs/user-settings.wbs.md",
+  "workUnits": {
+    "WU-0": { "status": "completed", "commitHash": "abc123" },
+    "WU-1": { "status": "in_progress", "terminal": "ttys001", "files": [...] },
+    "WU-2": { "status": "pending", "dependsOn": ["WU-0"] }
+  },
+  "lockedFiles": {
+    "src/hooks/useSettings.ts": { "workUnit": "WU-1", "terminal": "ttys001" }
+  },
+  "sharedReadOnly": ["src/types/settings.ts"]
+}
+```
+
+### Conflict Resolution
+
+| Scenario | Detection | Resolution |
+|----------|-----------|------------|
+| Two agents edit same file | `check` returns BLOCKED | Second agent waits or picks different WU |
+| Agent edits read-only file | `check` returns BLOCKED | Agent reports error, human decides |
+| WU started before dependency | `claim` fails | Agent waits for blocking WU commit |
+| Stale lock (agent crashed) | Human notices | Run `./scripts/coordinate.sh reset` |
+
+### Integration with Build Agent
+
+Build agents should:
+1. **Claim WU** before starting work
+2. **Lock files** listed in WBS before editing
+3. **Check files** not in their WU before reading (reads always OK)
+4. **Complete WU** after successful commit
+
+This is advisory - agents can still edit without checking, but doing so risks conflicts.
+
+---
 
 ## Learnings Integration
 
