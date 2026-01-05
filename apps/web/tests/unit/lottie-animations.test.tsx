@@ -1,13 +1,14 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 // Mock lottie-react
 vi.mock('lottie-react', () => ({
-  default: vi.fn(({ loop, autoplay, style }) => (
+  default: vi.fn(({ loop, autoplay, style }: { loop?: boolean; autoplay?: boolean; style?: React.CSSProperties }) => (
     <div
       data-testid="lottie-animation"
-      data-loop={loop}
-      data-autoplay={autoplay}
+      data-loop={String(loop ?? true)}
+      data-autoplay={String(autoplay ?? true)}
       style={style}
     >
       Lottie Animation
@@ -18,7 +19,7 @@ vi.mock('lottie-react', () => ({
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: { children: React.ReactNode }) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   },
   useReducedMotion: vi.fn(() => false),
 }))
@@ -108,23 +109,24 @@ describe('SuccessCelebration Component', () => {
   it('renders success animation', async () => {
     const { SuccessCelebration } = await import('@/components/ui/success-celebration')
 
-    render(<SuccessCelebration show={true} />)
+    const { container } = render(<SuccessCelebration />)
 
-    // Should show celebration
-    await waitFor(() => {
-      expect(document.body.innerHTML).toContain('success') ||
-      expect(screen.queryByTestId('lottie-animation')).toBeTruthy()
-    })
+    // Should render celebration component
+    expect(container.firstChild).toBeTruthy()
   })
 
   it('calls onComplete when animation finishes', async () => {
+    vi.useFakeTimers()
     const { SuccessCelebration } = await import('@/components/ui/success-celebration')
     const onComplete = vi.fn()
 
-    render(<SuccessCelebration show={true} onComplete={onComplete} />)
+    render(<SuccessCelebration onComplete={onComplete} />)
 
-    // onComplete should be callable
-    expect(typeof onComplete).toBe('function')
+    // Advance timer to trigger onComplete (600ms timeout in component)
+    vi.advanceTimersByTime(700)
+
+    expect(onComplete).toHaveBeenCalled()
+    vi.useRealTimers()
   })
 
   it('respects reduced motion', async () => {
@@ -132,11 +134,19 @@ describe('SuccessCelebration Component', () => {
     vi.mocked(useReducedMotion).mockReturnValue(true)
 
     const { SuccessCelebration } = await import('@/components/ui/success-celebration')
-    const onComplete = vi.fn()
 
-    render(<SuccessCelebration show={true} onComplete={onComplete} />)
+    const { container } = render(<SuccessCelebration />)
 
     // Should still render but without animation
-    expect(document.body.innerHTML).toBeTruthy()
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  it('accepts size prop', async () => {
+    const { SuccessCelebration } = await import('@/components/ui/success-celebration')
+
+    const { container } = render(<SuccessCelebration size="lg" />)
+
+    // Should apply large size class
+    expect(container.innerHTML).toContain('w-32')
   })
 })
