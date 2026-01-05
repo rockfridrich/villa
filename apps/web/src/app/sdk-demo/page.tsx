@@ -2,24 +2,23 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
-import { NicknameSelection } from '@/components/sdk/NicknameSelection'
-import { AvatarSelection } from '@/components/sdk/AvatarSelection'
-import { SignInWelcome } from '@/components/sdk/SignInWelcome'
-import { checkNickname } from '@/lib/nickname'
-import type { AvatarConfig, VillaIdentity } from '@/types'
+import { VillaAuth } from '@/components/sdk/VillaAuth'
+import { ProfileSettings } from '@/components/sdk/ProfileSettings'
+import { AvatarPreview } from '@/components/sdk/AvatarPreview'
+import type { AvatarConfig } from '@/types'
 import {
   Code,
   Copy,
   CheckCircle2,
   User,
-  Image as ImageIcon,
-  Globe,
+  Search,
   Settings,
   LogOut,
   Terminal,
   Fingerprint,
   Trash2,
-  RefreshCw,
+  Globe,
+  ExternalLink,
 } from 'lucide-react'
 
 interface LogEntry {
@@ -32,34 +31,38 @@ interface LogEntry {
   duration?: number
 }
 
+interface UserProfile {
+  address: string
+  nickname: string
+  displayName: string
+  avatar: AvatarConfig
+  ensName: string // nickname.villa.cash
+}
+
 /**
- * SDK Demo Page
+ * SDK Demo Page - Complete Integration Guide
  *
- * Interactive showcase of all Villa SDK functions with real-time logs.
- * Split view: Components (left) | Code/Logs (right)
- *
- * Note: This demo uses simulated SDK calls to demonstrate functionality
- * without requiring full authentication flow.
+ * Shows the full Villa SDK flow:
+ * 1. Authentication (VillaAuth popup)
+ * 2. Query user data
+ * 3. ENS resolution (nickname.villa.cash)
+ * 4. Profile settings (edit avatar/name)
+ * 5. Logout
  */
 export default function SDKDemoPage() {
-  // Mock SDK config
-  const [sdkConfig] = useState({
-    appId: 'villa-sdk-demo',
-    network: 'base-sepolia' as const,
-    apiUrl: 'https://api.villa.cash',
-  })
+  // User state
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [showAuth, setShowAuth] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
-  // Authentication state
-  const [identity, setIdentity] = useState<VillaIdentity | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadingAction, setLoadingAction] = useState<'signin' | 'create' | null>(null)
+  // Query state
+  const [queryInput, setQueryInput] = useState('')
+  const [queryResult, setQueryResult] = useState<UserProfile | null>(null)
+  const [ensInput, setEnsInput] = useState('')
+  const [ensResult, setEnsResult] = useState<{ address: string; nickname: string } | null>(null)
 
   // UI state
-  const [activeSection, setActiveSection] = useState<'welcome' | 'nickname' | 'avatar' | 'ens' | 'config'>('welcome')
-  const [ensInput, setEnsInput] = useState('')
-  const [addressInput, setAddressInput] = useState('')
-  const [ensResult, setEnsResult] = useState<string | null>(null)
-  const [reverseEnsResult, setReverseEnsResult] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<'auth' | 'query' | 'ens' | 'settings'>('auth')
   const [copiedLog, setCopiedLog] = useState<number | null>(null)
 
   // Logs
@@ -67,12 +70,12 @@ export default function SDKDemoPage() {
   const logIdRef = useRef(0)
   const logsEndRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll logs to bottom
+  // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
 
-  // Add log entry
+  // Add log
   const addLog = useCallback((entry: Omit<LogEntry, 'id' | 'timestamp'>) => {
     const newLog: LogEntry = {
       ...entry,
@@ -83,7 +86,7 @@ export default function SDKDemoPage() {
     return newLog.id
   }, [])
 
-  // Update log entry (for duration tracking)
+  // Update log
   const updateLog = useCallback((id: number, updates: Partial<LogEntry>) => {
     setLogs(prev => prev.map(log => log.id === id ? { ...log, ...updates } : log))
   }, [])
@@ -94,231 +97,136 @@ export default function SDKDemoPage() {
     logIdRef.current = 0
   }, [])
 
-  // Mock Sign In
-  const handleSignIn = useCallback(async () => {
-    setIsLoading(true)
-    setLoadingAction('signin')
-    const startTime = Date.now()
-    const logId = addLog({ method: 'villa.signIn()', args: { scopes: ['profile'] } })
-
-    try {
-      // Simulate authentication delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      const mockIdentity: VillaIdentity = {
-        walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8',
-        nickname: 'demo_user',
-        avatar: {
-          style: 'avataaars',
-          selection: 'male',
-          variant: 0,
-        },
-        isNewUser: false,
-      }
-
-      const duration = Date.now() - startTime
-
-      setIdentity(mockIdentity)
-      updateLog(logId, { result: mockIdentity, duration })
-      setActiveSection('config')
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
-    } finally {
-      setIsLoading(false)
-      setLoadingAction(null)
-    }
-  }, [addLog, updateLog])
-
-  // Mock Create Account
-  const handleCreateAccount = useCallback(async () => {
-    setIsLoading(true)
-    setLoadingAction('create')
-    const startTime = Date.now()
-    const logId = addLog({ method: 'villa.signIn()', args: { scopes: ['profile'], note: 'Creating new account' } })
-
-    try {
-      // Simulate authentication delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      const mockIdentity: VillaIdentity = {
-        walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8',
-        nickname: null,
-        avatar: null,
-        isNewUser: true,
-      }
-
-      const duration = Date.now() - startTime
-
-      setIdentity(mockIdentity)
-      updateLog(logId, { result: mockIdentity, duration })
-      setActiveSection('nickname')
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
-    } finally {
-      setIsLoading(false)
-      setLoadingAction(null)
-    }
-  }, [addLog, updateLog])
-
-  // Sign Out
-  const handleSignOut = useCallback(async () => {
-    const startTime = Date.now()
-    const logId = addLog({ method: 'villa.signOut()' })
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      const duration = Date.now() - startTime
-
-      setIdentity(null)
-      updateLog(logId, { result: 'Signed out successfully', duration })
-      setActiveSection('welcome')
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
-    }
-  }, [addLog, updateLog])
-
-  // Claim Nickname
-  const handleClaimNickname = useCallback(async (nickname: string) => {
-    const startTime = Date.now()
-    const logId = addLog({ method: 'onClaim(nickname)', args: { nickname } })
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        result: { success: true, nickname },
-        duration,
-      })
-
-      // Update identity with nickname
-      if (identity) {
-        setIdentity({ ...identity, nickname })
-      }
-
-      setActiveSection('avatar')
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
-    }
-  }, [addLog, updateLog, identity])
-
-  // Avatar Selected
-  const handleAvatarSelected = useCallback((config: AvatarConfig) => {
-    addLog({
-      method: 'onSelect(avatarConfig)',
-      args: config,
-      result: 'Avatar configuration saved',
+  // Handle VillaAuth complete
+  const handleAuthComplete = useCallback((result: {
+    success: boolean
+    identity?: { address: string; nickname: string; avatar: AvatarConfig }
+    error?: string
+  }) => {
+    const logId = addLog({
+      method: 'VillaAuth.onComplete',
+      args: { type: result.success ? 'success' : 'error' },
     })
 
-    // Update identity with avatar
-    if (identity) {
-      setIdentity({ ...identity, avatar: config })
-    }
-
-    setActiveSection('config')
-  }, [addLog, identity])
-
-  // Mock Resolve ENS
-  const handleResolveEns = useCallback(async () => {
-    if (!ensInput.trim()) return
-
-    const startTime = Date.now()
-    const logId = addLog({ method: 'villa.resolveEns(name)', args: { name: ensInput } })
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      // Mock ENS resolution (vitalik.eth example)
-      const address = ensInput.toLowerCase() === 'vitalik.eth'
-        ? '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
-        : null
-
-      const duration = Date.now() - startTime
-
-      setEnsResult(address)
-      updateLog(logId, { result: { address: address || 'Not found' }, duration })
-    } catch (error) {
-      const duration = Date.now() - startTime
+    if (result.success && result.identity) {
+      const profile: UserProfile = {
+        address: result.identity.address,
+        nickname: result.identity.nickname,
+        displayName: result.identity.nickname,
+        avatar: result.identity.avatar,
+        ensName: `${result.identity.nickname}.villa.cash`,
+      }
+      setUser(profile)
       updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
+        result: {
+          address: profile.address,
+          nickname: profile.nickname,
+          ensName: profile.ensName,
+        },
+        duration: 0,
       })
+    } else {
+      updateLog(logId, { error: result.error || 'Authentication failed' })
     }
-  }, [ensInput, addLog, updateLog])
+    setShowAuth(false)
+  }, [addLog, updateLog])
 
-  // Mock Reverse ENS
-  const handleReverseEns = useCallback(async () => {
-    if (!addressInput.trim()) return
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    const logId = addLog({ method: 'villa.logout()' })
+    setUser(null)
+    setQueryResult(null)
+    updateLog(logId, { result: { success: true }, duration: 50 })
+  }, [addLog, updateLog])
 
-    const startTime = Date.now()
-    const logId = addLog({ method: 'villa.reverseEns(address)', args: { address: addressInput } })
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      // Mock reverse ENS lookup
-      const name = addressInput.toLowerCase() === '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
-        ? 'vitalik.eth'
-        : null
-
-      const duration = Date.now() - startTime
-
-      setReverseEnsResult(name)
-      updateLog(logId, { result: { name: name || 'Not found' }, duration })
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
-    }
-  }, [addressInput, addLog, updateLog])
-
-  // Get Avatar URL
-  const handleGetAvatarUrl = useCallback(() => {
-    if (!identity) return
+  // Query user by nickname
+  const handleQueryUser = useCallback(async () => {
+    if (!queryInput.trim()) return
 
     const startTime = Date.now()
     const logId = addLog({
-      method: 'villa.getAvatarUrl(seed, config)',
-      args: {
-        seed: identity.walletAddress,
-        config: identity.avatar,
-      },
+      method: 'villa.getProfile(nickname)',
+      args: { nickname: queryInput },
     })
 
-    try {
-      // Mock avatar URL generation
-      const url = `https://api.dicebear.com/9.x/avataaars/svg?seed=${identity.walletAddress}`
-      const duration = Date.now() - startTime
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
 
-      updateLog(logId, { result: { url }, duration })
-    } catch (error) {
-      const duration = Date.now() - startTime
-      updateLog(logId, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        duration,
-      })
+    // Mock response - in real app this queries the database
+    const mockAddress = `0x${queryInput.toLowerCase().split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
+
+    const result: UserProfile = {
+      address: mockAddress,
+      nickname: queryInput.toLowerCase(),
+      displayName: queryInput,
+      avatar: { style: 'avataaars', selection: 'female', variant: 0 },
+      ensName: `${queryInput.toLowerCase()}.villa.cash`,
     }
-  }, [identity, addLog, updateLog])
 
-  // Copy log to clipboard
+    setQueryResult(result)
+    updateLog(logId, {
+      result: {
+        address: result.address,
+        nickname: result.nickname,
+        ensName: result.ensName,
+      },
+      duration: Date.now() - startTime,
+    })
+  }, [queryInput, addLog, updateLog])
+
+  // ENS Resolution (nickname.villa.cash → address)
+  const handleEnsResolve = useCallback(async () => {
+    if (!ensInput.trim()) return
+
+    const startTime = Date.now()
+    // Parse input - could be "alice" or "alice.villa.cash"
+    const nickname = ensInput.replace('.villa.cash', '').toLowerCase()
+    const fullEns = `${nickname}.villa.cash`
+
+    const logId = addLog({
+      method: 'villa.resolveENS(name)',
+      args: { name: fullEns },
+    })
+
+    // Simulate DNSSEC-compatible ENS resolution
+    await new Promise(resolve => setTimeout(resolve, 600))
+
+    // Mock address from nickname (deterministic for demo)
+    const mockAddress = `0x${nickname.split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
+
+    setEnsResult({ address: mockAddress, nickname })
+    updateLog(logId, {
+      result: {
+        name: fullEns,
+        address: mockAddress,
+        dnssec: true,
+      },
+      duration: Date.now() - startTime,
+    })
+  }, [ensInput, addLog, updateLog])
+
+  // Handle profile update
+  const handleProfileUpdate = useCallback(async (updates: { displayName?: string; avatar?: AvatarConfig }) => {
+    if (!user) return
+
+    const logId = addLog({
+      method: 'villa.updateProfile(updates)',
+      args: updates,
+    })
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 300))
+
+    setUser(prev => prev ? {
+      ...prev,
+      displayName: updates.displayName || prev.displayName,
+      avatar: updates.avatar || prev.avatar,
+    } : null)
+
+    updateLog(logId, { result: { success: true }, duration: 300 })
+  }, [user, addLog, updateLog])
+
+  // Copy log
   const handleCopyLog = useCallback((log: LogEntry) => {
     const logText = JSON.stringify({
       method: log.method,
@@ -327,14 +235,10 @@ export default function SDKDemoPage() {
       error: log.error,
       duration: log.duration,
     }, null, 2)
-
     navigator.clipboard.writeText(logText)
     setCopiedLog(log.id)
     setTimeout(() => setCopiedLog(null), 2000)
   }, [])
-
-  // Check if authenticated
-  const isAuthenticated = identity !== null
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -348,24 +252,20 @@ export default function SDKDemoPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-serif text-ink">Villa SDK Demo</h1>
-                <p className="text-sm text-ink-muted">Interactive API Playground</p>
+                <p className="text-sm text-ink-muted">Complete Integration Guide</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {isAuthenticated && identity.nickname && (
+              {user && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-lg">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-green-900">
-                    @{identity.nickname}
+                    @{user.nickname}
                   </span>
                 </div>
               )}
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={clearLogs}
-              >
+              <Button size="sm" variant="secondary" onClick={clearLogs}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear Logs
               </Button>
@@ -374,7 +274,7 @@ export default function SDKDemoPage() {
         </div>
       </header>
 
-      {/* Main Content - Split View */}
+      {/* Main Content */}
       <div className="max-w-screen-2xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[calc(100vh-180px)]">
           {/* Left: Components */}
@@ -382,16 +282,15 @@ export default function SDKDemoPage() {
             {/* Navigation */}
             <Card>
               <CardHeader>
-                <CardTitle>Sections</CardTitle>
+                <CardTitle>SDK Methods</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { id: 'welcome', label: 'Authentication', icon: Fingerprint },
-                    { id: 'nickname', label: 'Nickname', icon: User },
-                    { id: 'avatar', label: 'Avatar', icon: ImageIcon },
-                    { id: 'ens', label: 'ENS', icon: Globe },
-                    { id: 'config', label: 'Config', icon: Settings },
+                    { id: 'auth', label: '1. Auth', icon: Fingerprint },
+                    { id: 'query', label: '2. Query', icon: Search },
+                    { id: 'ens', label: '3. ENS', icon: Globe },
+                    { id: 'settings', label: '4. Settings', icon: Settings },
                   ].map(section => (
                     <Button
                       key={section.id}
@@ -407,371 +306,413 @@ export default function SDKDemoPage() {
               </CardContent>
             </Card>
 
-            {/* Welcome / Authentication */}
-            {activeSection === 'welcome' && (
+            {/* 1. Authentication */}
+            {activeSection === 'auth' && (
               <Card>
                 <CardHeader>
                   <CardTitle>Authentication</CardTitle>
                   <p className="text-sm text-ink-muted mt-1">
-                    Sign in with passkey or create new Villa ID
+                    VillaAuth handles passkey → nickname → avatar in one popup
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {!isAuthenticated ? (
-                    <SignInWelcome
-                      onSignIn={handleSignIn}
-                      onCreateAccount={handleCreateAccount}
-                      isLoading={isLoading}
-                      loadingAction={loadingAction || undefined}
-                    />
-                  ) : (
-                    <div className="space-y-4 text-center py-8">
-                      <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-10 h-10 text-green-600" />
+                  {user ? (
+                    <div className="space-y-4">
+                      {/* Current User */}
+                      <div className="flex items-center gap-4 p-4 bg-cream-100 rounded-xl">
+                        <AvatarPreview
+                          walletAddress={user.address}
+                          selection={user.avatar.selection}
+                          variant={user.avatar.variant}
+                          size={64}
+                          className="rounded-full"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-ink truncate">{user.displayName}</p>
+                          <p className="text-sm text-ink-muted">@{user.nickname}</p>
+                          <p className="text-xs text-villa-500 font-mono">{user.ensName}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-xl font-serif text-ink">Signed In</h3>
-                        <p className="text-ink-muted mt-1">@{identity.nickname || 'new_user'}</p>
-                        <p className="text-xs text-ink-muted mt-1 font-mono">
-                          {identity.walletAddress.slice(0, 6)}...{identity.walletAddress.slice(-4)}
+
+                      {/* Actions */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          variant="secondary"
+                          onClick={() => setShowSettings(true)}
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={handleLogout}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </Button>
+                      </div>
+
+                      {/* Code Example */}
+                      <div className="p-3 bg-neutral-900 rounded-lg">
+                        <pre className="text-xs text-green-400 overflow-x-auto">
+{`// Logout
+await villa.logout()
+
+// Check session
+const user = villa.getCurrentUser()
+if (!user) redirect('/login')`}
+                        </pre>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-center py-8">
+                        <User className="w-16 h-16 mx-auto mb-4 text-ink-muted opacity-50" />
+                        <p className="text-ink-muted mb-4">No active session</p>
+                        <Button onClick={() => setShowAuth(true)}>
+                          <Fingerprint className="w-4 h-4 mr-2" />
+                          Sign In with Villa
+                        </Button>
+                      </div>
+
+                      {/* Code Example */}
+                      <div className="p-3 bg-neutral-900 rounded-lg">
+                        <pre className="text-xs text-green-400 overflow-x-auto">
+{`import { VillaAuth } from '@villa/sdk'
+
+<VillaAuth
+  appName="Your App"
+  onComplete={(result) => {
+    if (result.success) {
+      // result.identity.address
+      // result.identity.nickname
+      // result.identity.avatar
+    }
+  }}
+/>`}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 2. Query User Data */}
+            {activeSection === 'query' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Query User Profile</CardTitle>
+                  <p className="text-sm text-ink-muted mt-1">
+                    Look up any user by their nickname
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter nickname (e.g., alice)"
+                        value={queryInput}
+                        onChange={(e) => setQueryInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleQueryUser()}
+                      />
+                      <Button onClick={handleQueryUser}>
+                        <Search className="w-4 h-4 mr-2" />
+                        Query
+                      </Button>
+                    </div>
+
+                    {queryResult && (
+                      <div className="p-4 bg-cream-100 rounded-xl space-y-3">
+                        <div className="flex items-center gap-3">
+                          <AvatarPreview
+                            walletAddress={queryResult.address}
+                            selection={queryResult.avatar.selection}
+                            variant={queryResult.avatar.variant}
+                            size={48}
+                            className="rounded-full"
+                          />
+                          <div>
+                            <p className="font-medium text-ink">@{queryResult.nickname}</p>
+                            <p className="text-xs text-villa-500">{queryResult.ensName}</p>
+                          </div>
+                        </div>
+                        <div className="text-xs font-mono text-ink-muted break-all">
+                          {queryResult.address}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Code Example */}
+                    <div className="p-3 bg-neutral-900 rounded-lg">
+                      <pre className="text-xs text-green-400 overflow-x-auto">
+{`// Query by nickname
+const profile = await villa.getProfile('alice')
+
+// Returns:
+{
+  address: '0x...',
+  nickname: 'alice',
+  ensName: 'alice.villa.cash',
+  avatar: { style, selection, variant }
+}`}
+                      </pre>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 3. ENS Resolution */}
+            {activeSection === 'ens' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>ENS Resolution</CardTitle>
+                  <p className="text-sm text-ink-muted mt-1">
+                    Resolve nickname.villa.cash → wallet address (DNSSEC compatible)
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="alice or alice.villa.cash"
+                        value={ensInput}
+                        onChange={(e) => setEnsInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleEnsResolve()}
+                      />
+                      <Button onClick={handleEnsResolve}>
+                        <Globe className="w-4 h-4 mr-2" />
+                        Resolve
+                      </Button>
+                    </div>
+
+                    {ensResult && (
+                      <div className="p-4 bg-cream-100 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ink-muted">ENS Name</span>
+                          <span className="font-medium text-villa-600">
+                            {ensResult.nickname}.villa.cash
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ink-muted">Address</span>
+                          <span className="font-mono text-xs text-ink truncate max-w-[200px]">
+                            {ensResult.address}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ink-muted">DNSSEC</span>
+                          <span className="text-green-600 flex items-center gap-1">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Verified
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Architecture Note */}
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                      <p className="font-medium mb-1">How it works:</p>
+                      <ul className="text-xs space-y-1 list-disc list-inside">
+                        <li>Nicknames stored in database with wallet address</li>
+                        <li>CCIP-Read resolver for villa.cash subdomain</li>
+                        <li>DNSSEC compatible for maximum compatibility</li>
+                        <li>Works with any ENS-compatible wallet/app</li>
+                      </ul>
+                    </div>
+
+                    {/* Code Example */}
+                    <div className="p-3 bg-neutral-900 rounded-lg">
+                      <pre className="text-xs text-green-400 overflow-x-auto">
+{`// Resolve ENS to address
+const address = await villa.resolveENS('alice.villa.cash')
+
+// Reverse resolve address to ENS
+const ensName = await villa.reverseENS('0x...')
+// Returns: 'alice.villa.cash'
+
+// Works with ethers.js too
+const address = await provider.resolveName('alice.villa.cash')`}
+                      </pre>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 4. Profile Settings */}
+            {activeSection === 'settings' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Settings</CardTitle>
+                  <p className="text-sm text-ink-muted mt-1">
+                    Edit display name and upload custom avatar
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {user ? (
+                    <div className="space-y-4">
+                      <ProfileSettings
+                        profile={{
+                          address: user.address,
+                          nickname: user.nickname,
+                          displayName: user.displayName,
+                          avatar: user.avatar,
+                        }}
+                        onUpdate={async (updates) => {
+                          await handleProfileUpdate(updates as { displayName?: string; avatar?: AvatarConfig })
+                        }}
+                        asModal={false}
+                        allowAvatarUpload={true}
+                      />
+
+                      {/* Note */}
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                        <p className="font-medium">Avatar Upload</p>
+                        <p className="text-xs mt-1">
+                          Custom photo upload is only available in Settings, not during onboarding.
+                          Onboarding uses generated avatars for quick setup.
                         </p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-ink-muted">
+                      <Settings className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Sign in to access settings</p>
                       <Button
-                        size="lg"
                         variant="secondary"
-                        onClick={handleSignOut}
-                        className="w-full"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => {
+                          setActiveSection('auth')
+                          setShowAuth(true)
+                        }}
                       >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
+                        Sign In First
                       </Button>
                     </div>
                   )}
                 </CardContent>
               </Card>
             )}
-
-            {/* Nickname Selection */}
-            {activeSection === 'nickname' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Nickname Selection</CardTitle>
-                  <p className="text-sm text-ink-muted mt-1">
-                    Choose a unique handle with real-time availability check
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {isAuthenticated ? (
-                    <NicknameSelection
-                      onClaim={handleClaimNickname}
-                      checkAvailability={async (nickname) => {
-                        const result = await checkNickname(nickname)
-                        return {
-                          available: result.available,
-                          suggestion: result.available ? undefined : `${nickname}${Math.floor(Math.random() * 100)}`,
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-ink-muted">
-                      <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>Sign in to claim a nickname</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Avatar Selection */}
-            {activeSection === 'avatar' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Avatar Selection</CardTitle>
-                  <p className="text-sm text-ink-muted mt-1">
-                    Choose your profile picture style
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {isAuthenticated ? (
-                    <AvatarSelection
-                      walletAddress={identity.walletAddress}
-                      onSelect={handleAvatarSelected}
-                      timerDuration={30}
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-ink-muted">
-                      <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>Sign in to select an avatar</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* ENS Resolution */}
-            {activeSection === 'ens' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>ENS Resolution</CardTitle>
-                  <p className="text-sm text-ink-muted mt-1">
-                    Resolve ENS names and reverse lookups
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Forward Resolution */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-medium text-ink">
-                        Resolve ENS → Address
-                      </label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          placeholder="vitalik.eth"
-                          value={ensInput}
-                          onChange={(e) => setEnsInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleResolveEns()}
-                        />
-                        <Button onClick={handleResolveEns}>
-                          <Globe className="w-4 h-4 mr-2" />
-                          Resolve
-                        </Button>
-                      </div>
-                      {ensResult !== null && (
-                        <div className="p-3 bg-cream-100 rounded-lg">
-                          <p className="text-xs text-ink-muted mb-1">Result:</p>
-                          <p className="font-mono text-sm text-ink break-all">
-                            {ensResult || 'Not found'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Reverse Resolution */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-medium text-ink">
-                        Reverse ENS → Name
-                      </label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          placeholder="0x..."
-                          value={addressInput}
-                          onChange={(e) => setAddressInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleReverseEns()}
-                        />
-                        <Button onClick={handleReverseEns}>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Reverse
-                        </Button>
-                      </div>
-                      {reverseEnsResult !== null && (
-                        <div className="p-3 bg-cream-100 rounded-lg">
-                          <p className="text-xs text-ink-muted mb-1">Result:</p>
-                          <p className="font-mono text-sm text-ink break-all">
-                            {reverseEnsResult || 'Not found'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Config & Session */}
-            {activeSection === 'config' && (
-              <div className="space-y-6">
-                {/* Session Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Current Session</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isAuthenticated ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-xs text-ink-muted">Nickname</p>
-                            <p className="font-medium text-ink">@{identity.nickname || 'new_user'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-ink-muted">Address</p>
-                            <p className="font-mono text-sm text-ink">
-                              {identity.walletAddress.slice(0, 6)}...{identity.walletAddress.slice(-4)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pt-3 border-t border-neutral-200">
-                          <p className="text-xs text-ink-muted mb-2">Avatar</p>
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${identity.walletAddress}`}
-                              alt={identity.nickname || 'avatar'}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={handleGetAvatarUrl}
-                            >
-                              Log Avatar URL
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="pt-3 border-t border-neutral-200">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={handleSignOut}
-                            className="w-full"
-                          >
-                            <LogOut className="w-4 h-4 mr-2" />
-                            Sign Out
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-ink-muted">
-                        <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>No active session</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* SDK Config */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>SDK Configuration</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-xs text-ink-muted">App ID</p>
-                        <p className="font-mono text-sm text-ink">{sdkConfig.appId}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-ink-muted">Network</p>
-                        <p className="font-medium text-ink">{sdkConfig.network}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-ink-muted">API URL</p>
-                        <p className="font-mono text-sm text-ink break-all">{sdkConfig.apiUrl}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-ink-muted">Authenticated</p>
-                        <p className="font-medium text-ink">
-                          {isAuthenticated ? 'Yes' : 'No'}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
 
-          {/* Right: Logs & Code */}
+          {/* Right: Logs */}
           <div className="space-y-6">
-            <Card className="h-full">
-              <CardHeader>
+            <Card className="h-full flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-5 h-5 text-ink" />
-                    <CardTitle>Console Logs</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-ink-muted">
-                    <Code className="w-4 h-4" />
-                    <span>{logs.length} events</span>
-                  </div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Terminal className="w-5 h-5" />
+                    API Logs
+                  </CardTitle>
+                  <span className="text-xs text-ink-muted">
+                    {logs.length} calls
+                  </span>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="bg-ink rounded-lg p-4 font-mono text-xs overflow-auto max-h-[calc(100vh-300px)] min-h-[400px]">
+              <CardContent className="flex-1 overflow-hidden">
+                <div className="h-full overflow-y-auto space-y-2 pr-2">
                   {logs.length === 0 ? (
-                    <div className="text-center py-12 text-cream-300">
-                      <Terminal className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No logs yet. Interact with the SDK to see events here.</p>
+                    <div className="text-center py-12 text-ink-muted">
+                      <Code className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>API calls will appear here</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {logs.map((log) => (
-                        <div
-                          key={log.id}
-                          className="bg-cream-900/20 rounded-lg p-3 border border-cream-800 group hover:border-accent-yellow transition-colors"
-                        >
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-accent-yellow font-semibold">
-                                  {log.method}
+                    logs.map(log => (
+                      <div
+                        key={log.id}
+                        className={`p-3 rounded-lg text-sm font-mono ${
+                          log.error
+                            ? 'bg-red-50 border border-red-200'
+                            : 'bg-neutral-100'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={log.error ? 'text-red-600' : 'text-villa-600'}>
+                                {log.method}
+                              </span>
+                              {log.duration !== undefined && (
+                                <span className="text-xs text-ink-muted">
+                                  {log.duration}ms
                                 </span>
-                                {log.duration && (
-                                  <span className="text-cream-400 text-[10px]">
-                                    {log.duration}ms
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-cream-400 mt-0.5">
-                                {log.timestamp.toLocaleTimeString()}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleCopyLog(log)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-cream-800 rounded"
-                            >
-                              {copiedLog === log.id ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4 text-cream-300" />
                               )}
-                            </button>
-                          </div>
-
-                          {/* Args */}
-                          {log.args !== undefined && (
-                            <div className="mb-2">
-                              <div className="text-cream-500 text-[10px] mb-1">Arguments:</div>
-                              <pre className="text-cream-200 text-[11px] overflow-x-auto">
+                            </div>
+                            {log.args && (
+                              <pre className="text-xs text-ink-muted mt-1 overflow-x-auto">
                                 {JSON.stringify(log.args, null, 2)}
                               </pre>
-                            </div>
-                          )}
-
-                          {/* Result */}
-                          {log.result !== undefined && (
-                            <div className="mb-2">
-                              <div className="text-green-400 text-[10px] mb-1">Result:</div>
-                              <pre className="text-green-200 text-[11px] overflow-x-auto">
-                                {typeof log.result === 'string'
-                                  ? log.result
-                                  : JSON.stringify(log.result, null, 2)}
+                            )}
+                            {log.result && (
+                              <pre className="text-xs text-green-600 mt-1 overflow-x-auto">
+                                → {JSON.stringify(log.result, null, 2)}
                               </pre>
-                            </div>
-                          )}
-
-                          {/* Error */}
-                          {log.error !== undefined && (
-                            <div>
-                              <div className="text-red-400 text-[10px] mb-1">Error:</div>
-                              <pre className="text-red-200 text-[11px] overflow-x-auto">
-                                {log.error}
-                              </pre>
-                            </div>
-                          )}
+                            )}
+                            {log.error && (
+                              <p className="text-xs text-red-600 mt-1">
+                                Error: {log.error}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleCopyLog(log)}
+                            className="p-1 text-ink-muted hover:text-ink rounded"
+                            title="Copy log"
+                          >
+                            {copiedLog === log.id ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
-                      ))}
-                      <div ref={logsEndRef} />
-                    </div>
+                        <div className="text-xs text-ink-muted mt-1">
+                          {log.timestamp.toLocaleTimeString()}
+                        </div>
+                      </div>
+                    ))
                   )}
+                  <div ref={logsEndRef} />
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* VillaAuth Modal */}
+      {showAuth && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-cream rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <VillaAuth
+              appName="SDK Demo"
+              onComplete={handleAuthComplete}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ProfileSettings Modal */}
+      {showSettings && user && (
+        <ProfileSettings
+          profile={{
+            address: user.address,
+            nickname: user.nickname,
+            displayName: user.displayName,
+            avatar: user.avatar,
+          }}
+          onUpdate={async (updates) => {
+            await handleProfileUpdate(updates as { displayName?: string; avatar?: AvatarConfig })
+          }}
+          onClose={() => setShowSettings(false)}
+          asModal={true}
+          allowAvatarUpload={true}
+        />
+      )}
     </div>
   )
 }
