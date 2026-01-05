@@ -1,0 +1,46 @@
+# Villa SDK
+
+> Privacy-first passkey authentication for Base network. No wallets. No passwords. Just Face ID.
+
+## Quick Integration
+
+```bash
+npm install @rockfridrich/villa-sdk viem zod
+```
+
+```tsx
+import { VillaProvider, VillaAuth } from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  const [user, setUser] = useState(null)
+  return (
+    <VillaProvider config={{ appId: 'your-app' }}>
+      {!user ? (
+        <VillaAuth onComplete={(r) => r.success && setUser(r.identity)} />
+      ) : (
+        <h1>Welcome, @{user.nickname}</h1>
+      )}
+    </VillaProvider>
+  )
+}
+```
+
+## API
+
+### Headless
+```ts
+import { Villa } from '@rockfridrich/villa-sdk'
+const result = await new Villa({ appId: 'app' }).signIn()
+```
+
+## Types
+```typescript
+type VillaAuthResult =
+  | { success: true; identity: { address: string; nickname: string; avatar: AvatarConfig } }
+  | { success: false; error: string }
+```
+
+## Docs
+https://developers.villa.cash
+https://developers.villa.cash/llms.txt
+https://github.com/rockfridrich/villa

@@ -1,10 +1,39 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Code2, Lock, Zap, Fingerprint, Play, ExternalLink } from 'lucide-react'
+import { Code2, Lock, Zap, Fingerprint, Play, ExternalLink, Sparkles, Copy, Check, FileText } from 'lucide-react'
 import { Button } from '@/components/ui'
 import Link from 'next/link'
+
+const AI_INTEGRATION_PROMPT = `I want to add Villa passkey authentication to my project. Villa provides privacy-first authentication on Base network - no passwords, just biometrics.
+
+Read the SDK documentation at: https://villa.cash/llms.txt
+Source code: https://github.com/rockfridrich/villa/tree/main/packages/sdk
+
+Integration steps:
+1. Install: npm install @rockfridrich/villa-sdk viem zod
+2. For React: npm install @rockfridrich/villa-sdk-react
+
+Basic usage:
+\`\`\`tsx
+import { VillaProvider, VillaAuth } from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  const [user, setUser] = useState(null)
+  return (
+    <VillaProvider config={{ appId: 'my-app' }}>
+      {!user ? (
+        <VillaAuth onComplete={(r) => r.success && setUser(r.identity)} />
+      ) : (
+        <h1>Welcome, @{user.nickname}</h1>
+      )}
+    </VillaProvider>
+  )
+}
+\`\`\`
+
+Please analyze my project structure and suggest the best way to integrate Villa authentication.`
 
 interface DeveloperLandingProps {
   onConnect: () => void
@@ -16,6 +45,26 @@ interface DeveloperLandingProps {
  * Hero section, features, code snippet, and CTA
  */
 export function DeveloperLanding({ onConnect, isConnected }: DeveloperLandingProps) {
+  const [copied, setCopied] = useState(false)
+
+  const copyPrompt = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(AI_INTEGRATION_PROMPT)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = AI_INTEGRATION_PROMPT
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [])
+
   const prefersReducedMotion = useRef(
     typeof window !== 'undefined'
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -90,7 +139,7 @@ export function DeveloperLanding({ onConnect, isConnected }: DeveloperLandingPro
         >
           Privacy-first passkey authentication on Base. Drop-in identity for your village apps.
         </motion.p>
-        <motion.div variants={itemVariants} className="pt-4">
+        <motion.div variants={itemVariants} className="pt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button
             size="lg"
             variant="primary"
@@ -101,6 +150,63 @@ export function DeveloperLanding({ onConnect, isConnected }: DeveloperLandingPro
           </Button>
         </motion.div>
       </div>
+
+      {/* AI Integration - Most Prominent */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-cyan-500/10 rounded-2xl p-8 mb-20 border border-purple-500/20 relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif text-ink">AI-Powered Integration</h2>
+              <p className="text-sm text-ink-muted">Let AI tools integrate Villa auth for you</p>
+            </div>
+          </div>
+
+          <p className="text-ink-muted mb-6 max-w-2xl">
+            Copy this prompt and paste it into Claude, ChatGPT, or any AI coding assistant.
+            It will analyze your project and suggest the best integration approach.
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={copyPrompt}
+              className="min-w-[200px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5 mr-2" />
+                  Copy AI Prompt
+                </>
+              )}
+            </Button>
+            <Link href="/llms.txt" target="_blank">
+              <Button variant="secondary" size="lg">
+                <FileText className="w-5 h-5 mr-2" />
+                View llms.txt
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-6 p-4 bg-ink/5 rounded-lg border border-ink/10">
+            <p className="text-xs text-ink-muted font-mono line-clamp-3">
+              {AI_INTEGRATION_PROMPT.substring(0, 200)}...
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Features Grid */}
       <motion.div
