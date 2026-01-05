@@ -2,8 +2,9 @@
 
 import { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Code2, Lock, Zap, Fingerprint } from 'lucide-react'
+import { Code2, Lock, Zap, Fingerprint, Play, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui'
+import Link from 'next/link'
 
 interface DeveloperLandingProps {
   onConnect: () => void
@@ -131,6 +132,37 @@ export function DeveloperLanding({ onConnect, isConnected }: DeveloperLandingPro
             </motion.div>
           )
         })}
+      </motion.div>
+
+      {/* Try the Demo */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-gradient-to-br from-accent-yellow/20 to-accent-yellow/5 rounded-xl p-8 mb-20 border border-accent-yellow/30"
+      >
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-left">
+            <h2 className="text-2xl font-serif text-ink mb-2">
+              Try the Interactive Demo
+            </h2>
+            <p className="text-ink-muted">
+              Test the full SDK flow in your browser. See postMessage events, inspect the iframe, and debug your integration.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link href="/sdk-demo">
+              <Button variant="primary" className="min-w-[160px]">
+                <Play className="w-4 h-4 mr-2" />
+                Full Demo
+              </Button>
+            </Link>
+            <Link href="/sdk-demo/iframe-test">
+              <Button variant="secondary" className="min-w-[160px]">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Iframe Test
+              </Button>
+            </Link>
+          </div>
+        </div>
       </motion.div>
 
       {/* Code Preview */}

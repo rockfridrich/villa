@@ -9,6 +9,7 @@ import type { Identity } from './types'
 
 /**
  * Trusted origins for postMessage communication
+ * HTTPS-only for security - passkeys require HTTPS anyway
  */
 const TRUSTED_ORIGINS = [
   'https://villa.cash',
@@ -16,9 +17,9 @@ const TRUSTED_ORIGINS = [
   'https://beta.villa.cash',
   'https://dev-1.villa.cash',
   'https://dev-2.villa.cash',
-  'http://localhost:3000',
-  'http://localhost:3001',
+  'https://developers.villa.cash',
   'https://localhost:3000',
+  'https://localhost:3001',
 ] as const
 
 /**
