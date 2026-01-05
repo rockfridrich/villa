@@ -139,7 +139,6 @@ export function ProfileSettings({
           <AvatarUpload
             onUpload={handleAvatarUpload}
             onCancel={handleBack}
-            currentAvatarUrl={customAvatar?.dataUrl}
           />
         </div>
       )
