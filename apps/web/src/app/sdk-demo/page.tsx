@@ -18,7 +18,6 @@ import {
   Fingerprint,
   Trash2,
   Globe,
-  ExternalLink,
 } from 'lucide-react'
 
 interface LogEntry {
@@ -642,12 +641,12 @@ const address = await provider.resolveName('alice.villa.cash')`}
                                 </span>
                               )}
                             </div>
-                            {log.args && (
+                            {log.args !== undefined && (
                               <pre className="text-xs text-ink-muted mt-1 overflow-x-auto">
                                 {JSON.stringify(log.args, null, 2)}
                               </pre>
                             )}
-                            {log.result && (
+                            {log.result !== undefined && (
                               <pre className="text-xs text-green-600 mt-1 overflow-x-auto">
                                 → {JSON.stringify(log.result, null, 2)}
                               </pre>

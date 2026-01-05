@@ -14,6 +14,7 @@ export type { ProfileSettingsProps, ProfileData, ProfileUpdate } from './Profile
 export { AvatarPreview } from './AvatarPreview'
 export { AvatarSelection } from './AvatarSelection'
 export { AvatarUpload } from './AvatarUpload'
+export { AvatarImage, AvatarImageWithFallback } from './AvatarImage'
 
 // Individual components (for custom flows)
 export { ConsentRequest } from './ConsentRequest'
