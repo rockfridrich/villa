@@ -205,10 +205,12 @@ curl -X PATCH "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/dn
 
 ```bash
 # Add resolver TXT record for ENS
-CLOUDFLARE_API_TOKEN="kpFQ_8IfnLdMZF1xw99M7CkPyEwjEoMDx6bEUWLE" \
-CLOUDFLARE_ZONE_ID="bf3804f5e64ef25baeb078f8d986b6b9" \
+CLOUDFLARE_API_TOKEN="$CLOUDFLARE_API_TOKEN" \
+CLOUDFLARE_ZONE_ID="$CLOUDFLARE_ZONE_ID" \
 npx tsx src/lib/infra/cli.ts cloudflare dns add-txt _ens.villa.cash "a]0xRESOLVER_ADDRESS"
 ```
+
+> **Note:** Get API credentials from 1Password or GitHub Secrets. Never commit tokens to code.
 
 Or via Cloudflare dashboard:
 1. Go to DNS → Records
