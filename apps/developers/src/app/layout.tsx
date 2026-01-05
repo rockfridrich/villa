@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Header } from '../components/Header'
+import { Sidebar } from '../components/Sidebar'
 
 export const metadata: Metadata = {
   title: 'Villa SDK - Developer Documentation',
@@ -18,7 +20,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Header />
+        <div className="max-w-7xl mx-auto flex gap-8 px-6">
+          <Sidebar />
+          <main className="flex-1 min-w-0">{children}</main>
+        </div>
+      </body>
     </html>
   )
 }

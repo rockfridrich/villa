@@ -16,17 +16,17 @@
 
 ## Priority Matrix
 
-| Priority | Item | Owner | Effort |
+| Priority | Item | Owner | Status |
 |----------|------|-------|--------|
-| P0 | SignInWelcome screen | @build | M |
-| P0 | NicknameSelection screen | @build | M |
-| P0 | ConsentRequest screen | @build | S |
-| P1 | Sidebar navigation | @build | M |
-| P1 | Mobile nav drawer | @build | M |
-| P1 | Alert component | @build | S |
-| P1 | Badge component | @build | S |
-| P1 | DropdownMenu component | @build | S |
-| P2 | Fix flaky E2E tests | @test | M |
+| P0 | SignInWelcome screen | @build | DONE |
+| P0 | NicknameSelection screen | @build | DONE |
+| P0 | ConsentRequest screen | @build | DONE |
+| P1 | Sidebar navigation | @build | IN PROGRESS |
+| P1 | Mobile nav drawer | @build | IN PROGRESS |
+| P1 | Alert component | @build | IN PROGRESS |
+| P1 | Badge component | @build | IN PROGRESS |
+| P1 | DropdownMenu component | @build | IN PROGRESS |
+| P2 | Fix flaky E2E tests | @test | BACKLOG |
 
 ---
 

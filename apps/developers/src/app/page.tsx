@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, ExternalLink, Github, ChevronRight } from 'lucide-react'
+import { Copy, Check, ExternalLink, ChevronRight } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
@@ -65,40 +65,8 @@ function CodeBlock({ code, language = 'tsx' }: { code: string; language?: string
 export default function DevelopersPage() {
   return (
     <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-cream-50/80 backdrop-blur-sm border-b border-ink/5">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <span className="font-serif text-xl">Villa SDK</span>
-            <div className="hidden sm:flex items-center gap-4 text-sm">
-              <a href="#quickstart" className="text-ink-muted hover:text-ink transition-colors">
-                Quickstart
-              </a>
-              <a href="#api" className="text-ink-muted hover:text-ink transition-colors">
-                API
-              </a>
-              <a href="#components" className="text-ink-muted hover:text-ink transition-colors">
-                Components
-              </a>
-              <a href="#ai" className="text-accent-yellow hover:text-accent-yellow/80 transition-colors font-medium">
-                AI
-              </a>
-            </div>
-          </div>
-          <a
-            href="https://github.com/rockfridrich/villa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
-          >
-            <Github className="w-4 h-4" />
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
-        </div>
-      </nav>
-
       {/* Hero */}
-      <section className="py-20 px-6">
+      <section id="getting-started" className="py-20">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h1 className="font-serif text-5xl sm:text-6xl tracking-tight">
             Villa SDK
@@ -138,7 +106,7 @@ export default function DevelopersPage() {
       </section>
 
       {/* Feature pillars */}
-      <section className="py-16 px-6 bg-ink/[0.02]">
+      <section className="py-16 bg-ink/[0.02]">
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
           {[
             {
@@ -166,7 +134,7 @@ export default function DevelopersPage() {
       </section>
 
       {/* Quickstart */}
-      <section id="quickstart" className="py-20 px-6">
+      <section id="quickstart" className="py-20">
         <div className="max-w-3xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Quickstart</h2>
@@ -174,7 +142,7 @@ export default function DevelopersPage() {
           </div>
 
           {/* Step 1 */}
-          <div className="space-y-4">
+          <div id="installation" className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium">
                 1
@@ -235,7 +203,7 @@ export default function DevelopersPage() {
       </section>
 
       {/* API Reference */}
-      <section id="api" className="py-20 px-6 bg-ink/[0.02]">
+      <section id="api" className="py-20 bg-ink/[0.02]">
         <div className="max-w-3xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">API Reference</h2>
@@ -296,7 +264,7 @@ export default function DevelopersPage() {
       </section>
 
       {/* Components */}
-      <section id="components" className="py-20 px-6">
+      <section id="components" className="py-20">
         <div className="max-w-3xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">React Components</h2>
@@ -366,7 +334,7 @@ function LoginPage() {
       </section>
 
       {/* AI Integration */}
-      <section id="ai" className="py-20 px-6 bg-accent-yellow/5 border-y border-accent-yellow/20">
+      <section id="ai" className="py-20 bg-accent-yellow/5 border-y border-accent-yellow/20">
         <div className="max-w-3xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-yellow/20 rounded-full text-sm font-medium">
@@ -479,7 +447,7 @@ function App() {
       </section>
 
       {/* Full Example */}
-      <section className="py-20 px-6 bg-ink/[0.02]">
+      <section className="py-20 bg-ink/[0.02]">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Full Example</h2>
@@ -536,7 +504,7 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-ink/5">
+      <footer className="py-12 border-t border-ink/5">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-sm text-ink-muted">
             <a href="https://villa.cash" className="hover:text-ink transition-colors">
