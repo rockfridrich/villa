@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream-50 text-ink antialiased;
+  }
+
+  ::selection {
+    @apply bg-accent-yellow/40;
+  }
+}
+
+@layer components {
+  .code-block {
+    @apply bg-ink text-cream-50 rounded-lg p-4 font-mono text-sm overflow-x-auto;
+  }
+
+  .code-inline {
+    @apply bg-ink/10 text-ink px-1.5 py-0.5 rounded font-mono text-sm;
+  }
+}

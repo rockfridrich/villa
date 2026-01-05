@@ -109,22 +109,32 @@ export function ConsentRequest({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.4 + permissions.length * 0.1 }}
       >
-        <Button
-          size="lg"
-          variant="primary"
-          className="w-full"
-          onClick={onAllow}
+        <motion.div
+          whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+          transition={{ duration: 0.1 }}
         >
-          Allow
-        </Button>
-        <Button
-          size="lg"
-          variant="ghost"
-          className="w-full"
-          onClick={onDeny}
+          <Button
+            size="lg"
+            variant="primary"
+            className="w-full"
+            onClick={onAllow}
+          >
+            Allow
+          </Button>
+        </motion.div>
+        <motion.div
+          whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+          transition={{ duration: 0.1 }}
         >
-          Deny
-        </Button>
+          <Button
+            size="lg"
+            variant="ghost"
+            className="w-full"
+            onClick={onDeny}
+          >
+            Deny
+          </Button>
+        </motion.div>
       </motion.div>
 
       {/* Helper text */}

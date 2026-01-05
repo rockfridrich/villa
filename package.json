@@ -14,6 +14,7 @@
   },
   "scripts": {
     "dev": "turbo run dev --filter=@villa/web",
+    "dev:developers": "pnpm --filter @villa/developers dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 interface SignInWelcomeProps {
@@ -79,30 +80,50 @@ export function SignInWelcome({
         {/* CTAs */}
         <motion.div variants={itemVariants} className="space-y-4">
           {/* Primary: Sign In */}
-          <Button
-            size="lg"
-            variant="primary"
-            onClick={onSignIn}
-            disabled={isLoading}
-            className="w-full"
+          <motion.div
+            whileTap={prefersReducedMotion || isLoading ? {} : { scale: 0.98 }}
+            transition={{ duration: 0.1 }}
           >
-            {isLoading && loadingAction === 'signin'
-              ? 'Signing in...'
-              : 'Sign In'}
-          </Button>
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={onSignIn}
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading && loadingAction === 'signin' ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </motion.div>
 
           {/* Secondary: Create Villa ID */}
-          <Button
-            size="lg"
-            variant="secondary"
-            onClick={onCreateAccount}
-            disabled={isLoading}
-            className="w-full"
+          <motion.div
+            whileTap={prefersReducedMotion || isLoading ? {} : { scale: 0.98 }}
+            transition={{ duration: 0.1 }}
           >
-            {isLoading && loadingAction === 'create'
-              ? 'Creating...'
-              : 'Create Villa ID'}
-          </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={onCreateAccount}
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading && loadingAction === 'create' ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                'Create Villa ID'
+              )}
+            </Button>
+          </motion.div>
         </motion.div>
       </div>
 
