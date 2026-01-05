@@ -27,8 +27,8 @@ services:
       timeout_seconds: 5
       success_threshold: 1
       failure_threshold: 3
-    build_command: pnpm install && pnpm --filter @villa/developers build
-    run_command: cd apps/developers && node .next/standalone/apps/developers/server.js
+    build_command: pnpm install && pnpm --filter @villa/developers build && cp -r apps/developers/.next/static apps/developers/.next/standalone/apps/developers/.next/static
+    run_command: cd apps/developers/.next/standalone/apps/developers && node server.js
     envs:
       - key: NODE_ENV
         value: production
