@@ -687,4 +687,41 @@ Full session logs preserved in git history for reference.
 
 ---
 
+## npm Publishing Patterns
+
+### 22. npm Package Publishing Pattern
+
+**Pre-publish checklist:**
+1. Verify package.json `name` matches intended npm scope
+2. Check npm scope exists: `npm search @scope`
+3. Build locally: `pnpm build`
+4. Dry run: `npm pack --dry-run`
+
+**Scope ownership:**
+- `@username` scopes auto-exist for npm users
+- `@org` scopes require creating npm organization
+- Don't assume scope availability without checking
+
+**Trusted Publishing (recommended):**
+1. Configure on npmjs.com package settings
+2. Add `id-token: write` permission to workflow
+3. No NPM_TOKEN needed after setup
+
+### 23. Peer Dependencies vs Regular Dependencies
+
+```json
+// ❌ Bad: forces specific versions on consumers
+"dependencies": { "viem": "^2.0.0" }
+
+// ✅ Good: consumers control versions
+"peerDependencies": { "viem": "^2.0.0" }
+```
+
+**When to use peer deps:**
+- Core libs consumers likely have (React, viem)
+- Avoiding version conflicts
+- Smaller bundle (deduplication)
+
+---
+
 *Auto-update: Extract patterns here, archive sessions after 2 weeks*

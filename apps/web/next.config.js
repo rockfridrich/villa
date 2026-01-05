@@ -19,6 +19,18 @@ const nextConfig = {
 
   // Security + caching headers
   async headers() {
+    // Trusted origins that can embed /auth in an iframe
+    const trustedFrameAncestors = [
+      "'self'",
+      'https://villa.cash',
+      'https://www.villa.cash',
+      'https://beta.villa.cash',
+      'https://dev-1.villa.cash',
+      'https://dev-2.villa.cash',
+      'https://localhost:3000',
+      'https://localhost:3001',
+    ].join(' ')
+
     return [
       // Static assets - long cache (hashed filenames)
       {
@@ -50,9 +62,41 @@ const nextConfig = {
           },
         ],
       },
-      // All routes - security headers
+      // /auth route - ALLOW iframe embedding for SDK
       {
-        source: '/:path*',
+        source: '/auth',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'publickey-credentials-get=*, publickey-credentials-create=*',
+          },
+          {
+            // CSP for Porto SDK - allows iframe embedding from trusted origins
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh",
+              "frame-src https://id.porto.sh",
+              `frame-ancestors ${trustedFrameAncestors}`,
+            ].join('; '),
+          },
+        ],
+      },
+      // All other routes - strict security headers
+      {
+        source: '/:path((?!auth).*)',
         headers: [
           {
             key: 'X-Frame-Options',
