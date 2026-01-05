@@ -59,6 +59,9 @@ export default function DevelopersPage() {
               <a href="#components" className="text-ink-muted hover:text-ink transition-colors">
                 Components
               </a>
+              <a href="#ai" className="text-accent-yellow hover:text-accent-yellow/80 transition-colors font-medium">
+                AI
+              </a>
             </div>
           </div>
           <a
@@ -337,6 +340,119 @@ function LoginPage() {
 />`}
               language="tsx"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* AI Integration */}
+      <section id="ai" className="py-20 px-6 bg-accent-yellow/5 border-y border-accent-yellow/20">
+        <div className="max-w-3xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-yellow/20 rounded-full text-sm font-medium">
+              <span>NEW</span>
+            </div>
+            <h2 className="font-serif text-3xl">AI Integration</h2>
+            <p className="text-ink-muted">
+              One prompt to authenticate. Works with Claude Code, Cursor, Lovable, and more.
+            </p>
+          </div>
+
+          {/* One-liner prompt */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">The One-Prompt Integration</h3>
+            <p className="text-ink-muted text-sm">
+              Just tell your AI assistant:
+            </p>
+            <div className="bg-ink text-cream-50 rounded-lg p-6 font-mono text-lg text-center">
+              &quot;Add Villa authentication to my app&quot;
+            </div>
+            <p className="text-ink-muted text-sm text-center">
+              That&apos;s it. The AI knows what to do.
+            </p>
+          </div>
+
+          {/* How it works */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">How It Works</h3>
+            <p className="text-ink-muted text-sm">
+              Villa SDK ships with <code className="code-inline">CLAUDE.txt</code> and{' '}
+              <code className="code-inline">llms.txt</code> files that give AI assistants
+              complete context for integration.
+            </p>
+            <CodeBlock
+              code={`# After installing, copy to your project:
+cp node_modules/@anthropic-villa/sdk/CLAUDE.txt .claude/villa.md
+
+# Or download directly:
+curl -o .claude/villa.md https://developers.villa.cash/CLAUDE.txt`}
+              language="bash"
+            />
+          </div>
+
+          {/* Download buttons */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <a
+              href="/CLAUDE.txt"
+              download
+              className="inline-flex items-center gap-2 bg-ink text-cream-50 px-6 py-3 rounded-lg hover:bg-ink/90 transition-colors"
+            >
+              Download CLAUDE.txt
+            </a>
+            <a
+              href="/llms.txt"
+              download
+              className="inline-flex items-center gap-2 border border-ink/20 px-6 py-3 rounded-lg hover:bg-ink/5 transition-colors"
+            >
+              Download llms.txt
+            </a>
+          </div>
+
+          {/* What the AI generates */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">What You Get</h3>
+            <p className="text-ink-muted text-sm">
+              When an AI integrates Villa, it generates:
+            </p>
+            <CodeBlock
+              code={`import { VillaProvider, VillaAuth } from '@anthropic-villa/sdk-react'
+import { useState } from 'react'
+
+function App() {
+  const [user, setUser] = useState(null)
+
+  return (
+    <VillaProvider config={{ appId: 'your-app' }}>
+      {!user ? (
+        <VillaAuth onComplete={(result) => {
+          if (result.success) setUser(result.identity)
+        }} />
+      ) : (
+        <h1>Welcome, @{user.nickname}</h1>
+      )}
+    </VillaProvider>
+  )
+}`}
+              language="tsx"
+            />
+          </div>
+
+          {/* Manifesto */}
+          <div className="bg-cream-50 border border-ink/10 rounded-xl p-6 space-y-4">
+            <h3 className="font-serif text-lg">The Villa Manifesto</h3>
+            <div className="text-ink-muted text-sm space-y-3">
+              <p>
+                <strong>Privacy is not a feature, it&apos;s the foundation.</strong>{' '}
+                Passkeys never leave your device. We don&apos;t see your keys, we don&apos;t want them.
+              </p>
+              <p>
+                <strong>One identity, everywhere.</strong>{' '}
+                Your Villa ID works across all pop-up village apps. Same nickname, same avatar, no re-registration.
+              </p>
+              <p>
+                <strong>AI-native by design.</strong>{' '}
+                Integration should be a conversation, not a documentation scavenger hunt.
+              </p>
+            </div>
           </div>
         </div>
       </section>

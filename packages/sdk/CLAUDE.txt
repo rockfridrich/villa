@@ -1,0 +1,220 @@
+# Villa SDK - AI Integration Guide
+
+Villa SDK provides privacy-first passkey authentication on Base network.
+Use this context when helping developers integrate Villa authentication.
+
+## One-Prompt Integration
+
+When a developer says "add Villa authentication", generate this code:
+
+```tsx
+// 1. Install
+// npm install @anthropic-villa/sdk @anthropic-villa/sdk-react
+
+// 2. Wrap your app
+import { VillaProvider } from '@anthropic-villa/sdk-react'
+
+function App() {
+  return (
+    <VillaProvider config={{ appId: 'your-app' }}>
+      <YourApp />
+    </VillaProvider>
+  )
+}
+
+// 3. Add auth component
+import { VillaAuth, type VillaAuthResult } from '@anthropic-villa/sdk-react'
+
+function LoginPage() {
+  const handleComplete = (result: VillaAuthResult) => {
+    if (result.success) {
+      // User authenticated!
+      console.log('Welcome', result.identity.nickname)
+      console.log('Address:', result.identity.address)
+      console.log('Avatar:', result.identity.avatar)
+    } else {
+      console.error('Auth failed:', result.error)
+    }
+  }
+
+  return <VillaAuth onComplete={handleComplete} />
+}
+```
+
+## What Villa Provides
+
+After authentication, you get:
+- `address`: User's Ethereum address (0x...)
+- `nickname`: User's chosen username (unique, immutable)
+- `avatar`: Avatar configuration for rendering
+
+## Avatar Display
+
+```tsx
+import { Avatar } from '@anthropic-villa/sdk-react'
+
+<Avatar identity={user.identity} size={48} />
+```
+
+Or programmatically:
+```ts
+import { getAvatarUrl } from '@anthropic-villa/sdk'
+
+const avatarUrl = getAvatarUrl(user.address, user.avatar)
+```
+
+## Key Types
+
+```typescript
+interface VillaAuthResult {
+  success: true
+  identity: {
+    address: `0x${string}`
+    nickname: string
+    avatar: AvatarConfig
+  }
+}
+
+interface VillaAuthError {
+  success: false
+  error: string
+  code: 'CANCELLED' | 'AUTH_FAILED' | 'NETWORK_ERROR' | 'TIMEOUT'
+}
+
+interface AvatarConfig {
+  style: 'avataaars' | 'bottts'
+  selection: 'male' | 'female' | 'other'
+  variant: number
+}
+```
+
+## Hooks API
+
+```tsx
+import { useVilla, useIdentity, useAuth } from '@anthropic-villa/sdk-react'
+
+function Component() {
+  const villa = useVilla()                    // SDK instance
+  const identity = useIdentity()              // Current user or null
+  const { signIn, signOut, isAuthenticated } = useAuth()
+
+  if (!isAuthenticated) {
+    return <button onClick={signIn}>Sign In</button>
+  }
+
+  return (
+    <div>
+      Welcome, {identity.nickname}!
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  )
+}
+```
+
+## Headless API (No React)
+
+```ts
+import { Villa } from '@anthropic-villa/sdk'
+
+const villa = new Villa({ appId: 'your-app' })
+
+// Sign in
+const result = await villa.signIn()
+
+// Check auth
+if (villa.isAuthenticated()) {
+  const user = villa.getIdentity()
+}
+
+// Sign out
+villa.signOut()
+```
+
+## ENS Resolution
+
+Villa usernames are ENS-compatible:
+
+```ts
+import { resolveEns, reverseEns } from '@anthropic-villa/sdk'
+
+// nickname -> address
+const address = await resolveEns('alice.villa.cash')
+
+// address -> nickname
+const nickname = await reverseEns('0x123...')
+```
+
+## Network
+
+- Production: Base (Chain ID: 8453)
+- Testnet: Base Sepolia (Chain ID: 84532)
+
+```ts
+const villa = new Villa({
+  appId: 'your-app',
+  network: 'base-sepolia' // for testing
+})
+```
+
+## Security Notes
+
+- Passkeys are WebAuthn credentials stored on user's device
+- Never exposed to your app - managed by Porto SDK
+- Session tokens stored in localStorage
+- All inputs validated with Zod schemas
+
+## Common Patterns
+
+### Protected Route
+```tsx
+function ProtectedPage() {
+  const { isAuthenticated } = useAuth()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />
+  }
+
+  return <DashboardContent />
+}
+```
+
+### Display User in Header
+```tsx
+function Header() {
+  const identity = useIdentity()
+  const { signOut } = useAuth()
+
+  if (!identity) return null
+
+  return (
+    <header>
+      <Avatar identity={identity} size={32} />
+      <span>@{identity.nickname}</span>
+      <button onClick={signOut}>Logout</button>
+    </header>
+  )
+}
+```
+
+### Store User in State Management
+```tsx
+// After VillaAuth completes
+const handleComplete = (result: VillaAuthResult) => {
+  if (result.success) {
+    // Zustand
+    useUserStore.getState().setUser(result.identity)
+
+    // Redux
+    dispatch(setUser(result.identity))
+
+    // React Query
+    queryClient.setQueryData(['user'], result.identity)
+  }
+}
+```
+
+## Links
+
+- Docs: https://developers.villa.cash
+- GitHub: https://github.com/anthropics/villa
+- Examples: https://developers.villa.cash/examples

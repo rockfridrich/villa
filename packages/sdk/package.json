@@ -1,21 +1,52 @@
 {
-  "name": "@villa/sdk",
+  "name": "@anthropic-villa/sdk",
   "version": "0.1.0",
-  "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "description": "Villa Identity SDK - Privacy-first passkey authentication for Base network",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
+  "files": [
+    "dist",
+    "CLAUDE.txt",
+    "README.md",
+    "llms.txt"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "passkey",
+    "authentication",
+    "identity",
+    "web3",
+    "base",
+    "webauthn",
+    "porto",
+    "villa"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/villa.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://developers.villa.cash",
+  "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "viem": "^2.0.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5.5.0"
   }
 }

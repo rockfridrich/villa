@@ -1,0 +1,81 @@
+# Villa SDK
+
+> Privacy-first passkey authentication for Base network. No wallets. No passwords. Just Face ID.
+
+## Quick Integration (Copy this exactly)
+
+```bash
+npm install @anthropic-villa/sdk @anthropic-villa/sdk-react
+```
+
+```tsx
+import { VillaProvider, VillaAuth } from '@anthropic-villa/sdk-react'
+
+function App() {
+  const [user, setUser] = useState(null)
+
+  return (
+    <VillaProvider config={{ appId: 'your-app' }}>
+      {!user ? (
+        <VillaAuth onComplete={(result) => {
+          if (result.success) setUser(result.identity)
+        }} />
+      ) : (
+        <h1>Welcome, @{user.nickname}</h1>
+      )}
+    </VillaProvider>
+  )
+}
+```
+
+## What You Get
+
+After authentication:
+- `address`: Ethereum address (0x...)
+- `nickname`: Unique username
+- `avatar`: Avatar config for rendering
+
+## API
+
+### React Components
+- `<VillaProvider>` - Wrap your app (required)
+- `<VillaAuth>` - Complete auth flow
+- `<Avatar>` - Display user avatar
+
+### React Hooks
+- `useAuth()` - `{ signIn, signOut, isAuthenticated }`
+- `useIdentity()` - Current user or null
+- `useVilla()` - SDK instance
+
+### Headless (No React)
+```ts
+import { Villa } from '@anthropic-villa/sdk'
+const villa = new Villa({ appId: 'your-app' })
+const result = await villa.signIn()
+```
+
+## Types
+
+```typescript
+type VillaAuthResult = {
+  success: true
+  identity: {
+    address: `0x${string}`
+    nickname: string
+    avatar: AvatarConfig
+  }
+} | {
+  success: false
+  error: string
+  code: 'CANCELLED' | 'AUTH_FAILED' | 'NETWORK_ERROR'
+}
+```
+
+## Network
+
+- Production: Base (8453)
+- Testnet: `{ network: 'base-sepolia' }` (84532)
+
+## Docs
+
+https://developers.villa.cash
