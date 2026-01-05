@@ -6,7 +6,8 @@
         "./src/*"
       ]
     },
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node", "react", "react-dom"]
   },
   "include": [
     "next-env.d.ts",
