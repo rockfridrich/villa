@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 
+// Disable caching for health check - must return fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Health check endpoint for monitoring and debugging
  * Used by ngrok scripts to verify the app is running

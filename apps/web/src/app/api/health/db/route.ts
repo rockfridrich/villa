@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import postgres from 'postgres'
 
+// Disable caching for health check - must return fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Database health check endpoint
  * Tests connection to PostgreSQL and returns status
