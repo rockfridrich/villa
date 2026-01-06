@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/rockfridrich/villa/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: Security Vulnerabilities
+    url: https://github.com/rockfridrich/villa/security/policy
+    about: Report security issues privately
+  - name: Documentation
+    url: https://developers.villa.cash
+    about: Read the developer documentation

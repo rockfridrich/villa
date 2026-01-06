@@ -1,0 +1,93 @@
+name: Good First Issue
+description: Create a curated issue for new contributors (maintainers only)
+title: "[Good First Issue]: "
+labels: ["good first issue", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for maintainers to create well-scoped issues for new contributors.
+
+        A good first issue should:
+        - Be completable in 1-2 hours
+        - Have clear acceptance criteria
+        - Include pointers to relevant code
+        - Not require deep context
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: Clear, concise description of what needs to be done
+      placeholder: |
+        Add a loading spinner to the login button while authentication is in progress.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Background information to help the contributor understand
+      placeholder: |
+        Currently, when users click login, there's no feedback until the passkey prompt appears.
+        This can take 1-2 seconds and users sometimes click multiple times.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Relevant Files
+      description: Point to the files they'll need to modify
+      placeholder: |
+        - `apps/web/src/components/auth/LoginButton.tsx` - The button component
+        - `apps/web/src/components/ui/Spinner.tsx` - Existing spinner component to reuse
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know this is done?
+      placeholder: |
+        - [ ] Button shows spinner when clicked
+        - [ ] Button is disabled during loading
+        - [ ] Spinner uses existing design system component
+        - [ ] Works on mobile
+    validations:
+      required: true
+
+  - type: textarea
+    id: hints
+    attributes:
+      label: Implementation Hints
+      description: Optional guidance without giving away the solution
+      placeholder: |
+        Look at how `SubmitButton.tsx` handles loading state - similar pattern.
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How challenging is this?
+      options:
+        - Beginner (first PR ever)
+        - Easy (familiar with React)
+        - Medium (requires understanding of codebase)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: time
+    attributes:
+      label: Estimated Time
+      description: How long should this take?
+      options:
+        - 30 minutes
+        - 1 hour
+        - 2 hours
+        - Half day
+    validations:
+      required: true

@@ -1,0 +1,25 @@
+# Villa Code Owners
+# These owners will be requested for review on PRs that modify their areas.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @rockfridrich
+
+# Critical infrastructure - owner review required
+/.github/ @rockfridrich
+/contracts/ @rockfridrich
+
+# Core authentication - security-sensitive
+/apps/web/src/lib/porto.ts @rockfridrich
+/apps/web/src/lib/store.ts @rockfridrich
+
+# SDK - public API surface
+/packages/sdk/ @rockfridrich
+
+# Database and migrations
+/apps/api/src/db/ @rockfridrich
+/drizzle/ @rockfridrich
+
+# Security configurations
+/.env.example @rockfridrich
+/apps/*/.env.example @rockfridrich

@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Villa contributor achievement definitions",
+  "achievements": [
+    {
+      "id": "setup-complete",
+      "name": "Environment Ready",
+      "description": "Successfully completed onboarding and built the project",
+      "emoji": "🏁",
+      "label": "achievement:setup",
+      "points": 10,
+      "trigger": "manual",
+      "criteria": "Run ./scripts/onboard.sh successfully"
+    },
+    {
+      "id": "first-pr",
+      "name": "First Pull Request",
+      "description": "Opened your first pull request to Villa",
+      "emoji": "🎯",
+      "label": "achievement:first-pr",
+      "points": 20,
+      "trigger": "pr_opened",
+      "criteria": "Author has no previous PRs in this repo"
+    },
+    {
+      "id": "first-merge",
+      "name": "Code Shipped",
+      "description": "Got your first PR merged to main",
+      "emoji": "🚀",
+      "label": "achievement:shipped",
+      "points": 50,
+      "trigger": "pr_merged",
+      "criteria": "Author has no previous merged PRs"
+    },
+    {
+      "id": "qa-tester",
+      "name": "QA Hero",
+      "description": "Tested on physical device via ngrok",
+      "emoji": "📱",
+      "label": "achievement:qa",
+      "points": 30,
+      "trigger": "manual",
+      "criteria": "Ran pnpm qa and tested on mobile"
+    },
+    {
+      "id": "bug-squasher",
+      "name": "Bug Squasher",
+      "description": "Fixed 3 or more bugs",
+      "emoji": "🐛",
+      "label": "achievement:bugs",
+      "points": 75,
+      "trigger": "pr_merged",
+      "criteria": "3+ merged PRs with 'fix:' prefix or 'bug' label"
+    },
+    {
+      "id": "feature-builder",
+      "name": "Feature Builder",
+      "description": "Shipped a major feature",
+      "emoji": "⭐",
+      "label": "achievement:feature",
+      "points": 100,
+      "trigger": "pr_merged",
+      "criteria": "Merged PR with 'feat:' prefix and 'enhancement' label"
+    },
+    {
+      "id": "docs-champion",
+      "name": "Docs Champion",
+      "description": "Improved documentation significantly",
+      "emoji": "📚",
+      "label": "achievement:docs",
+      "points": 40,
+      "trigger": "pr_merged",
+      "criteria": "Merged PR with 'docs:' prefix"
+    },
+    {
+      "id": "reviewer",
+      "name": "Code Reviewer",
+      "description": "Provided helpful code reviews on 5+ PRs",
+      "emoji": "👀",
+      "label": "achievement:reviewer",
+      "points": 60,
+      "trigger": "review_submitted",
+      "criteria": "5+ review comments submitted"
+    },
+    {
+      "id": "trusted-contributor",
+      "name": "Trusted Contributor",
+      "description": "10+ merged PRs, eligible for maintainer status",
+      "emoji": "💎",
+      "label": "achievement:trusted",
+      "points": 200,
+      "trigger": "pr_merged",
+      "criteria": "10+ merged PRs to main"
+    },
+    {
+      "id": "streak-7",
+      "name": "Week Warrior",
+      "description": "Contributed 7 days in a row",
+      "emoji": "🔥",
+      "label": "achievement:streak",
+      "points": 50,
+      "trigger": "daily_check",
+      "criteria": "Commits or PRs on 7 consecutive days"
+    }
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "name": "Newcomer",
+      "minPoints": 0,
+      "label": "contributor-level-1",
+      "color": "#c5def5"
+    },
+    {
+      "level": 2,
+      "name": "Contributor",
+      "minPoints": 100,
+      "label": "contributor-level-2",
+      "color": "#bfd4f2"
+    },
+    {
+      "level": 3,
+      "name": "Trusted",
+      "minPoints": 300,
+      "label": "contributor-level-3",
+      "color": "#a2d2ff"
+    },
+    {
+      "level": 4,
+      "name": "Maintainer",
+      "minPoints": 500,
+      "label": "maintainer",
+      "color": "#ffd700"
+    }
+  ]
+}
