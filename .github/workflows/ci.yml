@@ -146,3 +146,74 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  quality-metrics:
+    name: Quality Metrics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100  # Get enough history for metrics
+
+      - name: Calculate quality metrics
+        id: metrics
+        run: |
+          # Count commits in last 30 days
+          TOTAL_COMMITS=$(git log --since="30 days ago" --oneline | wc -l | tr -d ' ')
+
+          # Count fix/correction commits
+          FIX_COMMITS=$(git log --since="30 days ago" --oneline --grep="^fix" --grep="^revert" --grep="^oops" -i | wc -l | tr -d ' ')
+
+          # Count Claude-generated commits
+          CLAUDE_COMMITS=$(git log --since="30 days ago" --oneline --grep="Claude Code" | wc -l | tr -d ' ')
+
+          # Calculate fixup ratio (lower is better)
+          if [ "$TOTAL_COMMITS" -gt 0 ]; then
+            FIXUP_RATIO=$(echo "scale=2; $FIX_COMMITS * 100 / $TOTAL_COMMITS" | bc)
+          else
+            FIXUP_RATIO=0
+          fi
+
+          # Calculate Claude ratio
+          if [ "$TOTAL_COMMITS" -gt 0 ]; then
+            CLAUDE_RATIO=$(echo "scale=2; $CLAUDE_COMMITS * 100 / $TOTAL_COMMITS" | bc)
+          else
+            CLAUDE_RATIO=0
+          fi
+
+          # Quality score (simplified: 100 - fixup_ratio)
+          QUALITY_SCORE=$(echo "scale=0; 100 - $FIXUP_RATIO" | bc)
+
+          echo "total_commits=$TOTAL_COMMITS" >> $GITHUB_OUTPUT
+          echo "fix_commits=$FIX_COMMITS" >> $GITHUB_OUTPUT
+          echo "claude_commits=$CLAUDE_COMMITS" >> $GITHUB_OUTPUT
+          echo "fixup_ratio=$FIXUP_RATIO" >> $GITHUB_OUTPUT
+          echo "claude_ratio=$CLAUDE_RATIO" >> $GITHUB_OUTPUT
+          echo "quality_score=$QUALITY_SCORE" >> $GITHUB_OUTPUT
+
+          # Output summary
+          echo "## Quality Metrics (Last 30 Days)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value | Target |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Commits | $TOTAL_COMMITS | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fix Commits | $FIX_COMMITS | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fixup Ratio | ${FIXUP_RATIO}% | < 15% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Claude Commits | $CLAUDE_COMMITS (${CLAUDE_RATIO}%) | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Score | $QUALITY_SCORE | >= 85 |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check quality thresholds
+        run: |
+          FIXUP_RATIO=${{ steps.metrics.outputs.fixup_ratio }}
+          QUALITY_SCORE=${{ steps.metrics.outputs.quality_score }}
+
+          # Warn if fixup ratio > 20%
+          if (( $(echo "$FIXUP_RATIO > 20" | bc -l) )); then
+            echo "::warning::Fixup ratio ($FIXUP_RATIO%) exceeds 20% threshold"
+          fi
+
+          # Warn if quality score < 80
+          if (( $(echo "$QUALITY_SCORE < 80" | bc -l) )); then
+            echo "::warning::Quality score ($QUALITY_SCORE) below 80 threshold"
+          fi

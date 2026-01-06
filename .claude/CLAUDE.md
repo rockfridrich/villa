@@ -47,16 +47,18 @@ bd show <id>         # Task details
 ./scripts/bd-workflow.sh done <id>    # Complete task
 ```
 
-| Agent | Model | Use For |
-|-------|-------|---------|
-| @spec | opus | Architecture decisions |
-| @build | sonnet | Implementation |
-| @design | sonnet | UI bootstrap, critique, animations |
-| @test | haiku | Run tests |
-| @review | sonnet | Code review |
-| @ops | haiku | Git, GitHub, deploy |
+### Cost-Optimized Agents (see [agents/INDEX.md](agents/INDEX.md))
 
-**Manifest:** [.claude/agents/](.claude/agents/) — Full definitions for all agents
+| Tier | Model | Agents | Use For |
+|------|-------|--------|---------|
+| Workers | haiku | @explore, @test, @ops | Search, test, deploy |
+| Specialists | sonnet | @build, @design, @review | Implementation |
+| Quality | sonnet | @quality-gate | Auto-validation |
+| Architects | opus | @spec, @architect | Architecture only |
+
+**Routing:** @router (haiku) classifies → appropriate tier → @quality-gate validates
+
+**Cost target:** < $50/day (down from $115/day)
 
 ---
 
@@ -83,13 +85,14 @@ bd show <id>         # Task details
 
 ## Anti-Patterns (Token Burners)
 
+- ❌ Using Opus for file searches (use @explore haiku)
+- ❌ Using Opus for test runs (use @test haiku)
+- ❌ Skipping @quality-gate validation
 - ❌ Pushing without running tests locally
 - ❌ Implementing before spec is approved
 - ❌ Creating new files when editing existing works
-- ❌ Over-documenting process (this file should stay <200 lines)
 - ❌ Multiple PRs for same feature (iterate in one PR)
 - ❌ CI debugging loops without checking deployment health
-- ❌ Manual `gh run list` polling (use @ops background)
 
 ---
 

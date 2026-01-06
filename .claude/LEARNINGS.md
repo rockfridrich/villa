@@ -1493,3 +1493,8 @@ Phase 3: Features (10% token cost, 70% user value)
 ```
 
 **Key insight:** Time in Phase 1 feels slow but makes Phase 2-3 exponentially faster
+
+### CI Failure - 2026-01-06 21:28
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20751345377
+- Action: Check `gh run view 20751345377 --log-failed`

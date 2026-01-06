@@ -49,6 +49,15 @@ interface CostEntry {
   source: string
 }
 
+interface QualityMetrics {
+  totalCommits: number
+  fixCommits: number
+  claudeCommits: number
+  fixupRatio: number
+  qualityScore: number
+  ciPassRate: number
+}
+
 interface MetricsData {
   git: {
     sessions: SessionMetrics[]
@@ -71,6 +80,7 @@ interface MetricsData {
     sourceFile?: string
     note: string
   }
+  quality: QualityMetrics
   lastUpdated: string
 }
 
@@ -493,6 +503,91 @@ export default function MetricsPage() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Quality Metrics */}
+            <div>
+              <h2 className="font-serif text-2xl mb-6 flex items-center gap-2">
+                <CheckCircle className="w-6 h-6" />
+                Quality Metrics
+                <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded ml-2">
+                  From git history
+                </span>
+              </h2>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Quality Score Gauge */}
+                <div className="bg-cream-50 border border-ink/5 rounded-xl p-4 col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Quality Score</span>
+                    <span className={`text-2xl font-bold ${
+                      data.quality.qualityScore >= 85 ? 'text-green-600' :
+                      data.quality.qualityScore >= 70 ? 'text-accent-yellow' :
+                      'text-red-600'
+                    }`}>
+                      {data.quality.qualityScore}
+                    </span>
+                  </div>
+                  <div className="h-3 bg-ink/10 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${
+                        data.quality.qualityScore >= 85 ? 'bg-green-500' :
+                        data.quality.qualityScore >= 70 ? 'bg-accent-yellow' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${data.quality.qualityScore}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-ink-muted mt-1">
+                    <span>Target: 85+</span>
+                    <span>100 - fixup ratio</span>
+                  </div>
+                </div>
+
+                {/* Fixup Ratio */}
+                <div className="bg-cream-50 border border-ink/5 rounded-xl p-4">
+                  <div className={`text-2xl font-bold ${
+                    data.quality.fixupRatio <= 15 ? 'text-green-600' :
+                    data.quality.fixupRatio <= 20 ? 'text-accent-yellow' :
+                    'text-red-600'
+                  }`}>
+                    {data.quality.fixupRatio}%
+                  </div>
+                  <div className="text-sm text-ink-muted">Fixup Ratio</div>
+                  <div className="text-xs text-ink-muted mt-1">Target: &lt;15%</div>
+                </div>
+
+                {/* Claude Commits */}
+                <div className="bg-cream-50 border border-ink/5 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {data.quality.claudeCommits}
+                  </div>
+                  <div className="text-sm text-ink-muted">Claude Commits</div>
+                  <div className="text-xs text-ink-muted mt-1">
+                    {data.quality.totalCommits > 0
+                      ? `${Math.round((data.quality.claudeCommits / data.quality.totalCommits) * 100)}% of total`
+                      : 'No commits'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Quality Breakdown */}
+              <div className="mt-4 bg-cream-50 border border-ink/5 rounded-xl p-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-semibold">{data.quality.totalCommits}</div>
+                    <div className="text-xs text-ink-muted">Total Commits</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-red-600">{data.quality.fixCommits}</div>
+                    <div className="text-xs text-ink-muted">Fix Commits</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-green-600">{data.quality.ciPassRate}%</div>
+                    <div className="text-xs text-ink-muted">CI Pass Rate</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Session History */}
