@@ -54,6 +54,10 @@ certificates/
 # Coordination state (runtime, per-machine)
 .claude/coordination/
 
+# Local developer preferences (per-developer)
+.claude/local/preferences.json
+.claude/local/learning.json
+
 # ngrok config (per-machine)
 .ngrok.yml
 

@@ -11,7 +11,22 @@ Privacy-first passkey authentication on **Base** network. Porto SDK + Villa them
 
 **Orchestrator Identity:** Read [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for partnership model
 **Philosophy:** Read [MANIFESTO.md](MANIFESTO.md) for repo-as-truth principles
-**Test Context:** `pnpm test:context` validates all prompts load correctly
+**Test Context:** `pnpm context:validate` (also runs in CI)
+
+---
+
+## Multi-Developer Preferences
+
+**Shared** (checked in): `.claude/shared/defaults.json`
+**Local** (gitignored): `.claude/local/preferences.json`
+
+```bash
+pnpm prefs:show      # View effective preferences
+pnpm prefs:report    # Full report with pending questions
+cp .claude/local/preferences.template.json .claude/local/preferences.json  # Setup
+```
+
+Claude learns your preferences over time. See [shared/preferences.schema.ts](shared/preferences.schema.ts) for options.
 
 ---
 
