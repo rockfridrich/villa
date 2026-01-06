@@ -3,7 +3,7 @@
  * Run with: npx tsx src/lib/db/migrate.ts
  */
 import { getDb, closeDb } from './index'
-import { SCHEMA } from './schema'
+import { SCHEMA, MIGRATION_NICKNAME_CHANGE } from './schema'
 
 async function migrate() {
   console.log('Running database migrations...')
@@ -13,10 +13,15 @@ async function migrate() {
 
     // Run schema creation
     await sql.unsafe(SCHEMA)
+    console.log('✓ Base schema applied')
+
+    // Run nickname change migration
+    await sql.unsafe(MIGRATION_NICKNAME_CHANGE)
+    console.log('✓ Nickname change tracking migration applied')
 
     console.log('Migrations completed successfully!')
 
-    // Verify tables exist
+    // Verify tables and columns exist
     const tables = await sql`
       SELECT table_name
       FROM information_schema.tables
@@ -26,6 +31,15 @@ async function migrate() {
 
     if (tables.length > 0) {
       console.log('Verified: profiles table exists')
+
+      // Verify new columns
+      const columns = await sql`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'profiles'
+        AND column_name IN ('nickname_change_count', 'last_nickname_change')
+      `
+      console.log(`Verified: ${columns.length}/2 nickname change columns exist`)
     } else {
       console.error('Warning: profiles table not found after migration')
     }

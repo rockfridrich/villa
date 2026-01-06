@@ -229,3 +229,88 @@ test.describe('API Health', () => {
     expect(data).toHaveProperty('timestamp')
   })
 })
+
+test.describe('CCIP-Read ENS Gateway', () => {
+  test('POST /api/ens/resolve handles request without name', async ({ request }) => {
+    const response = await request.post('/api/ens/resolve', {
+      data: {
+        sender: '0x0000000000000000000000000000000000000000',
+        data: '0x3b3b57de0000000000000000000000000000000000000000000000000000000000000000'
+      }
+    })
+
+    // Should return 400 for missing name
+    expect(response.status()).toBe(400)
+    const data = await response.json()
+    expect(data).toHaveProperty('error')
+  })
+
+  test('POST /api/ens/resolve returns encoded address for known nickname', async ({ request }) => {
+    // Skip if no DATABASE_URL (requires DB to look up nickname)
+    if (!process.env.DATABASE_URL) {
+      test.skip()
+      return
+    }
+
+    // Use hex-encoded DNS name for "testuser.villa.cash"
+    const dnsName = '0x0874657374757365720576696c6c610463617368' + '00'
+
+    const response = await request.post('/api/ens/resolve', {
+      data: {
+        sender: '0x0000000000000000000000000000000000000000',
+        data: '0x3b3b57de0000000000000000000000000000000000000000000000000000000000000000',
+        extraData: dnsName
+      }
+    })
+
+    expect(response.ok()).toBeTruthy()
+    const data = await response.json()
+    expect(data).toHaveProperty('data')
+    // Response should be hex-encoded
+    expect(data.data).toMatch(/^0x/)
+  })
+})
+
+test.describe('Profile Nickname Edit API', () => {
+  // Skip DB-dependent tests when running locally
+  test.skip(() => !process.env.DATABASE_URL, 'Requires DATABASE_URL')
+
+  test('PATCH /api/profile validates nickname format', async ({ request }) => {
+    const response = await request.patch('/api/profile', {
+      data: {
+        address: '0x0000000000000000000000000000000000000001',
+        newNickname: 'ab' // Too short
+      }
+    })
+
+    expect(response.status()).toBe(400)
+    const data = await response.json()
+    expect(data.error).toContain('at least 3')
+  })
+
+  test('PATCH /api/profile rejects invalid address', async ({ request }) => {
+    const response = await request.patch('/api/profile', {
+      data: {
+        address: 'invalid-address',
+        newNickname: 'validnickname'
+      }
+    })
+
+    expect(response.status()).toBe(400)
+    const data = await response.json()
+    expect(data.error).toContain('Invalid address')
+  })
+
+  test('PATCH /api/profile returns 404 for non-existent profile', async ({ request }) => {
+    const response = await request.patch('/api/profile', {
+      data: {
+        address: '0x0000000000000000000000000000000000000001',
+        newNickname: 'validnickname'
+      }
+    })
+
+    expect(response.status()).toBe(404)
+    const data = await response.json()
+    expect(data.error).toContain('not found')
+  })
+})

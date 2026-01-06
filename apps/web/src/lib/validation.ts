@@ -27,6 +27,15 @@ export const displayNameSchema = z
   .transform(sanitize)
   .refine((val) => val.length > 0, 'Name cannot be empty after sanitization')
 
+// Nickname validation schema for profile updates
+export const nicknameSchema = z
+  .string()
+  .min(3, 'Nickname must be at least 3 characters')
+  .max(30, 'Nickname must be 30 characters or less')
+  .regex(/^[a-zA-Z]/, 'Nickname must start with a letter')
+  .regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed')
+  .transform((val) => val.trim())
+
 // Avatar style selection (user-facing choice: male, female, or other)
 export const avatarStyleSelectionSchema = z.enum(['male', 'female', 'other'])
 

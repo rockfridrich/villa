@@ -9,6 +9,7 @@
  */
 
 import { TinyCloudWeb } from '@tinycloudlabs/web-sdk'
+import { signMessage } from '@/lib/porto'
 
 // Storage keys
 export const STORAGE_KEYS = {
@@ -16,6 +17,10 @@ export const STORAGE_KEYS = {
   preferences: 'villa/preferences',
   session: 'villa/session',
 } as const
+
+// TinyCloud authentication state
+let tinyCloudAuthenticated = false
+let currentAuthAddress: string | null = null
 
 // Types
 export interface VillaPreferences {
@@ -52,8 +57,6 @@ function getDeviceId(): string {
 /**
  * Get or create TinyCloud client instance
  * Note: TinyCloud requires SIWE authentication via signIn()
- * For now, we create the instance but storage operations will
- * fail gracefully if not signed in.
  */
 export async function getTinyCloud(): Promise<TinyCloudWeb> {
   // Return existing instance if connected
@@ -70,8 +73,6 @@ export async function getTinyCloud(): Promise<TinyCloudWeb> {
   connectionPromise = (async () => {
     try {
       const tc = new TinyCloudWeb()
-      // Note: signIn() requires user interaction (wallet signature)
-      // We'll attempt to use existing session or fail gracefully
       tinyCloudInstance = tc
       return tc
     } catch (error) {
@@ -84,10 +85,55 @@ export async function getTinyCloud(): Promise<TinyCloudWeb> {
 }
 
 /**
- * Check if TinyCloud is available and connected
+ * Authenticate TinyCloud with a user's address using SIWE
+ * Must be called after Porto authentication to enable cross-device storage
+ * @param address The user's Ethereum address from Porto
+ */
+export async function authenticateTinyCloud(address: string): Promise<boolean> {
+  // Already authenticated for this address
+  if (tinyCloudAuthenticated && currentAuthAddress === address) {
+    return true
+  }
+
+  try {
+    const tc = await getTinyCloud()
+
+    // Generate SIWE message using TinyCloud's method
+    const siweMessage = await tc.generateSiweMessage(address, {
+      statement: 'Sign in to Villa Storage for cross-device sync',
+    })
+
+    // Sign the message using Porto
+    const messageToSign = siweMessage.prepareMessage()
+    const signature = await signMessage(messageToSign, address)
+
+    // Authenticate with TinyCloud using the signed message
+    await tc.signInWithSignature(siweMessage, signature)
+
+    tinyCloudAuthenticated = true
+    currentAuthAddress = address
+    console.log('TinyCloud authenticated for', address)
+    return true
+  } catch (error) {
+    console.warn('TinyCloud authentication failed:', error)
+    tinyCloudAuthenticated = false
+    currentAuthAddress = null
+    return false
+  }
+}
+
+/**
+ * Check if TinyCloud is available and authenticated
  */
 export function isTinyCloudConnected(): boolean {
-  return tinyCloudInstance !== null
+  return tinyCloudInstance !== null && tinyCloudAuthenticated
+}
+
+/**
+ * Check if TinyCloud is authenticated for a specific address
+ */
+export function isTinyCloudAuthenticatedFor(address: string): boolean {
+  return tinyCloudAuthenticated && currentAuthAddress?.toLowerCase() === address.toLowerCase()
 }
 
 /**
@@ -96,6 +142,8 @@ export function isTinyCloudConnected(): boolean {
 export function disconnectTinyCloud(): void {
   tinyCloudInstance = null
   connectionPromise = null
+  tinyCloudAuthenticated = false
+  currentAuthAddress = null
 }
 
 /**
@@ -123,6 +171,11 @@ export class VillaStorage<T> {
       }
     }
 
+    // Only try TinyCloud if authenticated
+    if (!isTinyCloudConnected()) {
+      return
+    }
+
     // Try TinyCloud for cross-device sync
     try {
       const tc = await getTinyCloud()
@@ -138,23 +191,25 @@ export class VillaStorage<T> {
    * TinyCloud data takes precedence (newer) over localStorage
    */
   async load(): Promise<T | null> {
-    // Try TinyCloud first for most recent data
-    try {
-      const tc = await getTinyCloud()
-      const result = await tc.storage.get(this.key)
-      if (result?.data) {
-        // Update localStorage with TinyCloud data
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem(this.localKey, JSON.stringify(result.data))
-          } catch {
-            // Ignore localStorage errors
+    // Try TinyCloud first for most recent data (only if authenticated)
+    if (isTinyCloudConnected()) {
+      try {
+        const tc = await getTinyCloud()
+        const result = await tc.storage.get(this.key)
+        if (result?.data) {
+          // Update localStorage with TinyCloud data
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(this.localKey, JSON.stringify(result.data))
+            } catch {
+              // Ignore localStorage errors
+            }
           }
+          return result.data as T
         }
-        return result.data as T
+      } catch {
+        // TinyCloud unavailable, fall through to localStorage
       }
-    } catch {
-      // TinyCloud unavailable, fall through to localStorage
     }
 
     // Fallback to localStorage
@@ -198,12 +253,14 @@ export class VillaStorage<T> {
       localStorage.removeItem(this.localKey)
     }
 
-    // Try TinyCloud
-    try {
-      const tc = await getTinyCloud()
-      await tc.storage.delete(this.key)
-    } catch {
-      // TinyCloud unavailable
+    // Try TinyCloud (only if authenticated)
+    if (isTinyCloudConnected()) {
+      try {
+        const tc = await getTinyCloud()
+        await tc.storage.delete(this.key)
+      } catch {
+        // TinyCloud unavailable
+      }
     }
   }
 }
@@ -222,14 +279,24 @@ export const sessionStore = new VillaStorage<VillaSession>(STORAGE_KEYS.session)
 
 /**
  * Sync all local data to TinyCloud
- * Call after wallet connection to push offline changes
+ * Call after TinyCloud authentication to push offline changes
+ * @returns true if sync was attempted (TinyCloud is connected)
  */
-export async function syncToTinyCloud(): Promise<void> {
+export async function syncToTinyCloud(): Promise<boolean> {
+  // Don't attempt sync if not authenticated
+  if (!isTinyCloudConnected()) {
+    console.log('TinyCloud not connected, skipping sync')
+    return false
+  }
+
+  console.log('Syncing local data to TinyCloud...')
+
   // Sync avatar
   const avatarData = avatarStore.loadLocal()
   if (avatarData) {
     try {
       await avatarStore.save(avatarData)
+      console.log('Avatar synced to TinyCloud')
     } catch {
       // Continue
     }
@@ -240,10 +307,13 @@ export async function syncToTinyCloud(): Promise<void> {
   if (prefsData) {
     try {
       await preferencesStore.save(prefsData)
+      console.log('Preferences synced to TinyCloud')
     } catch {
       // Continue
     }
   }
+
+  return true
 }
 
 /**

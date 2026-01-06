@@ -363,3 +363,93 @@ export function isPortoSupported(): boolean {
     typeof window.PublicKeyCredential !== 'undefined'
   )
 }
+
+/**
+ * Sign a message using Porto (for SIWE authentication)
+ * @param message The message to sign
+ * @param address The address signing the message
+ * @returns The signature as a hex string
+ */
+export async function signMessage(message: string, address: string): Promise<string> {
+  const porto = getPorto()
+
+  // Porto's provider.request expects typed params
+  const signature = await porto.provider.request({
+    method: 'personal_sign',
+    params: [message as `0x${string}`, address as `0x${string}`],
+  })
+
+  return signature as string
+}
+
+/**
+ * Generate a SIWE (Sign-In With Ethereum) message
+ * Compatible with EIP-4361
+ */
+export function generateSiweMessage(params: {
+  address: string
+  domain?: string
+  uri?: string
+  nonce?: string
+  issuedAt?: string
+  expirationTime?: string
+  statement?: string
+}): string {
+  const {
+    address,
+    domain = typeof window !== 'undefined' ? window.location.host : 'villa.cash',
+    uri = typeof window !== 'undefined' ? window.location.origin : 'https://villa.cash',
+    nonce = generateNonce(),
+    issuedAt = new Date().toISOString(),
+    statement = 'Sign in to Villa',
+  } = params
+
+  // EIP-4361 SIWE message format
+  return [
+    `${domain} wants you to sign in with your Ethereum account:`,
+    address,
+    '',
+    statement,
+    '',
+    `URI: ${uri}`,
+    `Version: 1`,
+    `Chain ID: 8453`, // Base mainnet
+    `Nonce: ${nonce}`,
+    `Issued At: ${issuedAt}`,
+  ].join('\n')
+}
+
+/**
+ * Generate a random nonce for SIWE
+ */
+function generateNonce(): string {
+  const array = new Uint8Array(16)
+  if (typeof window !== 'undefined' && window.crypto) {
+    window.crypto.getRandomValues(array)
+  } else {
+    // Fallback for SSR
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256)
+    }
+  }
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Sign a SIWE message for authentication
+ * Returns both the message and signature for verification
+ */
+export async function signSiweMessage(address: string, options?: {
+  statement?: string
+  nonce?: string
+}): Promise<{ message: string; signature: string }> {
+  const message = generateSiweMessage({
+    address,
+    statement: options?.statement,
+    nonce: options?.nonce,
+  })
+
+  const signature = await signMessage(message, address)
+
+  return { message, signature }
+}

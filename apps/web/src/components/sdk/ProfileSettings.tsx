@@ -9,7 +9,7 @@ import { AvatarPreview } from './AvatarPreview'
 import { AvatarSelection } from './AvatarSelection'
 import { AvatarUpload } from './AvatarUpload'
 import { ProfileSection, EditableField } from './profile'
-import { displayNameSchema } from '@/lib/validation'
+import { displayNameSchema, nicknameSchema } from '@/lib/validation'
 import { avatarStorage, type CustomAvatar } from '@/lib/storage/tinycloud'
 import type { AvatarConfig } from '@/types'
 
@@ -19,12 +19,17 @@ export interface ProfileData {
   nickname: string | null
   displayName: string
   avatar: AvatarConfig | CustomAvatar
+  /** Whether user can change their nickname (limited changes allowed) */
+  canChangeNickname?: boolean
+  /** Number of times nickname has been changed */
+  nicknameChangeCount?: number
 }
 
 /** Profile update payload */
 export interface ProfileUpdate {
   displayName?: string
   avatar?: AvatarConfig | CustomAvatar
+  nickname?: string
 }
 
 export interface ProfileSettingsProps {
@@ -62,6 +67,10 @@ export function ProfileSettings({
 
   const handleDisplayNameSave = async (newName: string) => {
     await onUpdate({ displayName: newName })
+  }
+
+  const handleNicknameSave = async (newNickname: string) => {
+    await onUpdate({ nickname: newNickname })
   }
 
   const handleAvatarSelect = async (config: AvatarConfig) => {
@@ -183,18 +192,32 @@ export function ProfileSettings({
 
         <div className="h-px bg-cream-200" />
 
-        {/* Nickname section (read-only) */}
+        {/* Nickname section - editable if allowed */}
         <ProfileSection
           label="Nickname"
-          helperText="Your nickname is permanent and cannot be changed. It's how others find you."
-          disabled
+          helperText={
+            profile.canChangeNickname
+              ? `You can change your nickname ${1 - (profile.nicknameChangeCount ?? 0)} more time(s)`
+              : "Your nickname is permanent. You've used your one-time change."
+          }
+          disabled={!profile.canChangeNickname}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-ink font-medium">
-              {profile.nickname || <span className="text-ink-muted italic">Not set</span>}
-            </span>
-            <Lock className="w-4 h-4 text-ink-muted" />
-          </div>
+          {profile.canChangeNickname ? (
+            <EditableField
+              value={profile.nickname || ''}
+              onSave={handleNicknameSave}
+              schema={nicknameSchema}
+              placeholder="Enter your nickname"
+              maxLength={30}
+            />
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-ink font-medium">
+                {profile.nickname || <span className="text-ink-muted italic">Not set</span>}
+              </span>
+              <Lock className="w-4 h-4 text-ink-muted" />
+            </div>
+          )}
         </ProfileSection>
 
         {/* Display name section (editable) */}
