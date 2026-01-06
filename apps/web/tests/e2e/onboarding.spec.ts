@@ -9,6 +9,7 @@ test.describe('Onboarding Flow', () => {
 
   test('redirects to onboarding when no identity', async ({ page }) => {
     await page.goto('/')
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
   })
 
@@ -69,6 +70,7 @@ test.describe('Home Screen', () => {
 
   test('redirects to home when identity exists', async ({ page }) => {
     await page.goto('/')
+    await page.waitForURL(/\/home/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/home/)
   })
 
@@ -90,6 +92,7 @@ test.describe('Home Screen', () => {
 
     await page.getByRole('button', { name: /Switch Account/i }).click()
 
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
   })
 })

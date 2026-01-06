@@ -39,7 +39,10 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'SDK types only - tests in apps/web'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build"
   },
   "peerDependencies": {
@@ -55,9 +58,12 @@
     }
   },
   "devDependencies": {
+    "@vitest/ui": "^4.0.16",
+    "happy-dom": "^20.0.11",
     "tsup": "^8.5.1",
     "typescript": "^5.5.0",
     "viem": "^2.0.0",
+    "vitest": "^4.0.16",
     "zod": "^3.22.0"
   },
   "engines": {

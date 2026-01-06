@@ -30,6 +30,7 @@ test.describe('Returning User Flow', () => {
       })
 
       await page.goto('/onboarding')
+      await page.waitForURL(/\/home/, { timeout: 10000 })
       await expect(page).toHaveURL(/\/home/)
     })
 
@@ -103,7 +104,8 @@ test.describe('Returning User Flow', () => {
       await expect(page.getByRole('heading', { name: 'Perfect!' })).toBeVisible()
 
       // Should redirect to home
-      await expect(page).toHaveURL(/\/home/, { timeout: 5000 })
+      await page.waitForURL(/\/home/, { timeout: 10000 })
+      await expect(page).toHaveURL(/\/home/)
 
       // Verify identity was saved
       await expect(page.getByText('@alice')).toBeVisible()

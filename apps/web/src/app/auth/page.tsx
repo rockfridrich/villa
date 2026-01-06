@@ -36,6 +36,18 @@ function isInIframe(): boolean {
   }
 }
 
+function isInPopup(): boolean {
+  // Check if we're in a popup window opened by Villa SDK
+  // 1. Check if window.opener exists (indicates popup)
+  // 2. Check URL param for explicit mode=popup
+  if (typeof window === 'undefined') return false
+
+  const params = new URLSearchParams(window.location.search)
+  const explicitMode = params.get('mode')
+
+  return explicitMode === 'popup' || (window.opener != null && window.opener !== window)
+}
+
 /**
  * Validate origin is a proper HTTPS URL (security check)
  */
@@ -99,10 +111,14 @@ function AuthPageContent() {
     return getValidatedParentOrigin(queryOrigin)
   }, [queryOrigin])
 
-  // Post message to parent window with validated origin
+  // Detect if we're in popup or iframe mode
+  const inPopup = useMemo(() => isInPopup(), [])
+  const inIframe = useMemo(() => isInIframe(), [])
+
+  // Post message to parent window (iframe) or opener (popup) with validated origin
   const postToParent = useCallback((message: Record<string, unknown>) => {
-    if (!isInIframe()) {
-      console.log('[Villa Auth] Not in iframe, message:', message)
+    if (!inPopup && !inIframe) {
+      console.log('[Villa Auth] Not in iframe or popup, message:', message)
       return
     }
 
@@ -111,15 +127,18 @@ function AuthPageContent() {
       return
     }
 
-    // Post to validated parent origin only
-    window.parent.postMessage(message, targetOrigin)
-  }, [targetOrigin])
+    // Post to opener (popup mode) or parent (iframe mode)
+    const target = inPopup ? window.opener : window.parent
+    if (target) {
+      target.postMessage(message, targetOrigin)
+    }
+  }, [targetOrigin, inPopup, inIframe])
 
   // Notify parent that auth is ready
   useEffect(() => {
     if (!hasNotifiedReady.current) {
       hasNotifiedReady.current = true
-      postToParent({ type: 'VILLA_AUTH_READY' })
+      postToParent({ type: 'VILLA_READY' })
     }
   }, [postToParent])
 
@@ -144,17 +163,31 @@ function AuthPageContent() {
 
       // Send both legacy and new message formats for compatibility
       postToParent({ type: 'AUTH_SUCCESS', identity })
-      postToParent({ type: 'VILLA_AUTH_SUCCESS', identity })
+      postToParent({ type: 'VILLA_AUTH_SUCCESS', payload: { identity } })
+
+      // If in popup mode, close the window after a short delay
+      if (inPopup) {
+        setTimeout(() => {
+          window.close()
+        }, 500)
+      }
     } else {
       if (result.code === 'CANCELLED') {
         postToParent({ type: 'AUTH_CLOSE' })
         postToParent({ type: 'VILLA_AUTH_CANCEL' })
       } else {
         postToParent({ type: 'AUTH_ERROR', error: result.error })
-        postToParent({ type: 'VILLA_AUTH_ERROR', error: result.error, code: result.code })
+        postToParent({ type: 'VILLA_AUTH_ERROR', payload: { error: result.error, code: result.code } })
+      }
+
+      // If in popup mode, close on cancel/error too
+      if (inPopup) {
+        setTimeout(() => {
+          window.close()
+        }, 500)
       }
     }
-  }, [postToParent])
+  }, [postToParent, inPopup])
 
   return (
     <VillaAuth

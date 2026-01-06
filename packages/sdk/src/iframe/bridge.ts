@@ -34,6 +34,9 @@ import { validateOrigin, parseVillaMessage, isDevelopment, ALLOWED_ORIGINS } fro
 /** Default timeout: 5 minutes */
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000
 
+/** Default iframe detection timeout: 3 seconds */
+const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000
+
 /** Villa auth URLs by network */
 const AUTH_URLS = {
   base: 'https://villa.cash/auth',
@@ -52,14 +55,17 @@ const AUTH_URLS = {
  * - Debug logging (opt-in)
  */
 export class VillaBridge {
-  private config: Required<BridgeConfig>
+  private config: Required<BridgeConfig> & { iframeDetectionTimeout: number }
   private iframe: HTMLIFrameElement | null = null
+  private popup: Window | null = null
   private container: HTMLDivElement | null = null
   private listeners: Map<BridgeEventName, Set<Function>> = new Map()
   private messageHandler: ((event: MessageEvent) => void) | null = null
   private timeoutId: ReturnType<typeof setTimeout> | null = null
+  private iframeDetectionTimeoutId: ReturnType<typeof setTimeout> | null = null
   private state: BridgeState = 'idle'
   private readonly authUrl: string
+  private mode: 'iframe' | 'popup' = 'iframe'
 
   /**
    * Create a new VillaBridge instance
@@ -84,6 +90,8 @@ export class VillaBridge {
       network: config.network || 'base',
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,
       debug: config.debug || false,
+      preferPopup: config.preferPopup || false,
+      iframeDetectionTimeout: config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
     }
 
     // Determine auth URL
@@ -122,13 +130,14 @@ export class VillaBridge {
   }
 
   /**
-   * Open the auth iframe
+   * Open the auth iframe or popup
    *
-   * Creates a fullscreen iframe and begins listening for messages.
-   * Resolves when iframe signals VILLA_READY.
+   * Creates a fullscreen iframe (or popup window) and begins listening for messages.
+   * Automatically falls back to popup if iframe is blocked.
+   * Resolves when iframe/popup signals VILLA_READY.
    *
    * @param scopes - Optional scopes to request (default: ['profile'])
-   * @returns Promise that resolves when iframe is ready
+   * @returns Promise that resolves when ready
    * @throws {Error} If bridge is already open or DOM is unavailable
    */
   async open(scopes: string[] = ['profile']): Promise<void> {
@@ -136,13 +145,27 @@ export class VillaBridge {
       throw new Error(`[VillaBridge] Cannot open: current state is ${this.state}`)
     }
 
-    if (typeof document === 'undefined') {
-      throw new Error('[VillaBridge] Cannot open: document is not available (SSR?)')
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('[VillaBridge] Cannot open: window/document not available (SSR?)')
     }
 
     this.state = 'opening'
-    this.log('Opening auth iframe...')
 
+    // If preferPopup is set, go straight to popup mode
+    if (this.config.preferPopup) {
+      this.log('Opening auth popup (preferPopup=true)...')
+      return this.openPopup(scopes)
+    }
+
+    // Otherwise, try iframe with fallback to popup
+    this.log('Opening auth iframe (with popup fallback)...')
+    return this.openIframeWithFallback(scopes)
+  }
+
+  /**
+   * Open iframe with automatic fallback to popup if blocked
+   */
+  private async openIframeWithFallback(scopes: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         // Create container with fullscreen styles
@@ -161,12 +184,22 @@ export class VillaBridge {
         // Set up message listener
         this.setupMessageListener(resolve)
 
-        // Set up timeout
+        // Set up iframe detection timeout - if we don't get VILLA_READY within X seconds,
+        // assume iframe is blocked and fall back to popup
+        this.iframeDetectionTimeoutId = setTimeout(() => {
+          this.log('Iframe appears to be blocked, falling back to popup...')
+          this.cleanupIframe()
+          this.openPopup(scopes)
+            .then(resolve)
+            .catch(reject)
+        }, this.config.iframeDetectionTimeout)
+
+        // Set up overall timeout
         this.timeoutId = setTimeout(() => {
           this.log('Timeout waiting for VILLA_READY')
           this.emit('error', 'Connection timeout', 'TIMEOUT')
           this.close()
-          reject(new Error('[VillaBridge] Timeout waiting for iframe to be ready'))
+          reject(new Error('[VillaBridge] Timeout waiting for auth to be ready'))
         }, this.config.timeout)
       } catch (error) {
         this.state = 'idle'
@@ -176,9 +209,75 @@ export class VillaBridge {
   }
 
   /**
-   * Close the auth iframe
+   * Open popup window for auth
+   */
+  private async openPopup(scopes: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.mode = 'popup'
+
+        // Build URL with params
+        const url = new URL(this.authUrl)
+        url.searchParams.set('appId', this.config.appId)
+        url.searchParams.set('scopes', scopes.join(','))
+        url.searchParams.set('origin', window.location.origin)
+        url.searchParams.set('mode', 'popup') // Signal to auth page it's in popup mode
+
+        // Open popup window
+        const width = 480
+        const height = 720
+        const left = Math.max(0, (window.screen.width - width) / 2)
+        const top = Math.max(0, (window.screen.height - height) / 2)
+
+        this.popup = window.open(
+          url.toString(),
+          'villa-auth',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`
+        )
+
+        if (!this.popup) {
+          // Popup was blocked
+          this.log('Popup blocked by browser')
+          this.emit('error', 'Popup blocked. Please allow popups for this site.', 'NETWORK_ERROR')
+          this.state = 'idle'
+          reject(new Error('[VillaBridge] Popup blocked by browser'))
+          return
+        }
+
+        // Set up message listener (works for both iframe and popup)
+        this.setupMessageListener(resolve)
+
+        // Check if popup was closed by user
+        const popupCheckInterval = setInterval(() => {
+          if (this.popup && this.popup.closed) {
+            clearInterval(popupCheckInterval)
+            if (this.state !== 'closed') {
+              this.log('Popup was closed by user')
+              this.emit('cancel')
+              this.close()
+            }
+          }
+        }, 500)
+
+        // Set up overall timeout
+        this.timeoutId = setTimeout(() => {
+          clearInterval(popupCheckInterval)
+          this.log('Timeout waiting for VILLA_READY')
+          this.emit('error', 'Connection timeout', 'TIMEOUT')
+          this.close()
+          reject(new Error('[VillaBridge] Timeout waiting for popup to be ready'))
+        }, this.config.timeout)
+      } catch (error) {
+        this.state = 'idle'
+        reject(error)
+      }
+    })
+  }
+
+  /**
+   * Close the auth iframe or popup
    *
-   * Removes iframe from DOM and cleans up all listeners.
+   * Removes iframe/popup and cleans up all listeners.
    */
   close(): void {
     if (this.state === 'closed' || this.state === 'idle') {
@@ -186,12 +285,16 @@ export class VillaBridge {
     }
 
     this.state = 'closing'
-    this.log('Closing auth iframe...')
+    this.log(`Closing auth ${this.mode}...`)
 
-    // Clear timeout
+    // Clear all timeouts
     if (this.timeoutId) {
       clearTimeout(this.timeoutId)
       this.timeoutId = null
+    }
+    if (this.iframeDetectionTimeoutId) {
+      clearTimeout(this.iframeDetectionTimeoutId)
+      this.iframeDetectionTimeoutId = null
     }
 
     // Remove message listener
@@ -200,6 +303,23 @@ export class VillaBridge {
       this.messageHandler = null
     }
 
+    // Clean up iframe
+    this.cleanupIframe()
+
+    // Clean up popup
+    if (this.popup && !this.popup.closed) {
+      this.popup.close()
+      this.popup = null
+    }
+
+    this.state = 'closed'
+    this.log(`Auth ${this.mode} closed`)
+  }
+
+  /**
+   * Clean up iframe-specific resources
+   */
+  private cleanupIframe(): void {
     // Remove iframe and container
     if (this.container) {
       this.container.remove()
@@ -211,9 +331,6 @@ export class VillaBridge {
     if (typeof document !== 'undefined') {
       document.body.style.overflow = ''
     }
-
-    this.state = 'closed'
-    this.log('Auth iframe closed')
   }
 
   /**
@@ -270,22 +387,24 @@ export class VillaBridge {
   }
 
   /**
-   * Post a message to the iframe
+   * Post a message to the iframe or popup
    *
    * @param message - Message to send
    */
   postMessage(message: object): void {
-    if (!this.iframe?.contentWindow) {
-      this.log('Cannot post message: iframe not ready')
+    const target = this.mode === 'popup' ? this.popup : this.iframe?.contentWindow
+
+    if (!target) {
+      this.log(`Cannot post message: ${this.mode} not ready`)
       return
     }
 
-    // Get target origin from iframe URL
-    const iframeUrl = new URL(this.authUrl)
-    const targetOrigin = iframeUrl.origin
+    // Get target origin from auth URL
+    const url = new URL(this.authUrl)
+    const targetOrigin = url.origin
 
     this.log('Posting message:', message)
-    this.iframe.contentWindow.postMessage(message, targetOrigin)
+    target.postMessage(message, targetOrigin)
   }
 
   // ============================================================
@@ -396,6 +515,11 @@ export class VillaBridge {
     switch (message.type) {
       case 'VILLA_READY':
         this.state = 'ready'
+        // Clear iframe detection timeout since we got VILLA_READY
+        if (this.iframeDetectionTimeoutId) {
+          clearTimeout(this.iframeDetectionTimeoutId)
+          this.iframeDetectionTimeoutId = null
+        }
         if (this.timeoutId) {
           clearTimeout(this.timeoutId)
           this.timeoutId = null

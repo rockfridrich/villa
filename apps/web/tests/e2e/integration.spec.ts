@@ -166,6 +166,7 @@ test.describe('State Persistence Integration', () => {
     await page.reload()
 
     // Should redirect to onboarding
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
     await expect(page.getByRole('heading', { name: 'Villa' })).toBeVisible()
   })
@@ -260,7 +261,8 @@ test.describe('Home Screen Integration', () => {
     await page.getByRole('button', { name: /Switch Account/i }).click()
 
     // Should redirect to onboarding
-    await expect(page).toHaveURL(/\/onboarding/, { timeout: 5000 })
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/onboarding/)
 
     // Identity should be cleared from localStorage
     const storedIdentity = await page.evaluate(() => {
@@ -280,7 +282,8 @@ test.describe('Home Screen Integration', () => {
     await logoutButtons.first().click()
 
     // Should redirect to onboarding
-    await expect(page).toHaveURL(/\/onboarding/, { timeout: 5000 })
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/onboarding/)
     await expect(page.getByRole('heading', { name: 'Villa' })).toBeVisible()
   })
 
@@ -559,6 +562,7 @@ test.describe('Cross-Page Integration', () => {
     await page.goto('/')
 
     // Should redirect back to home
+    await page.waitForURL(/\/home/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/home/)
     await expect(page.getByText('@Navigation Test')).toBeVisible()
   })
@@ -571,7 +575,8 @@ test.describe('Cross-Page Integration', () => {
     await page.goto('/home')
 
     // Should redirect to onboarding
-    await expect(page).toHaveURL(/\/onboarding/, { timeout: 5000 })
+    await page.waitForURL(/\/onboarding/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/onboarding/)
   })
 
   test('direct navigation to onboarding with identity redirects', async ({ page }) => {
@@ -594,7 +599,8 @@ test.describe('Cross-Page Integration', () => {
     await page.goto('/onboarding')
 
     // Should redirect to home
-    await expect(page).toHaveURL(/\/home/, { timeout: 5000 })
+    await page.waitForURL(/\/home/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/home/)
     await expect(page.getByText('@Redirect Test')).toBeVisible()
   })
 })

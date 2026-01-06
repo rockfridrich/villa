@@ -243,30 +243,35 @@ export default function SDKDemoPage() {
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="bg-cream-100 border-b border-neutral-200 sticky top-0 z-10">
-        <div className="max-w-screen-2xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent-yellow rounded-lg flex items-center justify-center">
-                <Fingerprint className="w-6 h-6 text-accent-brown" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent-yellow rounded-lg flex items-center justify-center">
+                <Fingerprint className="w-6 h-6 sm:w-7 sm:h-7 text-accent-brown" />
               </div>
               <div>
-                <h1 className="text-2xl font-serif text-ink">Villa SDK Demo</h1>
-                <p className="text-sm text-ink-muted">Complete Integration Guide</p>
+                <h1 className="text-xl sm:text-2xl font-serif text-ink">Villa SDK Demo</h1>
+                <p className="text-xs sm:text-sm text-ink-muted">Third-Party Integration Guide</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               {user && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-lg">
+                <div className="flex items-center gap-2 px-3 py-2 bg-green-100 rounded-lg min-h-[44px]">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-green-900">
                     @{user.nickname}
                   </span>
                 </div>
               )}
-              <Button size="sm" variant="secondary" onClick={clearLogs}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear Logs
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={clearLogs}
+                className="min-h-[44px] min-w-[44px]"
+              >
+                <Trash2 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Clear Logs</span>
               </Button>
             </div>
           </div>
@@ -274,7 +279,41 @@ export default function SDKDemoPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-screen-2xl mx-auto p-6">
+      <div className="max-w-screen-2xl mx-auto p-4 sm:p-6">
+        {/* Integration Guide Banner */}
+        <div className="mb-6 p-6 bg-gradient-to-br from-accent-yellow/20 to-accent-green/10 rounded-xl border-2 border-accent-yellow/50">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-accent-yellow rounded-lg flex items-center justify-center flex-shrink-0">
+              <Code className="w-6 h-6 text-accent-brown" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-serif text-ink mb-2">Integration Guide</h2>
+              <p className="text-sm text-ink-muted mb-4">
+                This demo showcases Villa SDK authentication for third-party apps.
+                Test the complete flow from authentication to profile management.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-ink-muted">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                  <span>Passkey authentication</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                  <span>Nickname lookup</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                  <span>ENS resolution</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                  <span>Profile management</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[calc(100vh-180px)]">
           {/* Left: Components */}
           <div className="space-y-6">
@@ -284,7 +323,7 @@ export default function SDKDemoPage() {
                 <CardTitle>SDK Methods</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                   {[
                     { id: 'auth', label: '1. Auth', icon: Fingerprint },
                     { id: 'query', label: '2. Query', icon: Search },
@@ -296,6 +335,7 @@ export default function SDKDemoPage() {
                       size="sm"
                       variant={activeSection === section.id ? 'primary' : 'secondary'}
                       onClick={() => setActiveSection(section.id as typeof activeSection)}
+                      className="min-h-[44px] justify-center"
                     >
                       <section.icon className="w-4 h-4 mr-2" />
                       {section.label}
@@ -334,10 +374,11 @@ export default function SDKDemoPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Button
                           variant="secondary"
                           onClick={() => setShowSettings(true)}
+                          className="min-h-[44px]"
                         >
                           <Settings className="w-4 h-4 mr-2" />
                           Edit Profile
@@ -345,10 +386,10 @@ export default function SDKDemoPage() {
                         <Button
                           variant="secondary"
                           onClick={handleLogout}
-                          className="text-red-600 hover:bg-red-50"
+                          className="text-red-600 hover:bg-red-50 min-h-[44px]"
                         >
                           <LogOut className="w-4 h-4 mr-2" />
-                          Logout
+                          Sign Out Demo
                         </Button>
                       </div>
 
@@ -368,16 +409,52 @@ if (!user) redirect('/login')`}
                     <div className="space-y-4">
                       <div className="text-center py-8">
                         <User className="w-16 h-16 mx-auto mb-4 text-ink-muted opacity-50" />
-                        <p className="text-ink-muted mb-4">No active session</p>
-                        <Button onClick={() => setShowAuth(true)}>
+                        <p className="text-sm text-ink-muted mb-2">No active session</p>
+                        <p className="text-xs text-ink-muted mb-4">
+                          Try the authentication flow with Villa passkeys
+                        </p>
+                        <Button
+                          onClick={() => setShowAuth(true)}
+                          size="lg"
+                          className="min-h-[44px]"
+                        >
                           <Fingerprint className="w-4 h-4 mr-2" />
-                          Sign In with Villa
+                          Try It: Sign In with Villa
                         </Button>
                       </div>
 
                       {/* Code Example */}
-                      <div className="p-3 bg-neutral-900 rounded-lg">
-                        <pre className="text-xs text-green-400 overflow-x-auto">
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`import { VillaAuth } from '@villa/sdk'
+
+<VillaAuth
+  appName="Your App"
+  onComplete={(result) => {
+    if (result.success) {
+      // result.identity.address
+      // result.identity.nickname
+      // result.identity.avatar
+    }
+  }}
+/>`)
+                              setCopiedLog(-1)
+                              setTimeout(() => setCopiedLog(null), 2000)
+                            }}
+                            className="p-2 rounded bg-neutral-800 hover:bg-neutral-700 transition-colors min-h-[44px] min-w-[44px]"
+                            title="Copy code"
+                          >
+                            {copiedLog === -1 ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-400" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-neutral-400" />
+                            )}
+                          </button>
+                        </div>
+                        <div className="p-3 bg-neutral-900 rounded-lg">
+                          <pre className="text-xs text-green-400 overflow-x-auto">
 {`import { VillaAuth } from '@villa/sdk'
 
 <VillaAuth
@@ -390,7 +467,8 @@ if (!user) redirect('/login')`}
     }
   }}
 />`}
-                        </pre>
+                          </pre>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -415,10 +493,14 @@ if (!user) redirect('/login')`}
                         value={queryInput}
                         onChange={(e) => setQueryInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleQueryUser()}
+                        className="min-h-[44px]"
                       />
-                      <Button onClick={handleQueryUser}>
-                        <Search className="w-4 h-4 mr-2" />
-                        Query
+                      <Button
+                        onClick={handleQueryUser}
+                        className="min-h-[44px] min-w-[44px]"
+                      >
+                        <Search className="w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Query</span>
                       </Button>
                     </div>
 
@@ -480,10 +562,14 @@ const profile = await villa.getProfile('alice')
                         value={ensInput}
                         onChange={(e) => setEnsInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleEnsResolve()}
+                        className="min-h-[44px]"
                       />
-                      <Button onClick={handleEnsResolve}>
-                        <Globe className="w-4 h-4 mr-2" />
-                        Resolve
+                      <Button
+                        onClick={handleEnsResolve}
+                        className="min-h-[44px] min-w-[44px]"
+                      >
+                        <Globe className="w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Resolve</span>
                       </Button>
                     </div>
 
@@ -579,11 +665,11 @@ const address = await provider.resolveName('alice.villa.cash')`}
                   ) : (
                     <div className="text-center py-8 text-ink-muted">
                       <Settings className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>Sign in to access settings</p>
+                      <p className="text-sm mb-4">Sign in to access profile settings</p>
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="mt-4"
+                        className="mt-4 min-h-[44px]"
                         onClick={() => {
                           setActiveSection('auth')
                           setShowAuth(true)
@@ -600,66 +686,69 @@ const address = await provider.resolveName('alice.villa.cash')`}
 
           {/* Right: Logs */}
           <div className="space-y-6">
-            <Card className="h-full flex flex-col">
-              <CardHeader className="flex-shrink-0">
+            <Card className="h-full flex flex-col lg:max-h-[calc(100vh-200px)]">
+              <CardHeader className="flex-shrink-0 bg-neutral-900 text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-white">
                     <Terminal className="w-5 h-5" />
                     API Logs
                   </CardTitle>
-                  <span className="text-xs text-ink-muted">
-                    {logs.length} calls
+                  <span className="text-xs text-neutral-400">
+                    {logs.length} {logs.length === 1 ? 'call' : 'calls'}
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto space-y-2 pr-2">
+              <CardContent className="flex-1 overflow-hidden bg-neutral-50">
+                <div className="h-full overflow-y-auto space-y-2 pr-2 py-2">
                   {logs.length === 0 ? (
                     <div className="text-center py-12 text-ink-muted">
                       <Code className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>API calls will appear here</p>
+                      <p className="text-sm">API calls will appear here</p>
+                      <p className="text-xs mt-2">Try authenticating or querying a user</p>
                     </div>
                   ) : (
                     logs.map(log => (
                       <div
                         key={log.id}
-                        className={`p-3 rounded-lg text-sm font-mono ${
+                        className={`p-3 rounded-lg text-sm font-mono transition-all ${
                           log.error
-                            ? 'bg-red-50 border border-red-200'
-                            : 'bg-neutral-100'
+                            ? 'bg-red-50 border-2 border-red-300'
+                            : 'bg-white border border-neutral-200 hover:border-accent-yellow'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={log.error ? 'text-red-600' : 'text-villa-600'}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`font-semibold ${log.error ? 'text-red-600' : 'text-accent-brown'}`}>
                                 {log.method}
                               </span>
                               {log.duration !== undefined && (
-                                <span className="text-xs text-ink-muted">
+                                <span className="text-xs px-2 py-0.5 bg-accent-yellow/20 text-accent-brown rounded">
                                   {log.duration}ms
                                 </span>
                               )}
                             </div>
                             {log.args !== undefined && (
-                              <pre className="text-xs text-ink-muted mt-1 overflow-x-auto">
+                              <pre className="text-xs text-ink-muted mt-2 overflow-x-auto bg-neutral-100 p-2 rounded">
                                 {JSON.stringify(log.args, null, 2)}
                               </pre>
                             )}
                             {log.result !== undefined && (
-                              <pre className="text-xs text-green-600 mt-1 overflow-x-auto">
+                              <pre className="text-xs text-accent-green mt-2 overflow-x-auto bg-green-50 p-2 rounded">
                                 → {JSON.stringify(log.result, null, 2)}
                               </pre>
                             )}
                             {log.error && (
-                              <p className="text-xs text-red-600 mt-1">
-                                Error: {log.error}
-                              </p>
+                              <div className="mt-2 p-2 bg-red-100 rounded">
+                                <p className="text-xs text-red-600 font-semibold">
+                                  Error: {log.error}
+                                </p>
+                              </div>
                             )}
                           </div>
                           <button
                             onClick={() => handleCopyLog(log)}
-                            className="p-1 text-ink-muted hover:text-ink rounded"
+                            className="p-2 text-ink-muted hover:text-ink rounded hover:bg-neutral-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             title="Copy log"
                           >
                             {copiedLog === log.id ? (
@@ -669,7 +758,8 @@ const address = await provider.resolveName('alice.villa.cash')`}
                             )}
                           </button>
                         </div>
-                        <div className="text-xs text-ink-muted mt-1">
+                        <div className="text-xs text-ink-muted mt-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-accent-yellow rounded-full"></span>
                           {log.timestamp.toLocaleTimeString()}
                         </div>
                       </div>
@@ -685,8 +775,15 @@ const address = await provider.resolveName('alice.villa.cash')`}
 
       {/* VillaAuth Modal */}
       {showAuth && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-cream rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAuth(false)
+            }
+          }}
+        >
+          <div className="bg-cream rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <VillaAuth
               appName="SDK Demo"
               onComplete={handleAuthComplete}

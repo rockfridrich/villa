@@ -57,6 +57,10 @@ export interface BridgeConfig {
   timeout?: number
   /** Enable debug logging */
   debug?: boolean
+  /** Prefer popup over iframe (useful when iframes are blocked) */
+  preferPopup?: boolean
+  /** Timeout to detect iframe blocking in ms (default: 3 seconds) */
+  iframeDetectionTimeout?: number
 }
 
 /**

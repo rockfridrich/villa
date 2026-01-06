@@ -40,7 +40,12 @@ interface SessionMetrics {
 interface CostEntry {
   date: string
   amount: number
-  description: string
+  breakdown?: {
+    opus?: number
+    sonnet?: number
+    haiku?: number
+    web_search?: number
+  }
   source: string
 }
 
@@ -59,7 +64,11 @@ interface MetricsData {
     hasData: boolean
     entries: CostEntry[]
     totalSpent: number
+    dailyAverage: number
+    byModel: Record<string, number>
     currency: string
+    period?: { start: string; end: string; days: number }
+    sourceFile?: string
     note: string
   }
   lastUpdated: string
@@ -370,7 +379,7 @@ export default function MetricsPage() {
                         <div key={i} className="flex justify-between items-center py-2 border-b border-ink/5 last:border-0">
                           <div>
                             <div className="font-mono text-sm">{entry.date}</div>
-                            <div className="text-xs text-ink-muted">{entry.description}</div>
+                            <div className="text-xs text-ink-muted">{entry.source}</div>
                           </div>
                           <div className="font-medium">${entry.amount.toFixed(2)}</div>
                         </div>

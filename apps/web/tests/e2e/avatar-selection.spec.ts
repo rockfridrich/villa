@@ -158,7 +158,8 @@ test.describe('Avatar Selection Flow', () => {
     expect(initialText).toMatch(/0:(30|29|28)/)
 
     // Wait for timer to reach 0:00 and auto-navigate to home
-    await expect(page).toHaveURL('/home', { timeout: 35000 })
+    await page.waitForURL(/\/home/, { timeout: 35000 })
+    await expect(page).toHaveURL(/\/home/)
 
     // Verify we're on home page (avatar auto-selected)
     await expect(page.getByRole('heading', { name: 'Villa' })).toBeVisible()

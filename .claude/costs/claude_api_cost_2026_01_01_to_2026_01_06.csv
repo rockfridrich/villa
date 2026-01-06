@@ -1,0 +1,67 @@
+usage_date_utc,model,workspace,api_key,usage_type,context_window,token_type,cost_usd,cost_type
+2026-01-02,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.01,token
+2026-01-02,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.01,token
+2026-01-02,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.00,token
+2026-01-02,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,2.20,token
+2026-01-02,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,1.09,token
+2026-01-02,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,1.01,token
+2026-01-02,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.00,token
+2026-01-02,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,0.02,token
+2026-01-02,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.01,token
+2026-01-03,--,Claude Code,claude_code_key_uranuslight_jgiv,--,--,--,0.10,web_search
+2026-01-03,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,1.21,token
+2026-01-03,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,0.01,token
+2026-01-03,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,0.06,token
+2026-01-03,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.20,token
+2026-01-03,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.50,token
+2026-01-03,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,55.84,token
+2026-01-03,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,22.74,token
+2026-01-03,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,35.01,token
+2026-01-03,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,12.02,token
+2026-01-03,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.03,token
+2026-01-03,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,1.44,token
+2026-01-03,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,1.30,token
+2026-01-03,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,1.33,token
+2026-01-04,--,Claude Code,claude_code_key_uranuslight_jgiv,--,--,--,0.14,web_search
+2026-01-04,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,3.03,token
+2026-01-04,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,0.81,token
+2026-01-04,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,1.21,token
+2026-01-04,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.96,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,1.55,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,63.82,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,73.83,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,64.99,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,75.45,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,4.25,token
+2026-01-04,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,28.25,token
+2026-01-04,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.06,token
+2026-01-04,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,7.32,token
+2026-01-04,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,5.70,token
+2026-01-04,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,4.73,token
+2026-01-05,--,Claude Code,claude_code_key_uranuslight_jgiv,--,--,--,0.14,web_search
+2026-01-05,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,1.12,token
+2026-01-05,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,0.34,token
+2026-01-05,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,0.88,token
+2026-01-05,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.48,token
+2026-01-05,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.71,token
+2026-01-05,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,57.43,token
+2026-01-05,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,44.55,token
+2026-01-05,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,14.45,token
+2026-01-05,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,12.93,token
+2026-01-05,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.16,token
+2026-01-05,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,1.25,token
+2026-01-05,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,1.69,token
+2026-01-05,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,1.27,token
+2026-01-06,--,Claude Code,claude_code_key_uranuslight_jgiv,--,--,--,0.03,web_search
+2026-01-06,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.93,token
+2026-01-06,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,0.09,token
+2026-01-06,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,0.15,token
+2026-01-06,Claude Haiku 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.26,token
+2026-01-06,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.32,token
+2026-01-06,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,31.58,token
+2026-01-06,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,39.16,token
+2026-01-06,Claude Opus 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,8.43,token
+2026-01-06,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_no_cache,0.14,token
+2026-01-06,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_read,0.65,token
+2026-01-06,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,input_cache_write_5m,1.85,token
+2026-01-06,Claude Sonnet 4.5,Claude Code,claude_code_key_uranuslight_jgiv,message,≤ 200k,output,0.81,token
