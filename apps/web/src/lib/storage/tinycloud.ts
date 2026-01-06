@@ -201,32 +201,87 @@ export async function createCustomAvatar(blob: Blob): Promise<CustomAvatar> {
 }
 
 /**
- * TinyCloud storage class (simplified for local storage first)
- * Can be extended to use actual TinyCloud SDK when needed
+ * TinyCloud-backed avatar storage with localStorage fallback
+ * Provides cross-device sync when TinyCloud is available
  */
 export class AvatarStorage {
-  private storageKey = 'villa-custom-avatar'
+  private localKey = 'villa-custom-avatar'
+  private tinyCloudKey = 'villa/avatar'
 
   /**
    * Save custom avatar to storage
+   * Saves to both localStorage (instant) and TinyCloud (cross-device)
    */
   async save(avatar: CustomAvatar): Promise<void> {
-    // For now, use localStorage with base64
-    // Can be upgraded to TinyCloud SDK later
+    // Always save to localStorage first (instant, works offline)
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(avatar))
-    } catch (error) {
-      // localStorage might be full or unavailable
+      localStorage.setItem(this.localKey, JSON.stringify(avatar))
+    } catch {
       throw new Error('Failed to save avatar. Storage may be full.')
+    }
+
+    // Try TinyCloud for cross-device sync (non-blocking)
+    this.syncToTinyCloud(avatar).catch(() => {
+      // TinyCloud unavailable - localStorage is still saved
+    })
+  }
+
+  /**
+   * Sync avatar to TinyCloud (background operation)
+   */
+  private async syncToTinyCloud(avatar: CustomAvatar): Promise<void> {
+    try {
+      const { getTinyCloud, isTinyCloudConnected } = await import('./tinycloud-client')
+      if (!isTinyCloudConnected()) return
+
+      const tc = await getTinyCloud()
+      await tc.storage.put(this.tinyCloudKey, avatar)
+    } catch {
+      // TinyCloud unavailable
     }
   }
 
   /**
    * Load custom avatar from storage
+   * Prefers TinyCloud (cross-device) over localStorage
    */
   async load(): Promise<CustomAvatar | null> {
+    // Try TinyCloud first for most recent cross-device data
     try {
-      const data = localStorage.getItem(this.storageKey)
+      const { getTinyCloud, isTinyCloudConnected } = await import('./tinycloud-client')
+      if (isTinyCloudConnected()) {
+        const tc = await getTinyCloud()
+        const result = await tc.storage.get(this.tinyCloudKey)
+        if (result?.data) {
+          // Update localStorage with TinyCloud data
+          try {
+            localStorage.setItem(this.localKey, JSON.stringify(result.data))
+          } catch {
+            // Ignore localStorage errors
+          }
+          return result.data as CustomAvatar
+        }
+      }
+    } catch {
+      // TinyCloud unavailable, fall through to localStorage
+    }
+
+    // Fallback to localStorage
+    try {
+      const data = localStorage.getItem(this.localKey)
+      if (!data) return null
+      return JSON.parse(data) as CustomAvatar
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Load from localStorage only (sync, fast)
+   */
+  loadLocal(): CustomAvatar | null {
+    try {
+      const data = localStorage.getItem(this.localKey)
       if (!data) return null
       return JSON.parse(data) as CustomAvatar
     } catch {
@@ -238,7 +293,18 @@ export class AvatarStorage {
    * Delete custom avatar from storage
    */
   async delete(): Promise<void> {
-    localStorage.removeItem(this.storageKey)
+    localStorage.removeItem(this.localKey)
+
+    // Try TinyCloud
+    try {
+      const { getTinyCloud, isTinyCloudConnected } = await import('./tinycloud-client')
+      if (isTinyCloudConnected()) {
+        const tc = await getTinyCloud()
+        await tc.storage.delete(this.tinyCloudKey)
+      }
+    } catch {
+      // TinyCloud unavailable
+    }
   }
 }
 

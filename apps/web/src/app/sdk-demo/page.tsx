@@ -38,6 +38,14 @@ interface UserProfile {
   ensName: string // nickname.villa.cash
 }
 
+// Demo configuration (for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface DemoConfig {
+  useLiveApi: boolean
+  simulateErrors: boolean
+  errorType: 'network' | 'notFound' | 'rateLimit' | null
+}
+
 /**
  * SDK Demo Page - Complete Integration Guide
  *
