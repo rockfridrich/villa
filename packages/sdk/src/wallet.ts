@@ -9,10 +9,12 @@
  * - AES-256-GCM for encryption
  * - Cryptographically secure random generation
  * - No plaintext key storage
+ * - Zod validation for all localStorage data
  */
 
+import { z } from 'zod'
 import { generatePrivateKey, privateKeyToAccount, type Account } from 'viem/accounts'
-import { type Hex, toHex, hexToBytes, bytesToHex } from 'viem'
+import { type Hex, hexToBytes, bytesToHex } from 'viem'
 
 /**
  * Encrypted wallet backup format
@@ -60,6 +62,21 @@ const KEY_LENGTH = 256
 const IV_LENGTH = 12
 const SALT_LENGTH = 32
 const DEFAULT_ITERATIONS = 100_000
+
+/**
+ * Zod schema for EncryptedWallet validation
+ * SECURITY: Always validate localStorage data before use
+ */
+const EncryptedWalletSchema = z.object({
+  version: z.literal(1),
+  ciphertext: z.string().min(1),
+  iv: z.string().min(1),
+  salt: z.string().min(1),
+  authTag: z.string().min(1),
+  iterations: z.number().min(10000),
+  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  createdAt: z.number(),
+})
 
 /**
  * Generate a new wallet with cryptographically secure randomness
@@ -343,6 +360,8 @@ export interface WalletStorage {
 /**
  * LocalStorage-based wallet storage (browser)
  *
+ * SECURITY: All localStorage data is validated with Zod before use.
+ *
  * For production, consider:
  * - IndexedDB for larger storage
  * - Secure cloud backup (encrypted)
@@ -351,19 +370,37 @@ export interface WalletStorage {
 export function createLocalStorage(prefix = 'villa_wallet_'): WalletStorage {
   return {
     async save(wallet: EncryptedWallet): Promise<void> {
+      // Validate before saving
+      const validated = EncryptedWalletSchema.safeParse(wallet)
+      if (!validated.success) {
+        console.error('[Villa SDK] Invalid wallet data:', validated.error.message)
+        return
+      }
       const key = `${prefix}${wallet.address.toLowerCase()}`
-      localStorage.setItem(key, JSON.stringify(wallet))
+      localStorage.setItem(key, JSON.stringify(validated.data))
     },
 
     async load(address: string): Promise<EncryptedWallet | null> {
       const key = `${prefix}${address.toLowerCase()}`
       const data = localStorage.getItem(key)
       if (!data) return null
+
+      // SECURITY: Parse and validate - never trust localStorage
+      let parsed: unknown
       try {
-        return JSON.parse(data) as EncryptedWallet
+        parsed = JSON.parse(data)
       } catch {
+        console.error('[Villa SDK] Corrupted wallet data in localStorage')
         return null
       }
+
+      const result = EncryptedWalletSchema.safeParse(parsed)
+      if (!result.success) {
+        console.error('[Villa SDK] Invalid wallet format:', result.error.message)
+        return null
+      }
+
+      return result.data as EncryptedWallet
     },
 
     async list(): Promise<string[]> {
