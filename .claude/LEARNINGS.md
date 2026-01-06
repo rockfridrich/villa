@@ -961,3 +961,535 @@ Full session logs preserved in git history for reference.
 ---
 
 *Auto-update: Extract patterns here, archive sessions after 2 weeks*
+
+## Contribution System & Security Patterns (2026-01-06)
+
+### 34. GitHub Actions for Achievement Tracking
+
+**Pattern:** Track user contributions and unlock badges via GitHub workflows, not manual tracking.
+
+Achievement system triggered on:
+- `pull_request.opened` → first-pr detection
+- `pull_request.closed` → first-merge, bug-squasher, trusted-contributor
+- `pull_request_review.submitted` → reviewer achievements
+
+**Implementation:**
+```yaml
+# .github/workflows/achievements.yml
+on:
+  pull_request:
+    types: [opened, closed]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+# Uses github-script@v7 to:
+# 1. Count PR history for achievement milestones
+# 2. Add achievement comment on PR (visible to all)
+# 3. Add label for filtering (first-pr, bug-squasher, etc.)
+```
+
+**Milestones:**
+- `first-pr` = opened PR count === 1
+- `first-merge` = merged PR count === 1
+- `bug-squasher` = 3+ PRs with "fix:" title or "bug" label
+- `trusted-contributor` = 10+ merged PRs (eligible for maintainer)
+
+**Benefits:**
+- Visible in PR (motivating for contributor)
+- Auditable in GitHub history
+- Labels enable filtering (e.g., `repo:villa is:pr label:first-pr`)
+- Zero overhead on user machine
+
+### 35. Command Injection Prevention: execFileSync Pattern (CRITICAL)
+
+**Incident:** Initial `scripts/stats-generate.ts` used string interpolation with git refs, allowing arbitrary code execution if git tag/branch contains shell metacharacters.
+
+```typescript
+// ❌ DANGEROUS
+const cmd = `git log ${sinceTag}..HEAD`
+execSync(cmd)  // If sinceTag = "main; rm -rf /", bash executes it!
+
+// ✅ CORRECT
+execFileSync("git", ["log", `${sinceTag}..HEAD`], {
+  encoding: "utf-8",
+  stdio: ["pipe", "pipe", "pipe"]
+})
+```
+
+**Why it matters:**
+- `execSync(string)` spawns `/bin/bash -c` and interpolates variables (DANGEROUS)
+- `execFileSync(cmd, args)` directly executes binary without shell (SAFE)
+- User input in CLI args (tags, branches) must use `execFileSync`
+
+**Implementation checklist:**
+- [ ] All git commands use `execFileSync("git", [...])`
+- [ ] Git refs validated: `/^[a-zA-Z0-9._\-\/]+$/` (no shell metacharacters)
+- [ ] Commit hashes validated: `/^[a-f0-9]{7,40}$/i`
+- [ ] grep for `execSync(` in security audits
+
+**Learned during:** Contribution system implementation. Found and fixed before commit.
+
+### 36. Path Traversal Prevention in Shell Scripts
+
+**Pattern:** Validate symlinks and paths to prevent directory escape attacks.
+
+```bash
+# ❌ Bad: Trusts user-provided paths
+CONFIG="${PROJECT_ROOT}/$USER_PATH"
+cat "$CONFIG"
+
+# ✅ Good: Resolve real path and bounds check
+validate_repository() {
+  local project_root="$1"
+  
+  for file in ".env.example" ".claude/preferences.json"; do
+    if [ -e "$project_root/$file" ]; then
+      # Resolve symlinks to canonical path
+      local real_path
+      real_path=$(cd "$project_root" && realpath "$file" 2>/dev/null || echo "")
+      
+      # Verify it never escapes project bounds
+      if [[ "$real_path" != "$project_root"* ]]; then
+        echo "Security: $file points outside repository" >&2
+        exit 1
+      fi
+    fi
+  done
+}
+```
+
+**Attack scenario:**
+1. Attacker: `ln -s /etc/passwd .env.example`
+2. Script checks: `[ -e "$root/.env.example" ]` → true (follows symlink)
+3. Script reads: `cat .env.example` → LEAKED /etc/passwd
+4. Fix: `realpath` resolves symlinks and verify output starts with `$project_root`
+
+**Apply to:** Any onboarding/setup script that reads paths from user repo.
+
+### 37. XSS Prevention: Username Sanitization Pattern
+
+**Pattern:** GitHub usernames can ONLY contain alphanumeric + underscore/hyphen. Strip everything else before rendering.
+
+```typescript
+// ❌ Dangerous: Assumes data is always safe
+<a href={`https://github.com/${username}`}>{username}</a>
+
+// ✅ Safe: Strip non-GitHub characters
+function sanitizeUsername(username: string): string {
+  if (!username) return 'unknown'
+  // Only allow GitHub-valid characters [a-zA-Z0-9_-]
+  return username.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 39)
+}
+
+// Apply in TWO places (defense in depth):
+// 1. Client-side (before rendering)
+const safeUsername = sanitizeUsername(contributor.username)
+<a href={`https://github.com/${encodeURIComponent(safeUsername)}`}>
+  @{safeUsername}
+</a>
+
+// 2. Server-side (before serving)
+const sanitizedStats = {
+  ...statsData,
+  contributors: statsData.contributors?.map(c => ({
+    ...c,
+    username: sanitizeUsername(c.username)
+  }))
+}
+```
+
+**Why both places:**
+- Client: Prevents DOM injection if data is corrupted
+- Server: Defense in depth (never trust edge cases)
+- Length limit: GitHub max is 39 chars; `.slice(0, 39)` prevents overflow attempts
+
+### 38. In-Memory Rate Limiting for Next.js APIs
+
+**Pattern:** Simple, effective rate limiting without external dependencies (Redis, etc.).
+
+```typescript
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT = 60  // requests per minute
+const RATE_WINDOW = 60 * 1000
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const record = rateLimitMap.get(ip)
+
+  // New IP or window expired
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW })
+    return true
+  }
+
+  // Check limit
+  if (record.count >= RATE_LIMIT) return false
+  record.count++
+  return true
+}
+
+export async function GET(request: Request) {
+  // Extract IP (handles proxies correctly)
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    )
+  }
+  // ... handler
+}
+```
+
+**Limitations:**
+- In-memory map resets on deploy (acceptable for public stats)
+- For persistent limits (auth), use Redis/database
+- `x-forwarded-for` can be spoofed (ok for non-critical endpoints)
+
+**Suitable for:** Public API endpoints, stats, leaderboards, health checks
+
+### 39. GitHub Source of Truth for Contribution Data
+
+**Decision pattern:** Use GitHub API + git history, NOT local database.
+
+**Why GitHub is better:**
+- PR count is immutable (source of truth)
+- Commit history is auditable (`git log` never lies)
+- Labels enable filtering (first-pr, bug-squasher)
+- Comments are visible to all (achievement notifications)
+- No sync issues (GitHub is always current)
+
+**Architecture:**
+
+| Data | Source | Read Method |
+|------|--------|-------------|
+| Contributions | git history | `git log --format` |
+| PR metadata | GitHub API | `github.rest.pulls.list()` |
+| Achievements | PR labels | Track via workflows |
+| Leaderboard | Computed | Sort by commit count |
+
+**Stats flow:**
+```
+scripts/stats-generate.ts
+  ├─ git log → commit counts per author
+  ├─ gh API → PR counts (if GitHub token provided)
+  ├─ Compute achievements based on thresholds
+  └─ Write to .github/stats/contributors.json
+```
+
+**Stored in repo:**
+- `.github/stats/contributors.json` - Snapshot (committed to main)
+- `.github/workflows/achievements.yml` - Tracking logic
+- Release notes include contributor table
+
+**Vs local database:**
+| Aspect | GitHub | Local DB |
+|--------|--------|----------|
+| Durability | Permanent (git) | Needs backups |
+| Auditable | Public history | Internal only |
+| Sync risk | None | High |
+| Complexity | Simpler | Migrations, schemas |
+
+### 40. Security Review Checklist for Shell + TypeScript
+
+**Always run before committing scripts:**
+
+- [ ] **Command Injection:** All exec calls use `execFileSync(binary, args)`?
+- [ ] **Path Traversal:** User paths checked with `realpath` + bounds?
+- [ ] **XSS:** All user-controlled data sanitized before DOM/API?
+- [ ] **Input Validation:** Git refs, hashes, usernames validated?
+- [ ] **Rate Limiting:** Public APIs have 429 enforcement?
+- [ ] **Credentials:** No hardcoded tokens/passwords in code/logs?
+- [ ] **Symlink Attacks:** Critical files verified with `realpath`?
+
+**Automated checks (add to `.husky/pre-commit`):**
+```bash
+# Find dangerous patterns
+grep -r "execSync(" scripts/ && echo "ERROR: execSync found" && exit 1
+grep -r '`\$' scripts/ | grep -v "$((" && echo "ERROR: shell expansion" && exit 1
+```
+
+### 41. GitHub Workflow Permissions Pattern (CRITICAL)
+
+**Incident 2026-01-06:** Initial branch protection API call failed due to overly broad permissions.
+
+```yaml
+# ❌ Bad: Too broad (principle of least privilege violated)
+permissions:
+  contents: write
+  pull-requests: write
+
+# ✅ Good: Explicit, minimal per task
+permissions:
+  contents: read              # Only if reading files
+  pull-requests: write        # Only if commenting on PRs
+  issues: write               # Only if adding issue labels
+```
+
+**Standard permission sets:**
+
+| Task | Required Permissions |
+|------|----------------------|
+| Comment on PR | `pull-requests: write` |
+| Add issue labels | `issues: write` |
+| Create deployments | `deployments: write` |
+| Modify branch rules | `administration: write` |
+| Read files only | `contents: read` |
+
+**Rule:** Default to read-only, add write permissions only when needed.
+
+### 42. Testing Achievement System Locally
+
+```bash
+# Create test PR
+gh pr create --title "test: achievements" --body "Testing unlock"
+
+# Monitor achievement workflow
+gh run list --workflow achievements.yml
+
+# View achievement comment
+gh pr comments --limit 1
+
+# Check labels applied
+gh pr view --json labels
+```
+
+**Critical:** CI must pass and PR must be on remote branch for workflows to trigger.
+
+### 43. Documentation Structure for Contribution Systems
+
+```
+CONTRIBUTING.md              # Public guide
+├─ Access Levels
+│  ├─ dev-1/dev-2 (public)
+│  ├─ beta (maintainer approval)
+│  └─ production (maintainer approval)
+├─ Achievements (auto-tracked)
+├─ Onboarding (links to scripts)
+└─ Code standards
+
+.github/SETUP.md             # Manual setup
+├─ Branch protection rules
+├─ Reviewer requirements
+└─ Deployment gates
+
+.claude/knowledge/onboarding.md  # AI context (RAG)
+└─ What Villa is, structure, tasks
+```
+
+### 44. Gamification Leaderboard in Release Tags
+
+**Pattern:** Include contributor stats in release tag annotation.
+
+Leaderboard appears in:
+- GitHub Releases page (tag body)
+- `developers.villa.cash/contributors` (from API)
+- Release notes (from generated markdown)
+
+**Updates:**
+- Manual: `scripts/stats-generate.ts` before release
+- Snapshot: `.github/stats/contributors.json` committed
+- Display: Contributors API fetches latest snapshot
+
+### 45. Autonomous Implementation: Plan → Implement → Security Review → Commit
+
+**Meta-pattern from this session:**
+
+```
+Phase 1: PLAN (requirements clear)
+  ├─ GitHub labels vs database?
+  ├─ Access control (dev/beta/prod)
+  ├─ Leaderboard storage
+  └─ Documentation structure
+
+Phase 2: IMPLEMENT
+  ├─ scripts/onboard.sh
+  ├─ scripts/stats-generate.ts ← CRITICAL BUG FOUND
+  ├─ .github/workflows/achievements.yml
+  ├─ apps/developers/contributors
+  └─ API + rate limiting
+
+Phase 3: SECURITY REVIEW
+  ├─ Command injection → FAIL (execSync)
+  ├─ Path traversal → FAIL (no realpath)
+  ├─ XSS → FAIL (no sanitization)
+  └─ Rate limiting → MISSING
+
+Phase 4: COMMIT (fixes included)
+  ├─ All security issues fixed
+  ├─ One comprehensive commit
+  └─ No separate "fix" commits
+```
+
+**What worked:**
+- Comprehensive spec caught all requirements upfront
+- Security review BEFORE commit (critical)
+- All fixes in single commit (clean history)
+
+**What could improve:**
+- Run security review in parallel with implementation tests
+- Add static analysis to pre-commit hooks
+
+### 46. Shell Script Best Practices (Summary)
+
+```bash
+#!/bin/bash
+set -euo pipefail  # Critical: exit on error, undefined vars, pipe failures
+
+# User-friendly output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error() { echo -e "${RED}✗ $1${NC}"; }
+
+# Validate early
+validate_repository() {
+  [ -f "$project_root/package.json" ] || { print_error "Not a project"; exit 1; }
+}
+
+# Use functions for repeated logic
+check_command() { command -v "$1" &> /dev/null; }
+
+# Dynamic paths (not hardcoded)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# NEVER eval or string interpolation for commands
+# Always use arrays with execFileSync in Node.js
+```
+
+---
+
+*Session 2026-01-06: Contribution system with gamification, security hardening patterns, and GitHub-native architecture.*
+
+
+### 7. Epic Task Decomposition
+
+Break features into atomic subtasks using hierarchical IDs:
+
+```bash
+# Create epic
+bd create "Sprint 4: Developer Portal" -p 1
+# Returns: villa-6ts
+
+# Create subtasks
+bd create "Sidebar navigation" -p 1 --parent villa-6ts
+bd create "Mobile drawer" -p 1 --parent villa-6ts
+# Returns: villa-6ts.1, villa-6ts.2
+
+# Claim and work
+bd start villa-6ts.1
+# ... build sidebar ...
+bd done villa-6ts.1
+```
+
+**Benefits:**
+- Tasks can run in parallel (different files)
+- Dependencies explicit (`bd dep add`)
+- Progress tracking automatic (epic shows % complete)
+- No "what should I work on?" tokens
+
+**Atomicity criteria:**
+- Single file or clear file set
+- <200 LOC typical
+- No hidden dependencies
+- Clear acceptance criteria
+
+### 8. Infrastructure-First ROI
+
+```typescript
+// ❌ Bad: Build feature, then realize need infrastructure
+1. Build 10 features manually tracking state
+2. Realize need task system
+3. Retrofit Beads
+4. Migrate 10 features' state
+
+// ✅ Good: Infrastructure first, features follow
+1. Setup Beads (70min investment)
+2. Features 1-10 use Beads naturally
+3. Each feature saves 15min
+4. ROI: (15min * 10 - 70min) / 70min = 114%
+```
+
+**When to build infrastructure:**
+- Repeating same manual process 3+ times
+- Cross-session state needed
+- Multi-developer coordination required
+
+**When NOT to:**
+- One-off tasks
+- Process still evolving (premature abstraction)
+- Infrastructure more complex than features it enables
+
+**ROI decision tree:**
+```
+┌─ Need to track state? ─┐
+│                         │
+│ YES                     │ NO → Use git commits/notes
+│  ↓                      │
+│ Across sessions?        │
+│  ↓                      │
+│ YES                     │ NO → Use todo.md
+│  ↓                      │
+│ Multiple agents?        │
+│  ↓                      │
+│ YES → Use Beads         │ NO → Use .claude/state.json
+│                         │
+└─────────────────────────┘
+```
+
+---
+
+## Token Efficiency Patterns (2026-01-06 Session)
+
+### File Churn Detection
+
+**Target:** <2 files changed 3+ times per session
+**Detection:**
+```bash
+git log --name-only --format= --since="4 hours ago" | sort | uniq -c | awk '$1 >= 3'
+```
+
+**Why it matters:** High churn = design uncertainty or rework
+
+### Correction Commit Ratio
+
+**Target:** <10% of commits are fixes/reverts
+**Calculation:**
+```bash
+corrections=$(git log --format='%s' --since="4 hours ago" | grep -cE '^(fix|revert|oops)')
+total=$(git log --oneline --since="4 hours ago" | wc -l)
+ratio=$((corrections * 100 / total))
+```
+
+**Why it matters:** High ratio = insufficient local verification
+
+### PR Size Guidelines
+
+| PR Type | Files | LOC | Review Time | Merge Time |
+|---------|-------|-----|-------------|------------|
+| Hotfix | 1-2 | <50 | 2min | 5min |
+| Feature | 3-10 | 200-500 | 10min | 30min |
+| Infrastructure | 10-50 | 500-2000 | 30min | 1-2 hours |
+
+**Best practice:** Smaller PRs = faster reviews = less merge friction
+
+### Session Structure (Inverted Pyramid)
+
+```
+Phase 1: Infrastructure (70% token cost, 0% user value)
+  → Beads setup, protocols, foundations
+Phase 2: Integration (20% token cost, 30% user value)
+  → APIs, data layers, connections
+Phase 3: Features (10% token cost, 70% user value)
+  → User-facing components, refinements
+```
+
+**Key insight:** Time in Phase 1 feels slow but makes Phase 2-3 exponentially faster

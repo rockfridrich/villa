@@ -20,6 +20,9 @@ export function Header() {
             <a href="/contributors" className="text-ink-muted hover:text-ink transition-colors">
               Contributors
             </a>
+            <a href="/metrics" className="text-ink-muted hover:text-ink transition-colors">
+              Metrics
+            </a>
           </div>
         </div>
         <a

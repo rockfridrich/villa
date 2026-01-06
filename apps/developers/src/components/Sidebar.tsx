@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Map, Users, ChevronDown } from 'lucide-react'
+import { BookOpen, Map, Users, ChevronDown, BarChart3 } from 'lucide-react'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 
 // Page navigation
 interface NavItem {
@@ -15,6 +16,7 @@ const navItems: NavItem[] = [
   { href: '/', label: 'Documentation', icon: BookOpen },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
   { href: '/contributors', label: 'Contributors', icon: Users },
+  { href: '/metrics', label: 'Metrics', icon: BarChart3 },
 ]
 
 // Doc sections (only shown on docs page)
@@ -32,11 +34,45 @@ const docSections: Section[] = [
   { id: 'ai', title: 'AI Integration' },
 ]
 
+// Animation variants
+const sectionListVariants: Variants = {
+  hidden: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: { duration: 0.2 },
+      opacity: { duration: 0.1 },
+    },
+  },
+  visible: {
+    height: 'auto',
+    opacity: 1,
+    transition: {
+      height: { duration: 0.2 },
+      opacity: { duration: 0.2, delay: 0.1 },
+    },
+  },
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [activeSection, setActiveSection] = useState<string>('')
   const [sectionsExpanded, setSectionsExpanded] = useState(true)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const isDocsPage = pathname === '/'
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   // Track scroll position for section highlighting (docs page only)
   useEffect(() => {
@@ -59,7 +95,7 @@ export function Sidebar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isDocsPage])
 
-  const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+  const handleSectionClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault()
     const element = document.getElementById(id)
 
@@ -68,8 +104,6 @@ export function Sidebar() {
       const elementPosition = element.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.scrollY - offset
 
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
       window.scrollTo({
         top: offsetPosition,
         behavior: prefersReducedMotion ? 'auto' : 'smooth',
@@ -77,7 +111,14 @@ export function Sidebar() {
 
       window.history.pushState(null, '', `#${id}`)
     }
-  }
+  }, [prefersReducedMotion])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setSectionsExpanded(!sectionsExpanded)
+    }
+  }, [sectionsExpanded])
 
   return (
     <aside
@@ -99,15 +140,19 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors duration-150
+                  flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors duration-150 min-h-11
+                  focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2
                   ${isActive
                     ? 'bg-accent-yellow/10 text-ink font-medium'
-                    : 'text-ink-muted hover:bg-cream-100 hover:text-ink'
+                    : 'text-ink-muted hover:bg-cream-100 hover:text-ink active:bg-cream-200'
                   }
                 `}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-accent-yellow' : ''}`} />
+                <Icon
+                  className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-accent-yellow' : ''}`}
+                  aria-hidden="true"
+                />
                 {item.label}
               </a>
             )
@@ -119,39 +164,58 @@ export function Sidebar() {
           <div className="space-y-1">
             <button
               onClick={() => setSectionsExpanded(!sectionsExpanded)}
-              className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-ink-muted uppercase tracking-wider hover:text-ink transition-colors"
+              onKeyDown={handleKeyDown}
+              className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-ink-muted uppercase tracking-wider hover:text-ink transition-colors duration-150 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 min-h-11"
+              aria-expanded={sectionsExpanded}
+              aria-controls="doc-sections"
             >
               <span>On This Page</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${sectionsExpanded ? '' : '-rotate-90'}`}
-              />
+              <motion.span
+                animate={{ rotate: sectionsExpanded ? 0 : -90 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+              </motion.span>
             </button>
 
-            {sectionsExpanded && (
-              <div className="space-y-0.5 mt-2">
-                {docSections.map((section) => {
-                  const isActive = activeSection === section.id
+            <AnimatePresence initial={false}>
+              {sectionsExpanded && (
+                <motion.div
+                  id="doc-sections"
+                  initial={prefersReducedMotion ? false : 'hidden'}
+                  animate={prefersReducedMotion ? { height: 'auto', opacity: 1 } : 'visible'}
+                  exit={prefersReducedMotion ? { height: 0, opacity: 0 } : 'hidden'}
+                  variants={sectionListVariants}
+                  transition={prefersReducedMotion ? { duration: 0 } : undefined}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-0.5 mt-2">
+                    {docSections.map((section) => {
+                      const isActive = activeSection === section.id
 
-                  return (
-                    <a
-                      key={section.id}
-                      href={`#${section.id}`}
-                      onClick={(e) => handleSectionClick(e, section.id)}
-                      className={`
-                        block px-4 py-1.5 text-sm transition-colors duration-150 border-l-2
-                        ${isActive
-                          ? 'border-accent-yellow text-ink font-medium bg-accent-yellow/5'
-                          : 'border-transparent text-ink-muted hover:text-ink hover:border-ink/20'
-                        }
-                      `}
-                      aria-current={isActive ? 'location' : undefined}
-                    >
-                      {section.title}
-                    </a>
-                  )
-                })}
-              </div>
-            )}
+                      return (
+                        <a
+                          key={section.id}
+                          href={`#${section.id}`}
+                          onClick={(e) => handleSectionClick(e, section.id)}
+                          className={`
+                            block px-4 py-2 text-sm transition-colors duration-150 border-l-2 min-h-11 flex items-center
+                            focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-inset
+                            ${isActive
+                              ? 'border-accent-yellow text-ink font-medium bg-accent-yellow/5'
+                              : 'border-transparent text-ink-muted hover:text-ink hover:border-ink/20 hover:bg-cream-100/50'
+                            }
+                          `}
+                          aria-current={isActive ? 'location' : undefined}
+                        >
+                          {section.title}
+                        </a>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -164,19 +228,19 @@ export function Sidebar() {
             href="https://github.com/rockfridrich/villa"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-ink-muted hover:text-ink transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-ink-muted hover:text-ink hover:bg-cream-100/50 rounded-lg transition-colors duration-150 min-h-11 focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2"
           >
             GitHub Repository
-            <span className="text-xs">↗</span>
+            <span className="text-xs" aria-hidden="true">&#8599;</span>
           </a>
           <a
             href="https://github.com/rockfridrich/villa/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-ink-muted hover:text-ink transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-ink-muted hover:text-ink hover:bg-cream-100/50 rounded-lg transition-colors duration-150 min-h-11 focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2"
           >
             Report Issue
-            <span className="text-xs">↗</span>
+            <span className="text-xs" aria-hidden="true">&#8599;</span>
           </a>
         </div>
       </nav>
