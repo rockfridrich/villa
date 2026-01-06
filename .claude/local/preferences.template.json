@@ -1,0 +1,28 @@
+{
+  "_comment": "Copy this file to preferences.json and customize. Only include fields you want to override.",
+  "_docs": "See .claude/shared/preferences.schema.ts for full schema documentation.",
+
+  "communication": {
+    "verbosity": "concise",
+    "explanations": "brief",
+    "tone": "direct",
+    "technicalLevel": "expert"
+  },
+
+  "workflow": {
+    "parallelism": "aggressive",
+    "autonomy": "high",
+    "checkpoints": "milestone",
+    "proactiveSuggestions": true
+  },
+
+  "focus": {
+    "areas": ["frontend", "sdk"],
+    "currentFocus": "sprint-4"
+  },
+
+  "learning": {
+    "enableLearning": true,
+    "allowPreferenceQuestions": true
+  }
+}

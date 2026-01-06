@@ -1,0 +1,45 @@
+{
+  "$schema": "./preferences.schema.json",
+  "_comment": "Default preferences for all Villa developers. Override in .claude/local/preferences.json",
+
+  "communication": {
+    "verbosity": "adaptive",
+    "explanations": "brief",
+    "tone": "direct",
+    "technicalLevel": "expert"
+  },
+
+  "workflow": {
+    "parallelism": "aggressive",
+    "autonomy": "high",
+    "checkpoints": "milestone",
+    "proactiveSuggestions": true
+  },
+
+  "models": {
+    "default": "sonnet",
+    "agents": {
+      "spec": "opus",
+      "architect": "opus",
+      "product": "opus",
+      "build": "sonnet",
+      "design": "sonnet",
+      "review": "sonnet",
+      "test": "haiku",
+      "ops": "haiku",
+      "explore": "haiku"
+    }
+  },
+
+  "focus": {
+    "areas": [],
+    "currentFocus": null,
+    "ownedPaths": []
+  },
+
+  "learning": {
+    "enableLearning": true,
+    "shareAnonymousPatterns": true,
+    "allowPreferenceQuestions": true
+  }
+}

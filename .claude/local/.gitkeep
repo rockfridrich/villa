@@ -1,0 +1,9 @@
+# This directory contains per-developer preferences (gitignored)
+#
+# Files:
+#   preferences.json  - Your personal preference overrides
+#   learning.json     - What Claude has learned about working with you
+#
+# To set up your local preferences:
+#   cp ../.claude/local/preferences.template.json preferences.json
+#   # Edit preferences.json with your preferences

@@ -54,7 +54,10 @@
     "test:api": "pnpm --filter @villa/api test",
     "test:context": "vitest run .claude/rag/context.test.ts",
     "context:validate": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts validate",
-    "context:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts report"
+    "context:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts report",
+    "prefs:show": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts show",
+    "prefs:questions": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts questions",
+    "prefs:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts report"
   },
   "devDependencies": {
     "@types/node": "25.0.3",
