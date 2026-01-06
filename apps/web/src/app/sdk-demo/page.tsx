@@ -18,6 +18,8 @@ import {
   Fingerprint,
   Trash2,
   Globe,
+  Zap,
+  AlertCircle,
 } from 'lucide-react'
 
 interface LogEntry {
@@ -38,8 +40,7 @@ interface UserProfile {
   ensName: string // nickname.villa.cash
 }
 
-// Demo configuration (for future use)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// Demo configuration
 interface DemoConfig {
   useLiveApi: boolean
   simulateErrors: boolean
@@ -71,6 +72,13 @@ export default function SDKDemoPage() {
   // UI state
   const [activeSection, setActiveSection] = useState<'auth' | 'query' | 'ens' | 'settings'>('auth')
   const [copiedLog, setCopiedLog] = useState<number | null>(null)
+
+  // Demo config
+  const [demoConfig, setDemoConfig] = useState<DemoConfig>({
+    useLiveApi: false,
+    simulateErrors: false,
+    errorType: null,
+  })
 
   // Logs
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -153,33 +161,95 @@ export default function SDKDemoPage() {
     const startTime = Date.now()
     const logId = addLog({
       method: 'villa.getProfile(nickname)',
-      args: { nickname: queryInput },
+      args: { nickname: queryInput, liveApi: demoConfig.useLiveApi },
     })
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Mock response - in real app this queries the database
-    const mockAddress = `0x${queryInput.toLowerCase().split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
-
-    const result: UserProfile = {
-      address: mockAddress,
-      nickname: queryInput.toLowerCase(),
-      displayName: queryInput,
-      avatar: { style: 'avataaars', selection: 'female', variant: 0 },
-      ensName: `${queryInput.toLowerCase()}.villa.cash`,
+    // Handle error simulation
+    if (demoConfig.simulateErrors && demoConfig.errorType) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      const errorMessages = {
+        network: 'Network request failed',
+        notFound: 'User not found',
+        rateLimit: 'Rate limit exceeded. Try again later.',
+      }
+      updateLog(logId, {
+        error: errorMessages[demoConfig.errorType],
+        duration: Date.now() - startTime,
+      })
+      setQueryResult(null)
+      return
     }
 
-    setQueryResult(result)
-    updateLog(logId, {
-      result: {
-        address: result.address,
-        nickname: result.nickname,
-        ensName: result.ensName,
-      },
-      duration: Date.now() - startTime,
-    })
-  }, [queryInput, addLog, updateLog])
+    if (demoConfig.useLiveApi) {
+      // Real API call
+      try {
+        const response = await fetch(`/api/nicknames/resolve/${queryInput.toLowerCase()}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          updateLog(logId, {
+            error: data.error || `HTTP ${response.status}`,
+            duration: Date.now() - startTime,
+          })
+          setQueryResult(null)
+          return
+        }
+
+        // Fetch full profile for avatar data
+        const profileResponse = await fetch(`/api/profile/${data.address}`)
+        const profileData = profileResponse.ok ? await profileResponse.json() : null
+
+        const result: UserProfile = {
+          address: data.address,
+          nickname: data.nickname,
+          displayName: profileData?.displayName || data.nickname,
+          avatar: profileData?.avatar || { style: 'avataaars', selection: 'female', variant: 0 },
+          ensName: `${data.nickname}.villa.cash`,
+        }
+
+        setQueryResult(result)
+        updateLog(logId, {
+          result: {
+            address: result.address,
+            nickname: result.nickname,
+            ensName: result.ensName,
+            source: 'live_api',
+          },
+          duration: Date.now() - startTime,
+        })
+      } catch (error) {
+        updateLog(logId, {
+          error: error instanceof Error ? error.message : 'Network error',
+          duration: Date.now() - startTime,
+        })
+        setQueryResult(null)
+      }
+    } else {
+      // Mock response
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const mockAddress = `0x${queryInput.toLowerCase().split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
+
+      const result: UserProfile = {
+        address: mockAddress,
+        nickname: queryInput.toLowerCase(),
+        displayName: queryInput,
+        avatar: { style: 'avataaars', selection: 'female', variant: 0 },
+        ensName: `${queryInput.toLowerCase()}.villa.cash`,
+      }
+
+      setQueryResult(result)
+      updateLog(logId, {
+        result: {
+          address: result.address,
+          nickname: result.nickname,
+          ensName: result.ensName,
+          source: 'mock',
+        },
+        duration: Date.now() - startTime,
+      })
+    }
+  }, [queryInput, addLog, updateLog, demoConfig])
 
   // ENS Resolution (nickname.villa.cash → address)
   const handleEnsResolve = useCallback(async () => {
@@ -192,25 +262,75 @@ export default function SDKDemoPage() {
 
     const logId = addLog({
       method: 'villa.resolveENS(name)',
-      args: { name: fullEns },
+      args: { name: fullEns, liveApi: demoConfig.useLiveApi },
     })
 
-    // Simulate DNSSEC-compatible ENS resolution
-    await new Promise(resolve => setTimeout(resolve, 600))
+    // Handle error simulation
+    if (demoConfig.simulateErrors && demoConfig.errorType) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      const errorMessages = {
+        network: 'Network request failed',
+        notFound: 'ENS name not found',
+        rateLimit: 'Rate limit exceeded. Try again later.',
+      }
+      updateLog(logId, {
+        error: errorMessages[demoConfig.errorType],
+        duration: Date.now() - startTime,
+      })
+      setEnsResult(null)
+      return
+    }
 
-    // Mock address from nickname (deterministic for demo)
-    const mockAddress = `0x${nickname.split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
+    if (demoConfig.useLiveApi) {
+      // Real API call
+      try {
+        const response = await fetch(`/api/nicknames/resolve/${nickname}`)
+        const data = await response.json()
 
-    setEnsResult({ address: mockAddress, nickname })
-    updateLog(logId, {
-      result: {
-        name: fullEns,
-        address: mockAddress,
-        dnssec: true,
-      },
-      duration: Date.now() - startTime,
-    })
-  }, [ensInput, addLog, updateLog])
+        if (!response.ok) {
+          updateLog(logId, {
+            error: data.error || `HTTP ${response.status}`,
+            duration: Date.now() - startTime,
+          })
+          setEnsResult(null)
+          return
+        }
+
+        setEnsResult({ address: data.address, nickname: data.nickname })
+        updateLog(logId, {
+          result: {
+            name: fullEns,
+            address: data.address,
+            dnssec: true,
+            source: 'live_api',
+          },
+          duration: Date.now() - startTime,
+        })
+      } catch (error) {
+        updateLog(logId, {
+          error: error instanceof Error ? error.message : 'Network error',
+          duration: Date.now() - startTime,
+        })
+        setEnsResult(null)
+      }
+    } else {
+      // Mock response
+      await new Promise(resolve => setTimeout(resolve, 600))
+
+      const mockAddress = `0x${nickname.split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 40).padEnd(40, '0')}`
+
+      setEnsResult({ address: mockAddress, nickname })
+      updateLog(logId, {
+        result: {
+          name: fullEns,
+          address: mockAddress,
+          dnssec: true,
+          source: 'mock',
+        },
+        duration: Date.now() - startTime,
+      })
+    }
+  }, [ensInput, addLog, updateLog, demoConfig])
 
   // Handle profile update
   const handleProfileUpdate = useCallback(async (updates: { displayName?: string; avatar?: AvatarConfig }) => {
@@ -263,7 +383,59 @@ export default function SDKDemoPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+              {/* Live API Toggle */}
+              <button
+                onClick={() => setDemoConfig(prev => ({ ...prev, useLiveApi: !prev.useLiveApi }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg min-h-[44px] transition-colors ${
+                  demoConfig.useLiveApi
+                    ? 'bg-accent-green/20 text-accent-green border-2 border-accent-green'
+                    : 'bg-neutral-100 text-ink-muted border-2 border-transparent'
+                }`}
+                title={demoConfig.useLiveApi ? 'Using live API (beta.villa.cash)' : 'Using mock data'}
+              >
+                <Zap className={`w-4 h-4 ${demoConfig.useLiveApi ? 'text-accent-green' : 'text-ink-muted'}`} />
+                <span className="text-sm font-medium">
+                  {demoConfig.useLiveApi ? 'Live' : 'Mock'}
+                </span>
+              </button>
+
+              {/* Error Simulation */}
+              <div className="relative">
+                <button
+                  onClick={() => setDemoConfig(prev => ({
+                    ...prev,
+                    simulateErrors: !prev.simulateErrors,
+                    errorType: !prev.simulateErrors ? 'network' : null,
+                  }))}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg min-h-[44px] transition-colors ${
+                    demoConfig.simulateErrors
+                      ? 'bg-red-100 text-red-600 border-2 border-red-300'
+                      : 'bg-neutral-100 text-ink-muted border-2 border-transparent'
+                  }`}
+                  title="Simulate API errors"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {demoConfig.simulateErrors ? 'Errors On' : 'Errors'}
+                  </span>
+                </button>
+                {demoConfig.simulateErrors && (
+                  <select
+                    value={demoConfig.errorType || 'network'}
+                    onChange={(e) => setDemoConfig(prev => ({
+                      ...prev,
+                      errorType: e.target.value as DemoConfig['errorType'],
+                    }))}
+                    className="absolute top-full mt-1 right-0 text-xs bg-white border rounded-lg p-1 shadow-lg z-10"
+                  >
+                    <option value="network">Network Error</option>
+                    <option value="notFound">Not Found</option>
+                    <option value="rateLimit">Rate Limit</option>
+                  </select>
+                )}
+              </div>
+
               {user && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-green-100 rounded-lg min-h-[44px]">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
