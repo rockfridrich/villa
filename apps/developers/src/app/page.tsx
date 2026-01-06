@@ -441,10 +441,13 @@ function LoginPage() {
           <div className="space-y-4">
             <h3 className="font-medium text-lg">How It Works</h3>
             <p className="text-ink-muted text-sm">
-              Villa SDK ships with <code className="code-inline">CLAUDE.txt</code> and{' '}
-              <code className="code-inline">llms.txt</code> files that give AI assistants
-              complete context for integration.
+              Villa SDK ships with AI context files that give assistants complete integration knowledge:
             </p>
+            <ul className="list-disc list-inside text-ink-muted text-sm space-y-2">
+              <li><code className="code-inline">CLAUDE.txt</code> - For Claude Code and Claude-based tools</li>
+              <li><code className="code-inline">llms.txt</code> - Universal format for all LLMs</li>
+              <li><code className="code-inline">LOVABLE.txt</code> - Optimized for Lovable projects</li>
+            </ul>
             <CodeBlock
               code={`# After installing, copy to your project:
 cp node_modules/@rockfridrich/villa-sdk/CLAUDE.txt .claude/villa.md
@@ -459,17 +462,24 @@ curl -o .claude/villa.md https://developers.villa.cash/CLAUDE.txt`}
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="/CLAUDE.txt"
-              download
+              download="CLAUDE.txt"
               className="inline-flex items-center gap-2 bg-ink text-cream-50 px-6 py-3 rounded-lg hover:bg-ink/90 transition-colors"
             >
               Download CLAUDE.txt
             </a>
             <a
               href="/llms.txt"
-              download
+              download="llms.txt"
               className="inline-flex items-center gap-2 border border-ink/20 px-6 py-3 rounded-lg hover:bg-ink/5 transition-colors"
             >
               Download llms.txt
+            </a>
+            <a
+              href="/LOVABLE.txt"
+              download="LOVABLE.txt"
+              className="inline-flex items-center gap-2 border border-ink/20 px-6 py-3 rounded-lg hover:bg-ink/5 transition-colors"
+            >
+              Download LOVABLE.txt
             </a>
           </div>
 
