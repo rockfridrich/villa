@@ -1,0 +1,76 @@
+{
+  "_comment": "REAL cost data from Anthropic console export. Source: claude_api_cost_2026_01_01_to_2026_01_06.csv",
+  "_source_file": ".claude/costs/claude_api_cost_2026_01_01_to_2026_01_06.csv",
+  "currency": "USD",
+  "period": {
+    "start": "2026-01-01",
+    "end": "2026-01-06",
+    "days": 6
+  },
+  "summary": {
+    "total": 694.04,
+    "dailyAverage": 115.67,
+    "byModel": {
+      "claude-opus-4.5": 652.11,
+      "claude-sonnet-4.5": 29.76,
+      "claude-haiku-4.5": 11.76,
+      "web-search": 0.41
+    }
+  },
+  "entries": [
+    {
+      "date": "2026-01-02",
+      "amount": 4.35,
+      "breakdown": {
+        "opus": 4.30,
+        "sonnet": 0.03,
+        "haiku": 0.02
+      },
+      "source": "console-export"
+    },
+    {
+      "date": "2026-01-03",
+      "amount": 131.79,
+      "breakdown": {
+        "opus": 126.11,
+        "sonnet": 4.10,
+        "haiku": 1.48,
+        "web_search": 0.10
+      },
+      "source": "console-export"
+    },
+    {
+      "date": "2026-01-04",
+      "amount": 336.10,
+      "breakdown": {
+        "opus": 312.14,
+        "sonnet": 17.81,
+        "haiku": 6.01,
+        "web_search": 0.14
+      },
+      "source": "console-export"
+    },
+    {
+      "date": "2026-01-05",
+      "amount": 137.40,
+      "breakdown": {
+        "opus": 130.07,
+        "sonnet": 4.37,
+        "haiku": 2.82,
+        "web_search": 0.14
+      },
+      "source": "console-export"
+    },
+    {
+      "date": "2026-01-06",
+      "amount": 84.40,
+      "breakdown": {
+        "opus": 79.49,
+        "sonnet": 3.45,
+        "haiku": 1.43,
+        "web_search": 0.03
+      },
+      "source": "console-export"
+    }
+  ]
+}

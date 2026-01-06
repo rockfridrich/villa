@@ -170,11 +170,16 @@ interface CostData {
 function loadCostData(): CostData {
   try {
     const cwd = process.cwd()
-    const costPath = existsSync(join(cwd, '..', '..', '.claude', 'costs.json'))
-      ? join(cwd, '..', '..', '.claude', 'costs.json')
-      : join(cwd, '.claude', 'costs.json')
+    // Check multiple locations for costs.json
+    const possiblePaths = [
+      join(cwd, 'data', 'costs.json'),           // Production: apps/developers/data/
+      join(cwd, '..', '..', '.claude', 'costs.json'), // Local dev: repo root
+      join(cwd, '.claude', 'costs.json'),        // Fallback
+    ]
 
-    if (!existsSync(costPath)) {
+    const costPath = possiblePaths.find(p => existsSync(p))
+
+    if (!costPath) {
       return { entries: [], total: 0, dailyAverage: 0, byModel: {} }
     }
 

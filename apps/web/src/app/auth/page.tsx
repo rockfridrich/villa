@@ -24,8 +24,23 @@ const VILLA_ORIGINS = [
   'https://dev-1.villa.cash',
   'https://dev-2.villa.cash',
   'https://developers.villa.cash',
+] as const
+
+// Development origins (localhost only - NEVER use wildcard)
+const DEV_ORIGINS = [
   'https://localhost:3000',
   'https://localhost:3001',
+  'http://localhost:3000',
+  'http://localhost:3001',
+] as const
+
+// Registered external app origins (allowlist for third-party integrations)
+// Apps must register via developers.villa.cash to be added here
+const REGISTERED_APP_ORIGINS = [
+  // Lovable.dev (registered partner)
+  'https://lovable.dev',
+  'https://www.lovable.dev',
+  // Add registered apps here after verification
 ] as const
 
 function isInIframe(): boolean {
@@ -49,16 +64,14 @@ function isInPopup(): boolean {
 }
 
 /**
- * Validate origin is a proper HTTPS URL (security check)
+ * Check if origin is in the allowlist
  */
-function isValidHttpsOrigin(origin: string): boolean {
-  try {
-    const url = new URL(origin)
-    // Allow HTTPS or localhost for development
-    return url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-  } catch {
-    return false
-  }
+function isAllowedOrigin(origin: string): boolean {
+  return (
+    VILLA_ORIGINS.includes(origin as typeof VILLA_ORIGINS[number]) ||
+    DEV_ORIGINS.includes(origin as typeof DEV_ORIGINS[number]) ||
+    REGISTERED_APP_ORIGINS.includes(origin as typeof REGISTERED_APP_ORIGINS[number])
+  )
 }
 
 /**
@@ -66,9 +79,9 @@ function isValidHttpsOrigin(origin: string): boolean {
  *
  * Security model:
  * - Villa origins are always trusted
- * - External app origins are accepted if passed via query param AND valid HTTPS
- * - This is similar to OAuth redirect_uri - the SDK specifies where to send results
- * - User explicitly consented by completing auth flow
+ * - Dev origins (localhost) are trusted in development only
+ * - External apps MUST be in REGISTERED_APP_ORIGINS allowlist
+ * - NEVER use wildcard ('*') - always specify exact origin
  */
 function getValidatedParentOrigin(queryOrigin: string | null): string | null {
   // 1. Check Villa-owned origins first (from referrer)
@@ -76,7 +89,7 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
     try {
       const referrerUrl = new URL(document.referrer)
       const referrerOrigin = referrerUrl.origin
-      if (VILLA_ORIGINS.includes(referrerOrigin as typeof VILLA_ORIGINS[number])) {
+      if (isAllowedOrigin(referrerOrigin)) {
         return referrerOrigin
       }
     } catch {
@@ -84,15 +97,30 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
     }
   }
 
-  // 2. Accept query param origin if valid HTTPS (for external apps like Lovable)
-  if (queryOrigin && isValidHttpsOrigin(queryOrigin)) {
+  // 2. Accept query param origin ONLY if in allowlist (registered apps)
+  // SECURITY: Never accept arbitrary HTTPS origins - must be pre-registered
+  if (queryOrigin && isAllowedOrigin(queryOrigin)) {
     return queryOrigin
   }
 
-  // 3. In development, allow localhost wildcard
-  if (typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return '*'
+  // 3. In development, check for localhost origins (NEVER return wildcard)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Return the specific localhost origin based on referrer or default
+      if (typeof document !== 'undefined' && document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer)
+          if (DEV_ORIGINS.includes(referrerUrl.origin as typeof DEV_ORIGINS[number])) {
+            return referrerUrl.origin
+          }
+        } catch {
+          // Invalid referrer
+        }
+      }
+      // Default to https localhost for passkey compatibility
+      return 'https://localhost:3000'
+    }
   }
 
   return null
