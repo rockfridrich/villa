@@ -11,11 +11,11 @@ Drop-in identity SDK: passkey auth, persistent nicknames, and avatars in under 1
 ## SDK Quick Start
 
 ```bash
-npm install @villa/sdk
+npm install @rockfridrich/villa-sdk
 ```
 
 ```typescript
-import { Villa } from '@villa/sdk'
+import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
   appId: 'your-app-id',
@@ -166,15 +166,33 @@ Scopes: `sdk`, `web`, `api`, `contracts`, `ui`
 4. Create PR with clear description
 5. Wait for CI + review
 
+### AI-Assisted Development
+
+This repo is optimized for AI collaboration (Claude Code):
+
+```bash
+# Agent context validated in CI
+pnpm context:validate
+
+# Set up your preferences
+cp .claude/local/preferences.template.json .claude/local/preferences.json
+```
+
+See `.claude/` for agent definitions, protocols, and shared knowledge.
+
 ## Roadmap
 
 | Sprint | Focus | Status |
 |--------|-------|--------|
-| Sprint 1 | SDK auth screens, API infra, contracts | Done |
-| Sprint 2 | Iframe integration, developer portal | In Progress |
-| Sprint 3 | React package, storage, docs | Next |
+| Sprint 1 | Passkey auth, onboarding flow | ✅ Done |
+| Sprint 2 | Nicknames, avatar selection | ✅ Done |
+| Sprint 3 | SDK iframe, developer portal | ✅ Done |
+| Sprint 4 | SDK screens, portal navigation | 🚧 In Progress |
+| Sprint 5 | React package, storage, docs | Next |
 
-See [specs/active/sdk-mlp-roadmap.md](specs/active/sdk-mlp-roadmap.md) for details.
+**Current Sprint (4):** SignInWelcome screen, NicknameSelection, sidebar navigation.
+
+See [ROADMAP.md](ROADMAP.md) for strategic direction.
 
 ## Architecture
 

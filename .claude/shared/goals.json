@@ -1,0 +1,75 @@
+{
+  "mission": "Privacy-first passkey authentication for pop-up villages",
+  "vision": "Every pop-up village resident has a secure, private digital identity",
+
+  "currentSprint": {
+    "name": "Sprint 4",
+    "focus": "SDK screens + Developer portal navigation",
+    "startDate": "2026-01-06",
+    "endDate": "2026-01-13"
+  },
+
+  "priorities": [
+    {
+      "id": "P0",
+      "title": "SignInWelcome screen",
+      "description": "Welcome screen for SDK auth flow",
+      "owner": null,
+      "status": "pending",
+      "spec": "specs/sprint-4/sdk-screens.md"
+    },
+    {
+      "id": "P1",
+      "title": "NicknameSelection screen",
+      "description": "Nickname picker for new users",
+      "owner": null,
+      "status": "pending",
+      "spec": "specs/sprint-4/sdk-screens.md"
+    },
+    {
+      "id": "P2",
+      "title": "Developer portal navigation",
+      "description": "Sidebar + mobile drawer",
+      "owner": null,
+      "status": "pending",
+      "spec": "specs/sprint-4/dev-portal-nav.md"
+    }
+  ],
+
+  "blocked": [],
+
+  "completed": [
+    {
+      "title": "RAG system for agent context",
+      "completedAt": "2026-01-06",
+      "pr": 22
+    },
+    {
+      "title": "Multi-developer preferences",
+      "completedAt": "2026-01-06",
+      "pr": 23
+    },
+    {
+      "title": "Avatar selection with timer",
+      "completedAt": "2026-01-05",
+      "pr": 20
+    },
+    {
+      "title": "Profile persistence API",
+      "completedAt": "2026-01-06",
+      "pr": 21
+    }
+  ],
+
+  "techDebt": [
+    "Flaky timer test in avatar-selection.spec.ts",
+    "img tags should use next/image",
+    "Database connection timeout handling"
+  ],
+
+  "metrics": {
+    "weeklyPRTarget": 5,
+    "ciSuccessTarget": 100,
+    "avgPRSize": 300
+  }
+}
