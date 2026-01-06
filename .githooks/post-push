@@ -1,0 +1,12 @@
+#!/bin/bash
+# Post-push hook: Start background CI monitoring
+# This is non-blocking - fires and forgets
+
+# Only run if CI monitor exists
+if [ -x "./scripts/ci-monitor.sh" ]; then
+    # Start background monitoring (completely non-blocking)
+    nohup ./scripts/ci-monitor.sh --watch >> .claude/ci-status.log 2>&1 &
+    echo "🔄 CI monitoring started in background (PID: $!)"
+    echo "📊 Check status: ./scripts/ci-monitor.sh"
+    echo "📋 View logs: tail -f .claude/ci-status.log"
+fi

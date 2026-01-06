@@ -61,7 +61,11 @@
     "beads": "./scripts/bd-workflow.sh",
     "beads:ui": "bdui start --port 3002 --open",
     "beads:ready": "bd ready",
-    "beads:status": "./scripts/bd-workflow.sh status"
+    "beads:status": "./scripts/bd-workflow.sh status",
+    "ci": "./scripts/ci-monitor.sh",
+    "ci:watch": "./scripts/ci-monitor.sh --watch",
+    "ci:log": "tail -f .claude/ci-status.log",
+    "verify:fast": "turbo run typecheck lint"
   },
   "devDependencies": {
     "@types/node": "25.0.3",

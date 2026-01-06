@@ -1,10 +1,15 @@
 #!/bin/bash
-# Pre-push hook: Run verification before pushing
-# Prevents CI failures by catching issues locally first
+# Pre-push hook: Fast verification before pushing
+# Full E2E tests run in CI - this is just a quick sanity check
+#
+# Fast checks (~30s): typecheck + lint
+# Slow checks (CI): E2E tests, security scans
+#
+# For full local verification: pnpm verify
 
 set -e
 
-echo "🔍 Running pre-push verification..."
+echo "🔍 Running fast pre-push checks..."
 echo ""
 
 # Check if we're in the right directory
@@ -13,15 +18,27 @@ if [ ! -f "package.json" ]; then
     exit 0
 fi
 
-# Run verification
-if npm run verify; then
+# Fast verification: typecheck + lint only
+# This catches 80% of issues in 20% of the time
+if pnpm typecheck && pnpm lint; then
     echo ""
-    echo "✅ All checks passed. Pushing..."
+    echo "✅ Fast checks passed. Pushing..."
+    echo "📊 Full E2E tests will run in CI"
+    echo ""
+
+    # Start background CI monitor (non-blocking)
+    if [ -x "./scripts/ci-monitor.sh" ]; then
+        echo "🔄 CI monitor will track status in background..."
+        # Note: This runs after push completes
+        # To enable: nohup ./scripts/ci-monitor.sh --watch >> .claude/ci-status.log 2>&1 &
+    fi
+
     exit 0
 else
     echo ""
-    echo "❌ Verification failed. Fix issues before pushing."
+    echo "❌ Fast verification failed. Fix issues before pushing."
     echo ""
+    echo "Run 'pnpm typecheck' and 'pnpm lint' to see errors"
     echo "To bypass (not recommended): git push --no-verify"
     exit 1
 fi
