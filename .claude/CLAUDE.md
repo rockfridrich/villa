@@ -39,6 +39,12 @@ pnpm verify          # ALWAYS run before pushing
 pnpm qa              # Mobile QA via ngrok
 pnpm build           # Build all packages
 pnpm typecheck       # Type check all packages
+
+# Task orchestration (Beads)
+bd ready             # Find available work
+bd show <id>         # Task details
+./scripts/bd-workflow.sh start <id>   # Claim task
+./scripts/bd-workflow.sh done <id>    # Complete task
 ```
 
 | Agent | Model | Use For |
@@ -180,8 +186,11 @@ Human + Claude Code partnership:
 4. **Human** — reviews, approves, merges
 
 ```bash
-./scripts/coordinate.sh status  # Check state
+bd ready                        # Find tasks with no blockers
+./scripts/bd-workflow.sh status # Full task overview
 ```
+
+**Task Memory:** Beads (`.beads/`) — survives sessions, hash-based IDs, dependency tracking
 
 **Animation:** Lottie (vectors) + Framer Motion (interactions)
 

@@ -1,0 +1,27 @@
+# Villa Beads Configuration
+# Persistent task memory for parallel agent orchestration
+#
+# Quick start:
+#   bd ready           - Show available work
+#   bd show <id>       - Task details
+#   bd create "title"  - New task
+#   bd close <id>      - Complete task
+
+# Issue prefix - all tasks named "villa-xxx"
+issue-prefix: villa
+
+# Auto-flush to JSONL for git tracking (shared across team)
+no-auto-flush: false
+
+# Auto-import when JSONL is newer (after git pull)
+no-auto-import: false
+
+# Default debounce for writes
+flush-debounce: "3s"
+
+# GitHub integration (for PR/issue linking)
+# Configure via: bd config set github.org rockfridrich
+#                bd config set github.repo villa
+
+# Sync branch for multi-clone setups (optional)
+# Uncomment for team sync: sync-branch: "beads-sync"
