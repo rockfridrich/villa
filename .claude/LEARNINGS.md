@@ -1494,6 +1494,55 @@ Phase 3: Features (10% token cost, 70% user value)
 
 **Key insight:** Time in Phase 1 feels slow but makes Phase 2-3 exponentially faster
 
+### 47. Lock File Sync Prevention (CRITICAL)
+
+**Incident 2026-01-06:** Contributor PR #27 failed CI because `pnpm-lock.yaml` was out of sync with modified `package.json`.
+
+**The Problem:**
+```bash
+# Contributor edits package.json (adds dependency)
+# Forgets to run pnpm install
+# Pushes → CI fails with ERR_PNPM_OUTDATED_LOCKFILE
+# 3-5 minutes wasted per occurrence
+```
+
+**Prevention (implemented):**
+
+1. **Pre-commit hook** (`.githooks/pre-commit`):
+   ```bash
+   # Detect package.json changes without lock file
+   if git diff --cached --name-only | grep -qE 'package\.json$'; then
+     if ! git diff --cached --name-only | grep -q 'pnpm-lock.yaml'; then
+       echo "Run: pnpm install && git add pnpm-lock.yaml"
+       exit 1
+     fi
+   fi
+   ```
+
+2. **CI fast-fail job** (`.github/workflows/ci.yml`):
+   ```yaml
+   lockfile-check:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v4
+       - uses: pnpm/action-setup@v4
+       - run: pnpm install --frozen-lockfile --ignore-scripts
+
+   # All other jobs depend on this
+   lint:
+     needs: [lockfile-check]
+   ```
+
+**Benefits:**
+- Local catch at commit time (pre-commit hook)
+- CI fails fast (~10s) before expensive jobs run
+- Clear error message with fix instructions
+
+**Why this matters for contributors:**
+- #1 contributor error (editing package.json, forgetting pnpm install)
+- First-time contributors often unfamiliar with lock files
+- Early detection = less frustration = more contributors
+
 ### CI Failure - 2026-01-06 21:28
 - Workflow: .github/workflows/contracts.yml
 - Run: https://github.com/rockfridrich/villa/actions/runs/20751345377
