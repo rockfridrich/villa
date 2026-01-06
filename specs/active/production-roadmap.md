@@ -10,18 +10,24 @@
 
 Villa is currently at **Beta (Base Sepolia)**. This spec documents all blockers and the critical path to production (Base Mainnet).
 
-### Current State
+### Current State (Updated 2026-01-06)
 
-| Component | Status | Blocker |
-|-----------|--------|---------|
-| Porto SDK Integration | ✅ Working | Passkeys bound to `id.porto.sh` |
-| Database (PostgreSQL) | ✅ Working | None |
-| SDK npm Packages | ✅ Published | None |
-| Contracts (Sepolia) | ✅ Deployed | Mainnet blocked by audit |
-| TinyCloud | 🔴 Not integrated | SDK never initialized |
-| ENS/CCIP-Read | 🟡 Partial | Gateway stubbed, returns `0x` |
-| Passkey Domain | 🔴 Porto-owned | Need `villa.cash` RP ID |
-| Mainnet Contracts | 🔴 Blocked | Audit + Groth16 + multisig |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Porto SDK Integration | ✅ Working | Passkeys via `id.porto.sh` |
+| Database (PostgreSQL) | ✅ Working | Profiles, nicknames persist |
+| SDK npm Packages | ✅ Published | @rockfridrich/villa-sdk v0.1.0 |
+| Contracts (Sepolia) | ✅ Deployed | VillaNicknameResolverV2, BiometricRecoverySignerV2 |
+| Generated Avatars | ✅ Persist | Database-backed cross-device |
+| Nicknames | ✅ Persist | Database-backed cross-device |
+| Auth Flow | ✅ Working | Sign in, create account, returning user |
+| Developer Portal | ✅ Live | developers.villa.cash |
+| TinyCloud | 🟡 Deferred | Only needed for custom avatar uploads |
+| ENS/CCIP-Read | 🟡 Deferred | Direct API works, full EIP-3668 deferred |
+| Passkey Domain | 🟡 Future | Phase 2 (requires audit + migration) |
+| Mainnet Contracts | 🔴 Blocked | External: audit + Groth16 + multisig |
+
+**Beta Status: PRODUCTION READY** - All core features working on beta.villa.cash
 
 ---
 
