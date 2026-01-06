@@ -828,22 +828,42 @@ Error: Invalid Chai property: toHaveFocus
 
 **Root cause:** vitest setup file import order or missing global extension.
 
-### 30. DATABASE_URL in DigitalOcean Specs
+### 30. DATABASE_URL in DigitalOcean Specs (CRITICAL)
 
-`envsubst` in CI may not substitute secrets properly:
+**Root cause discovered 2026-01-06:** DO App Platform overwrites env vars with platform-managed values on every deploy. Manual `doctl apps update` with hardcoded DATABASE_URL gets reset when GitHub triggers a new deployment.
 
-```bash
-# ❌ Unreliable: envsubst in workflow
-envsubst '${DATABASE_URL}' < app.yaml > app-generated.yaml
+```yaml
+# ❌ WRONG: Manual env var (gets overwritten every deploy)
+envs:
+  - key: DATABASE_URL
+    value: "postgresql://user:pass@host:5432/db"
+    scope: RUN_AND_BUILD_TIME
 
-# ✅ Reliable: Manual sed substitution
-sed 's|\${DATABASE_URL}|actual-connection-string|g' app.yaml > app-generated.yaml
+# ✅ CORRECT: Database component binding (survives redeploys)
+databases:
+  - name: villa-db
+    engine: PG
+    production: true
+    cluster_name: villa-db    # Must match existing cluster
+    db_name: villa
+    db_user: doadmin
 
-# ✅ Best: Hardcode in spec (if not truly secret)
-# Or use DO encrypted env vars (EV[...] format)
+envs:
+  - key: DATABASE_URL
+    value: "${villa-db.DATABASE_URL}"  # Platform resolves this
+    scope: RUN_AND_BUILD_TIME
 ```
 
-**Verification:** `grep '\${' generated.yaml` should return nothing.
+**Symptoms of wrong approach:**
+- DATABASE_URL works after manual update, fails after next GitHub push
+- Private hostname appears (e.g., `private-villa-db-...`) causing CONNECT_TIMEOUT
+- ~2 hours debugging CI/envsubst when real issue is platform behavior
+
+**Verification:**
+```bash
+doctl apps spec get $APP_ID --format yaml | grep -A 5 "databases:"
+# Should show database component, not empty
+```
 
 ### 31. Production Deployment Checklist
 
@@ -869,6 +889,58 @@ doctl apps update $APP_ID --spec app-generated.yaml
 doctl apps create-deployment $APP_ID --force-rebuild
 ```
 
+### 32. DevOps Debugging Time-Box (CRITICAL)
+
+**Incident 2026-01-06:** 2+ hours lost debugging DATABASE_URL reset on deploy.
+
+**Pattern:** When infrastructure issue persists after 15 minutes:
+
+```
+STOP → ESCALATE → DOCUMENT
+```
+
+1. **15 min mark:** If same error after 2 attempts → different approach
+2. **30 min mark:** If platform-specific → check official docs, not Stack Overflow
+3. **45 min mark:** If still stuck → create minimal repro OR delegate to specialist
+
+**Root cause analysis:**
+- Spent 2h debugging envsubst/CI when real issue was DO App Platform behavior
+- Solution was in DO docs: database component bindings
+- Should have searched "digitalocean app platform database connection" at 15 min mark
+
+**Prevention:**
+```bash
+# Before debugging infra, check platform docs
+curl -s "https://docs.digitalocean.com/products/app-platform/..."
+# Or search: site:docs.digitalocean.com "database connection"
+```
+
+### 33. postgres.js Connection Options
+
+```typescript
+// ✅ Correct options for DigitalOcean
+const sql = postgres(dbUrl, {
+  max: 10,              // Connection pool size
+  idle_timeout: 20,     // Close idle connections after 20s
+  connect_timeout: 10,  // Fail fast on connection issues
+  ssl: dbUrl.includes('sslmode=require') ? 'require' : false,
+})
+
+// ❌ Invalid options (don't exist in postgres.js)
+// socket_timeout, statement_timeout (use raw SQL SET for these)
+```
+
+**Auto-migration pattern:**
+```typescript
+let migrationRun = false
+export async function ensureTables() {
+  if (migrationRun) return
+  const db = getDb()
+  await db`CREATE TABLE IF NOT EXISTS profiles (...)`
+  migrationRun = true
+}
+```
+
 ---
 
 ## Session Archive
@@ -882,6 +954,7 @@ Historical session notes in `.claude/archive/` and `.claude/reflections/`:
 - `reflections/2026-01-05-mlp-sprint-1.md` - MLP Sprint 1 (SDK screens, API infra, contracts)
 - `reflections/2026-01-05-env-config-session.md` - Env config + NO manual deployments rule
 - `reflections/2026-01-06-production-deploy.md` - SDK iframe CSP + production release v0.3.0
+- `reflections/2026-01-06-profile-persistence.md` - Database binding fix + DevOps time-box pattern
 
 Full session logs preserved in git history for reference.
 

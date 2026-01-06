@@ -112,7 +112,49 @@ services:
 region: nyc
 ```
 
+## Database Binding (CRITICAL)
+
+DO App Platform overwrites env vars on each deploy. Use database component binding:
+
+```yaml
+# In app spec (e.g., .do/app-staging.yaml)
+databases:
+  - name: villa-db
+    engine: PG
+    production: true
+    cluster_name: villa-db    # Must match existing managed DB cluster
+    db_name: villa
+    db_user: doadmin
+
+services:
+  - name: web
+    envs:
+      - key: DATABASE_URL
+        value: "${villa-db.DATABASE_URL}"  # Platform resolves to public URL
+        scope: RUN_AND_BUILD_TIME
+```
+
+**Why binding matters:**
+- Manual `DATABASE_URL` gets reset to private hostname on each GitHub deploy
+- Private hostnames (e.g., `private-villa-db-...`) are VPC-internal only
+- App containers can't reach private hostnames → CONNECT_TIMEOUT
+- Binding syntax `${villa-db.DATABASE_URL}` always resolves to public URL
+
+**Verification:**
+```bash
+doctl apps spec get $APP_ID --format yaml | grep -A 5 "databases:"
+# Should show database component
+```
+
+---
+
 ## Learnings
+
+### 2026-01-06: Database Binding Discovery
+**Problem:** DATABASE_URL reset to private hostname after every GitHub deploy
+**Cause:** DO App Platform manages env vars, overwriting manual updates
+**Solution:** Use database component binding `${villa-db.DATABASE_URL}`
+**Time lost:** ~2 hours debugging envsubst/CI before finding root cause
 
 ### 2026-01-04: doctl Arrays
 **Problem:** jq error "Cannot index array with string"
