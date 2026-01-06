@@ -1,40 +1,55 @@
 import { NextResponse } from 'next/server'
 import { execSync } from 'child_process'
-import { readFileSync, existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 
-// Session metrics from git and beads
+/**
+ * METRICS API - ONLY VERIFIABLE DATA
+ *
+ * This API returns ONLY data that can be verified:
+ * 1. Git metrics - directly from git log (provable)
+ * 2. Cost data - ONLY from .claude/costs.json if manually entered
+ *
+ * NO ESTIMATES. NO GUESSES. If we don't have real data, we say so.
+ */
+
+// Session metrics - ONLY verifiable git data
 interface SessionMetrics {
   id: string
   date: string
-  branch: string
   commits: number
-  corrections: number
+  corrections: number  // fix/revert commits
   filesChanged: number
   linesAdded: number
   linesDeleted: number
-  prsCreated: number
-  prsMerged: number
-  tasksCompleted: number
-  duration: string
-  efficiency: number
-  tokenEstimate: number
+  efficiency: number   // (1 - corrections/commits) * 100
+}
+
+// Cost data - MUST be manually entered
+interface CostEntry {
+  date: string
+  amount: number
+  description: string
+  source: 'manual' | 'invoice' | 'api'
 }
 
 interface MetricsResponse {
-  sessions: SessionMetrics[]
-  totals: {
-    totalCommits: number
-    totalPRs: number
-    totalTasksCompleted: number
-    avgEfficiency: number
-    totalTokenEstimate: number
-    totalLinesAdded: number
+  git: {
+    sessions: SessionMetrics[]
+    totals: {
+      totalCommits: number
+      totalLinesAdded: number
+      avgEfficiency: number
+      firstCommit: string
+      lastCommit: string
+    }
   }
-  tokenPricing: {
-    inputPer1k: number
-    outputPer1k: number
-    avgSessionCost: number
+  costs: {
+    hasData: boolean
+    entries: CostEntry[]
+    totalSpent: number
+    currency: string
+    note: string
   }
   lastUpdated: string
 }
@@ -58,17 +73,8 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
-// Estimate tokens from git activity
-function estimateTokens(commits: number, linesChanged: number): number {
-  // Rough estimation: each commit = ~500 tokens context + response
-  // Each line changed = ~10 tokens to process
-  const basePerCommit = 500
-  const perLine = 10
-  return commits * basePerCommit + linesChanged * perLine
-}
-
-// Get git metrics for date range
-function getGitMetrics(since: string, until: string = 'now'): Partial<SessionMetrics> {
+// Get REAL git metrics - no estimation
+function getGitMetrics(since: string, until: string = 'now'): SessionMetrics | null {
   try {
     const cwd = process.cwd()
     const root = existsSync(join(cwd, '..', '..', '.git'))
@@ -76,139 +82,81 @@ function getGitMetrics(since: string, until: string = 'now'): Partial<SessionMet
       : cwd
 
     const commits = parseInt(
-      execSync(`git -C "${root}" log --oneline --since="${since}" --until="${until}" | wc -l`, { encoding: 'utf-8' }).trim()
+      execSync(`git -C "${root}" log --oneline --since="${since}" --until="${until}" 2>/dev/null | wc -l`, { encoding: 'utf-8' }).trim()
     ) || 0
 
+    if (commits === 0) return null
+
     const corrections = parseInt(
-      execSync(`git -C "${root}" log --format='%s' --since="${since}" --until="${until}" | grep -cE '^(fix|revert|oops)' || echo 0`, { encoding: 'utf-8' }).trim()
+      execSync(`git -C "${root}" log --format='%s' --since="${since}" --until="${until}" 2>/dev/null | grep -ciE '^(fix|revert|oops)' || echo 0`, { encoding: 'utf-8' }).trim()
     ) || 0
 
     // Get diff stats
     const diffStat = execSync(
-      `git -C "${root}" log --numstat --since="${since}" --until="${until}" | awk 'NF==3 {add+=$1; del+=$2} END {print add, del}'`,
+      `git -C "${root}" log --numstat --since="${since}" --until="${until}" 2>/dev/null | awk 'NF==3 {add+=$1; del+=$2} END {print add, del}'`,
       { encoding: 'utf-8' }
     ).trim().split(' ')
 
     const linesAdded = parseInt(diffStat[0]) || 0
     const linesDeleted = parseInt(diffStat[1]) || 0
 
-    // Get files changed
     const filesChanged = parseInt(
-      execSync(`git -C "${root}" log --name-only --format= --since="${since}" --until="${until}" | sort -u | wc -l`, { encoding: 'utf-8' }).trim()
+      execSync(`git -C "${root}" log --name-only --format= --since="${since}" --until="${until}" 2>/dev/null | sort -u | wc -l`, { encoding: 'utf-8' }).trim()
     ) || 0
 
     return {
+      id: `git-${since}`,
+      date: since.split(' ')[0],
       commits,
       corrections,
       filesChanged,
       linesAdded,
       linesDeleted,
-      efficiency: commits > 0 ? Math.round((1 - corrections / commits) * 100) : 100,
-      tokenEstimate: estimateTokens(commits, linesAdded + linesDeleted)
+      efficiency: commits > 0 ? Math.round((1 - corrections / commits) * 100) : 100
     }
   } catch {
-    return {
-      commits: 0,
-      corrections: 0,
-      filesChanged: 0,
-      linesAdded: 0,
-      linesDeleted: 0,
-      efficiency: 100,
-      tokenEstimate: 0
-    }
+    return null
   }
 }
 
-// Get session data from reflection files
-function getSessionsFromReflections(): SessionMetrics[] {
+// Get sessions for last N days
+function getRecentSessions(days: number): SessionMetrics[] {
   const sessions: SessionMetrics[] = []
 
-  try {
-    const cwd = process.cwd()
-    const reflectionsPath = existsSync(join(cwd, '..', '..', '.claude', 'reflections'))
-      ? join(cwd, '..', '..', '.claude', 'reflections')
-      : join(cwd, '.claude', 'reflections')
-
-    if (!existsSync(reflectionsPath)) return sessions
-
-    // Read reflection files and extract metrics
-    const files = execSync(`ls "${reflectionsPath}"/*.md 2>/dev/null || echo ""`, { encoding: 'utf-8' })
-      .split('\n')
-      .filter(f => f.endsWith('.md') && !f.includes('INDEX'))
-
-    for (const file of files) {
-      const content = readFileSync(file, 'utf-8')
-
-      // Extract date from filename (2026-01-06-*.md)
-      const dateMatch = file.match(/(\d{4}-\d{2}-\d{2})/)
-      const date = dateMatch ? dateMatch[1] : 'unknown'
-
-      // Extract metrics from content
-      const commitsMatch = content.match(/Commits:\s*(\d+)/i)
-      const prsMatch = content.match(/PRs.*?(\d+)/i)
-      const efficiencyMatch = content.match(/(\d+)%.*efficiency/i) || content.match(/efficiency.*?(\d+)%/i)
-      const durationMatch = content.match(/Duration:\s*([^\n]+)/i)
-
-      const commits = commitsMatch ? parseInt(commitsMatch[1]) : 0
-      const gitMetrics = getGitMetrics(`${date} 00:00`, `${date} 23:59`)
-
-      sessions.push({
-        id: file.split('/').pop()?.replace('.md', '') || date,
-        date,
-        branch: 'main',
-        commits: commits || gitMetrics.commits || 0,
-        corrections: gitMetrics.corrections || 0,
-        filesChanged: gitMetrics.filesChanged || 0,
-        linesAdded: gitMetrics.linesAdded || 0,
-        linesDeleted: gitMetrics.linesDeleted || 0,
-        prsCreated: prsMatch ? parseInt(prsMatch[1]) : 0,
-        prsMerged: prsMatch ? parseInt(prsMatch[1]) : 0,
-        tasksCompleted: 0,
-        duration: durationMatch ? durationMatch[1].trim() : '4 hours',
-        efficiency: efficiencyMatch ? parseInt(efficiencyMatch[1]) : gitMetrics.efficiency || 85,
-        tokenEstimate: gitMetrics.tokenEstimate || 0
-      })
-    }
-  } catch {
-    // Return empty if can't read reflections
-  }
-
-  return sessions.sort((a, b) => b.date.localeCompare(a.date))
-}
-
-// Get recent sessions from git log
-function getRecentSessions(): SessionMetrics[] {
-  const sessions: SessionMetrics[] = []
-
-  // Get last 7 days of activity
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < days; i++) {
     const date = new Date()
     date.setDate(date.getDate() - i)
     const dateStr = date.toISOString().split('T')[0]
 
     const metrics = getGitMetrics(`${dateStr} 00:00`, `${dateStr} 23:59`)
-
-    if (metrics.commits && metrics.commits > 0) {
-      sessions.push({
-        id: `session-${dateStr}`,
-        date: dateStr,
-        branch: 'main',
-        commits: metrics.commits || 0,
-        corrections: metrics.corrections || 0,
-        filesChanged: metrics.filesChanged || 0,
-        linesAdded: metrics.linesAdded || 0,
-        linesDeleted: metrics.linesDeleted || 0,
-        prsCreated: 0,
-        prsMerged: 0,
-        tasksCompleted: 0,
-        duration: 'N/A',
-        efficiency: metrics.efficiency || 100,
-        tokenEstimate: metrics.tokenEstimate || 0
-      })
+    if (metrics && metrics.commits > 0) {
+      sessions.push(metrics)
     }
   }
 
   return sessions
+}
+
+// Load REAL cost data from file (manually entered)
+function loadCostData(): { entries: CostEntry[], total: number } {
+  try {
+    const cwd = process.cwd()
+    const costPath = existsSync(join(cwd, '..', '..', '.claude', 'costs.json'))
+      ? join(cwd, '..', '..', '.claude', 'costs.json')
+      : join(cwd, '.claude', 'costs.json')
+
+    if (!existsSync(costPath)) {
+      return { entries: [], total: 0 }
+    }
+
+    const data = JSON.parse(readFileSync(costPath, 'utf-8'))
+    const entries: CostEntry[] = Array.isArray(data.entries) ? data.entries : []
+    const total = entries.reduce((sum, e) => sum + (e.amount || 0), 0)
+
+    return { entries, total }
+  } catch {
+    return { entries: [], total: 0 }
+  }
 }
 
 export const dynamic = 'force-dynamic'
@@ -227,50 +175,42 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Combine reflection-based and git-based sessions
-    const reflectionSessions = getSessionsFromReflections()
-    const recentSessions = getRecentSessions()
+    // Get REAL git data (last 30 days)
+    const sessions = getRecentSessions(30)
 
-    // Merge and dedupe by date
-    const sessionMap = new Map<string, SessionMetrics>()
-    for (const session of [...reflectionSessions, ...recentSessions]) {
-      if (!sessionMap.has(session.date) || session.efficiency > 0) {
-        sessionMap.set(session.date, session)
-      }
-    }
-
-    const sessions = Array.from(sessionMap.values())
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 30) // Last 30 sessions
-
-    // Calculate totals
+    // Calculate totals from REAL data
     const totals = {
       totalCommits: sessions.reduce((sum, s) => sum + s.commits, 0),
-      totalPRs: sessions.reduce((sum, s) => sum + s.prsMerged, 0),
-      totalTasksCompleted: sessions.reduce((sum, s) => sum + s.tasksCompleted, 0),
-      avgEfficiency: Math.round(
-        sessions.reduce((sum, s) => sum + s.efficiency, 0) / Math.max(sessions.length, 1)
-      ),
-      totalTokenEstimate: sessions.reduce((sum, s) => sum + s.tokenEstimate, 0),
-      totalLinesAdded: sessions.reduce((sum, s) => sum + s.linesAdded, 0)
+      totalLinesAdded: sessions.reduce((sum, s) => sum + s.linesAdded, 0),
+      avgEfficiency: sessions.length > 0
+        ? Math.round(sessions.reduce((sum, s) => sum + s.efficiency, 0) / sessions.length)
+        : 0,
+      firstCommit: sessions.length > 0 ? sessions[sessions.length - 1].date : 'N/A',
+      lastCommit: sessions.length > 0 ? sessions[0].date : 'N/A'
     }
 
-    // Claude pricing (as of 2025)
-    const tokenPricing = {
-      inputPer1k: 0.015,  // $15/1M input tokens for Opus
-      outputPer1k: 0.075, // $75/1M output tokens for Opus
-      avgSessionCost: Math.round(totals.totalTokenEstimate / 1000 * 0.045 * 100) / 100 // Blended rate
-    }
+    // Load REAL cost data (only if manually entered)
+    const costData = loadCostData()
 
     const response: MetricsResponse = {
-      sessions,
-      totals,
-      tokenPricing,
+      git: {
+        sessions,
+        totals
+      },
+      costs: {
+        hasData: costData.entries.length > 0,
+        entries: costData.entries,
+        totalSpent: costData.total,
+        currency: 'USD',
+        note: costData.entries.length > 0
+          ? 'From manually entered data in .claude/costs.json'
+          : 'No cost data. Add entries to .claude/costs.json to track spending.'
+      },
       lastUpdated: new Date().toISOString()
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, max-age=300' } // 5 min cache
+      headers: { 'Cache-Control': 'public, max-age=300' }
     })
   } catch (error) {
     console.error('Error generating metrics:', error)

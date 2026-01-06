@@ -1,0 +1,13 @@
+{
+  "_comment": "REAL cost data only. Add entries from your Anthropic invoice or console.",
+  "_instructions": "To track costs: 1) Go to console.anthropic.com/settings/billing 2) Export usage 3) Add entries below",
+  "currency": "USD",
+  "entries": [
+    {
+      "date": "2026-01-01",
+      "amount": 0,
+      "description": "January 2026 - Update with real invoice data",
+      "source": "manual"
+    }
+  ]
+}
