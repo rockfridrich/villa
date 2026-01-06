@@ -6,6 +6,7 @@ import postgres from 'postgres'
 
 // Singleton connection pool
 let sql: ReturnType<typeof postgres> | null = null
+let migrationRun = false
 
 /**
  * Get database connection
@@ -30,6 +31,38 @@ export function getDb() {
   })
 
   return sql
+}
+
+/**
+ * Ensure tables exist (auto-migration on first request)
+ * Safe to call multiple times - only runs once per process
+ */
+export async function ensureTables() {
+  if (migrationRun) return
+
+  const db = getDb()
+
+  // Create profiles table if not exists
+  await db`
+    CREATE TABLE IF NOT EXISTS profiles (
+      address VARCHAR(42) PRIMARY KEY,
+      nickname VARCHAR(32) UNIQUE,
+      nickname_normalized VARCHAR(32) UNIQUE,
+      avatar_style VARCHAR(20),
+      avatar_selection VARCHAR(10),
+      avatar_variant INTEGER,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `
+
+  // Create indexes (IF NOT EXISTS is implicit for CREATE INDEX in PG 9.5+)
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_profiles_nickname
+    ON profiles(nickname_normalized)
+  `
+
+  migrationRun = true
 }
 
 /**

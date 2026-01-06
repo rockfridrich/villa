@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, ensureTables } from '@/lib/db'
 import type { ProfileRow } from '@/lib/db/schema'
 
 // Disable caching - availability can change
@@ -87,6 +87,7 @@ export async function GET(
   }
 
   try {
+    await ensureTables()
     const sql = getDb()
 
     // Check if nickname exists

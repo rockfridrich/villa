@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, ensureTables } from '@/lib/db'
 import type { ProfileRow } from '@/lib/db/schema'
 import { rowToProfile } from '@/lib/db/schema'
 
@@ -29,6 +29,7 @@ export async function GET(
   const normalizedAddress = address.toLowerCase()
 
   try {
+    await ensureTables()
     const sql = getDb()
 
     const rows = await sql<ProfileRow[]>`

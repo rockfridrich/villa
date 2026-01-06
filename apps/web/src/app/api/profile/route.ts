@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getDb } from '@/lib/db'
+import { getDb, ensureTables } from '@/lib/db'
 import type { ProfileRow } from '@/lib/db/schema'
 import { rowToProfile } from '@/lib/db/schema'
 
@@ -28,6 +28,9 @@ const createProfileSchema = z.object({
  */
 export async function POST(request: Request) {
   try {
+    // Ensure tables exist on first request
+    await ensureTables()
+
     const body = await request.json()
     const parsed = createProfileSchema.safeParse(body)
 
