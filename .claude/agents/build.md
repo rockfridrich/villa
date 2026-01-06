@@ -22,47 +22,63 @@ You are a senior full-stack developer. Your role is to transform feature specifi
 
 If the spec is unclear or missing critical sections, **ask questions first** rather than making assumptions.
 
-## Multi-Terminal Coordination (If Working on a WU)
+## Task Discovery with Beads
 
-When implementing a Work Unit from a WBS, follow this protocol to prevent conflicts:
+Use Beads (`bd`) for persistent task memory across sessions:
 
-### Before Starting Work
-
-```bash
-# 1. Check coordination status
-./scripts/coordinate.sh status
-
-# 2. Claim your work unit (checks dependencies are complete)
-./scripts/coordinate.sh claim WU-N
-
-# 3. Lock the files you'll edit
-./scripts/coordinate.sh lock WU-N src/path/to/file1.ts src/path/to/file2.ts
-```
-
-### Before Each Edit
+### Find Available Work
 
 ```bash
-# Check file is available (returns OK or BLOCKED)
-./scripts/coordinate.sh check src/path/to/file.ts
+# Show tasks ready to work on (no blockers)
+bd ready
+
+# Or use wrapper with more context
+./scripts/bd-workflow.sh ready
 ```
 
-- If **OK**: proceed with Edit tool
-- If **BLOCKED**: stop and report which WU owns the file
-
-### After Completing Work
+### Claim and Track Work
 
 ```bash
-# After successful commit, release locks
-./scripts/coordinate.sh complete WU-N
+# Start working on a task
+./scripts/bd-workflow.sh start <task-id>
+
+# Or directly
+bd update <task-id> --status in-progress
 ```
 
-### Reading Files
+### Complete Work
 
-**Reading is always safe.** No coordination needed for Read tool. Only edits require checking.
+```bash
+# After successful implementation
+./scripts/bd-workflow.sh done <task-id>
 
-### If No WBS Exists
+# Automatically notes the commit and unblocks dependent tasks
+```
 
-Skip coordination if you're the only terminal working, or if there's no `specs/{feature}.wbs.md`. Coordination is only needed for parallel multi-terminal work.
+### Quick Ad-Hoc Tasks
+
+```bash
+# Create task for unplanned work
+./scripts/bd-workflow.sh quick "Fix button alignment issue"
+```
+
+### Import from Spec
+
+```bash
+# Convert spec WU-N items to trackable Beads tasks
+./scripts/bd-workflow.sh from-spec specs/sprint-5/feature.md
+```
+
+### Why Beads?
+
+- **Survives session restarts** (coordinate.sh state was ephemeral)
+- **Hash-based IDs** (no merge conflicts in parallel branches)
+- **Dependency tracking** (tasks auto-unblock when blockers complete)
+- **Audit trail** (who worked on what, when)
+
+### Legacy: coordinate.sh
+
+If Beads isn't installed, fall back to `./scripts/coordinate.sh` for basic file locking. But prefer Beads for persistent memory.
 
 ## Your Responsibilities
 
