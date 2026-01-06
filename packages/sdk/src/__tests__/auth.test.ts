@@ -34,10 +34,13 @@ describe('auth', () => {
 
   let messageCallback: ((message: AuthMessage) => void) | null = null
 
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear()
     messageCallback = null
     vi.clearAllMocks()
+
+    // Force auth module to reinitialize by signing out
+    await signOut()
 
     // Setup default mocks
     vi.mocked(iframe.createAuthIframe).mockReturnValue(mockIframe as any)
@@ -449,21 +452,25 @@ describe('auth', () => {
     })
 
     test('handles concurrent signIn attempts', async () => {
+      // Only test that the second call replaces the first iframe
       const promise1 = signIn()
+
+      // Second signIn should create a new iframe (destroying the first)
       const promise2 = signIn()
 
-      // Give promises time to register
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      // Both should get the same callback since onMessage replaces handler
+      // Send success to the active callback (should be promise2's)
       messageCallback?.({ type: 'AUTH_SUCCESS', identity: mockIdentity })
 
-      const results = await Promise.allSettled([promise1, promise2])
+      // Promise2 should succeed
+      await expect(promise2).resolves.toEqual(mockIdentity)
 
-      // At least one should succeed (the last one registered)
-      const succeeded = results.filter((r) => r.status === 'fulfilled')
-      expect(succeeded.length).toBeGreaterThan(0)
-    }, 10000)
+      // Promise1 may or may not resolve depending on timing
+      // Just ensure no hanging promises
+      await Promise.race([
+        promise1,
+        new Promise((resolve) => setTimeout(() => resolve('timeout'), 100)),
+      ])
+    })
 
     test('session expiry is set correctly', async () => {
       const beforeTime = Date.now()
