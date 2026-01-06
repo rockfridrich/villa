@@ -23,9 +23,22 @@ pnpm verify
 
 ## Your First Contribution
 
-### Step 1: Find an Issue
+### Step 1: Find Work
 
-Look for issues labeled [`good first issue`](https://github.com/rockfridrich/villa/labels/good%20first%20issue) - these are curated for newcomers.
+We use **Beads** for task tracking. It lives in the repo (`.beads/`) and syncs via git.
+
+```bash
+# See what's ready to work on (no blockers)
+bd ready
+
+# Full task overview
+bd list --status=open
+
+# View task details
+bd show <task-id>
+```
+
+You can also check [GitHub Issues](https://github.com/rockfridrich/villa/labels/good%20first%20issue) for `good first issue` labels.
 
 ### Step 2: Set Up Your Environment
 
@@ -41,18 +54,87 @@ This will:
 - Verify your first build succeeds
 - Unlock your first achievement!
 
-### Step 3: Create Your PR
+### Step 3: Claim and Work
 
-1. Create a branch: `git checkout -b feat/your-feature`
-2. Make your changes
-3. Run `pnpm verify` (required before every PR)
-4. Push and open a PR
+```bash
+# Claim a task (marks it in-progress)
+bd update <task-id> --status=in_progress
 
-### Step 4: Get Reviewed & Merged
+# Create a branch
+git checkout -b feat/your-feature
+
+# Make your changes...
+
+# Mark complete when done
+bd close <task-id>
+```
+
+### Step 4: Create Your PR
+
+1. Run `pnpm verify` (required before every PR)
+2. Push and open a PR
+3. Beads auto-syncs via git hooks
+
+### Step 5: Get Reviewed & Merged
 
 - PRs automatically deploy to a preview environment (dev-1 or dev-2)
 - A maintainer will review your code
 - Once approved, your code ships to beta, then production!
+
+## Task Tracking (Beads)
+
+We use [Beads](https://github.com/steveyegge/beads) for git-native task tracking. Tasks live in `.beads/` and sync automatically.
+
+### Quick Commands
+
+| Command | Description |
+|---------|-------------|
+| `bd ready` | Show tasks with no blockers |
+| `bd list --status=open` | All open tasks |
+| `bd show <id>` | Task details + dependencies |
+| `bd update <id> --status=in_progress` | Claim a task |
+| `bd close <id>` | Mark task complete |
+| `bd create --title="..." --type=task --priority=2` | Create new task |
+
+### Task Workflow
+
+```
+bd ready          # Find available work
+    ↓
+bd show <id>      # Review task details
+    ↓
+bd update <id> --status=in_progress   # Claim it
+    ↓
+git checkout -b feat/...              # Create branch
+    ↓
+# ... do the work ...
+    ↓
+pnpm verify       # Verify before push
+    ↓
+bd close <id>     # Mark complete
+    ↓
+git push          # Beads syncs automatically
+```
+
+### Dependencies & Blocking
+
+Tasks can block other tasks. Use `bd show <id>` to see what's blocking or blocked.
+
+```bash
+# Add dependency (task A depends on task B)
+bd dep add <task-a> <task-b>
+
+# View blocked tasks
+bd blocked
+```
+
+### Creating Tasks from Specs
+
+When a spec is approved, create tasks from it:
+
+```bash
+./scripts/bd-workflow.sh from-spec specs/active/feature.md
+```
 
 ## Development Workflow
 
@@ -65,6 +147,8 @@ This will:
 | `pnpm verify` | Run all checks (lint, typecheck, build, test) |
 | `pnpm qa` | Start ngrok tunnel for mobile testing |
 | `pnpm test:e2e:chromium` | Run E2E tests locally |
+| `bd ready` | Find available tasks |
+| `bd stats` | Project health snapshot |
 
 ### Environment Setup
 
@@ -130,14 +214,85 @@ Scan the QR code to test on your phone. This is essential for passkey testing si
 | wallet address | (hidden) |
 | SDK names | Never shown |
 
+## Specs Workflow
+
+All features start with an approved spec.
+
+### Spec Locations
+
+| Directory | Purpose |
+|-----------|---------|
+| `specs/active/` | Current sprint work |
+| `specs/done/` | Shipped features |
+| `specs/reference/` | Design docs, guides |
+| `specs/infrastructure/` | DevOps, security |
+
+### Spec Lifecycle
+
+```
+Draft (Claude GUI or markdown)
+    ↓
+Copy to specs/active/{feature}.md
+    ↓
+Create tasks: ./scripts/bd-workflow.sh from-spec specs/active/{feature}.md
+    ↓
+Implement tasks via bd workflow
+    ↓
+Move to specs/done/ when shipped
+```
+
+### Spec Metadata
+
+All specs require this header:
+
+```markdown
+# Feature Name
+**Status:** DRAFT | APPROVED | BUILDING | DONE
+**Created:** YYYY-MM-DD
+**Author:** Your Name
+```
+
+## SDK Integration (NEAR Terminal)
+
+If you're integrating Villa SDK into your app:
+
+```bash
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react
+```
+
+```tsx
+import { VillaAuth } from '@rockfridrich/villa-sdk-react'
+import { getAvatarUrl } from '@rockfridrich/villa-sdk'
+
+function LoginPage() {
+  return (
+    <VillaAuth
+      appName="Your App"
+      onComplete={(result) => {
+        if (result.success) {
+          // result.identity: { address, nickname, avatar }
+          console.log('Welcome', result.identity.nickname)
+        }
+      }}
+    />
+  )
+}
+```
+
+See `specs/done/near-terminal-integration.md` for full SDK documentation.
+
 ## For AI-Assisted Contributors
 
 If you're using Claude Code or similar tools:
 
 1. The `.claude/` directory contains project context
 2. Run `pnpm prefs:show` to see AI preferences
-3. Use specialized agents: `@build`, `@test`, `@review`, `@ops`
-4. See `.claude/CLAUDE.md` for full agent documentation
+3. Use specialized agents (cost-optimized by tier):
+   - **Workers** (haiku): `@explore`, `@test`, `@ops` — fast, cheap
+   - **Specialists** (sonnet): `@build`, `@design`, `@review` — implementation
+   - **Architects** (opus): `@spec`, `@architect` — strategic decisions
+4. Task tracking: `bd ready` to find work, `bd close <id>` when done
+5. See `.claude/CLAUDE.md` for full documentation
 
 ## Achievements
 
