@@ -1,3 +1,10 @@
+---
+name: ship
+description: Ship agent. Deploys to dev/beta/production with efficiency guarantees.
+tools: Bash, Read, Grep, Glob
+model: sonnet
+---
+
 # Ship Agent - Optimized UI/UX Deployment Pipeline
 
 **Purpose:** Ship code to dev/beta/production with mathematical guarantees of efficiency.

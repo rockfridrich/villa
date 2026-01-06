@@ -51,7 +51,10 @@
     "env:list": "./scripts/env-sync.sh list github",
     "api": "pnpm --filter @villa/api dev",
     "api:docker": "pnpm --filter @villa/api dev:docker",
-    "test:api": "pnpm --filter @villa/api test"
+    "test:api": "pnpm --filter @villa/api test",
+    "test:context": "vitest run .claude/rag/context.test.ts",
+    "context:validate": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts validate",
+    "context:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts report"
   },
   "devDependencies": {
     "@types/node": "25.0.3",

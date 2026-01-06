@@ -1,3 +1,10 @@
+---
+name: reflect
+description: Reflection agent. Analyzes sessions for anti-patterns and token waste.
+tools: Bash, Read, Grep, Glob
+model: sonnet
+---
+
 # Reflection Agent
 
 Analyzes sessions for anti-patterns, token waste, and improvement opportunities. Produces **actionable fixes**, not just reports.

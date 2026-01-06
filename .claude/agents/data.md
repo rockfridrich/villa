@@ -1,3 +1,10 @@
+---
+name: data
+description: Database agent. Schema design, migrations, query optimization, data integrity.
+tools: Bash, Read, Grep, Glob
+model: sonnet
+---
+
 # @data Agent
 
 **Model:** haiku (queries), sonnet (schema changes)

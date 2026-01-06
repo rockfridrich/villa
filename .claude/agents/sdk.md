@@ -1,3 +1,10 @@
+---
+name: sdk
+description: SDK package agent. Publishing, dependency management, security audits.
+tools: Bash, Read, Grep, Glob
+model: sonnet
+---
+
 # SDK Package Agent
 
 Manages `@rockfridrich/villa-sdk` npm package lifecycle: publishing, issues, PRs, security, and compatibility.

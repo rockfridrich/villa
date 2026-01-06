@@ -7,6 +7,14 @@ Privacy-first passkey authentication on **Base** network. Porto SDK + Villa them
 
 ---
 
+## Context Loading (RAG)
+
+**Orchestrator Identity:** Read [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for partnership model
+**Philosophy:** Read [MANIFESTO.md](MANIFESTO.md) for repo-as-truth principles
+**Test Context:** `pnpm test:context` validates all prompts load correctly
+
+---
+
 ## Quick Reference
 
 ```bash
@@ -27,7 +35,7 @@ pnpm typecheck       # Type check all packages
 | @review | sonnet | Code review |
 | @ops | haiku | Git, GitHub, deploy |
 
-**Manifest:** [agents/](agents/) — Full definitions for all agents
+**Manifest:** [.claude/agents/](.claude/agents/) — Full definitions for all agents
 
 ---
 
@@ -143,7 +151,7 @@ specs/             # active/, reference/
 
 - [Porto SDK](https://porto.sh/sdk)
 - [LEARNINGS.md](LEARNINGS.md) — Patterns that saved time
-- [agents/](agents/) — Agent definitions
+- [.claude/agents/](agents/) — Agent definitions
 - [knowledge/](knowledge/) — Platform-specific docs
 
 ---
