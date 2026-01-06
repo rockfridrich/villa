@@ -11,6 +11,7 @@
     "lint": "next lint && eslint .",
     "lint:fix": "next lint --fix && eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx src/lib/db/migrate.ts",
     "test": "pnpm run test:unit && pnpm run test:integration && pnpm run test:security",
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:integration": "vitest run --config vitest.config.integration.ts",
