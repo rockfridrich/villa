@@ -259,6 +259,34 @@ function OnboardingContent() {
     setStep('avatar')
   }
 
+  const saveProfile = async (
+    address: string,
+    nickname: string,
+    avatar: AvatarConfig
+  ) => {
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          nickname,
+          avatar: {
+            style: avatar.style,
+            selection: avatar.selection,
+            variant: avatar.variant,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        console.error('Failed to save profile:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+    }
+  }
+
   const handleAvatarSelected = (config: AvatarConfig) => {
     if (!address) {
       setError({
@@ -285,6 +313,9 @@ function OnboardingContent() {
       avatar: config,
       createdAt: Date.now(),
     })
+
+    // Fire and forget - persist to API
+    saveProfile(address, result.data, config)
 
     router.replace('/home')
   }
