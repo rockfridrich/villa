@@ -57,7 +57,11 @@
     "context:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/loader.ts report",
     "prefs:show": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts show",
     "prefs:questions": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts questions",
-    "prefs:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts report"
+    "prefs:report": "pnpm --filter @villa/web exec tsx ../../.claude/rag/preferences.ts report",
+    "beads": "./scripts/bd-workflow.sh",
+    "beads:ui": "bdui start --port 3002 --open",
+    "beads:ready": "bd ready",
+    "beads:status": "./scripts/bd-workflow.sh status"
   },
   "devDependencies": {
     "@types/node": "25.0.3",

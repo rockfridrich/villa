@@ -11,17 +11,14 @@ export function Header() {
           <MobileNav />
           <span className="font-serif text-xl">Villa SDK</span>
           <div className="hidden sm:flex items-center gap-4 text-sm">
-            <a href="#quickstart" className="text-ink-muted hover:text-ink transition-colors">
-              Quickstart
+            <a href="/" className="text-ink-muted hover:text-ink transition-colors">
+              Docs
             </a>
-            <a href="#api" className="text-ink-muted hover:text-ink transition-colors">
-              API
+            <a href="/roadmap" className="text-ink-muted hover:text-ink transition-colors">
+              Roadmap
             </a>
-            <a href="#components" className="text-ink-muted hover:text-ink transition-colors">
-              Components
-            </a>
-            <a href="#ai" className="text-accent-yellow hover:text-accent-yellow/80 transition-colors font-medium">
-              AI
+            <a href="/contributors" className="text-ink-muted hover:text-ink transition-colors">
+              Contributors
             </a>
           </div>
         </div>
