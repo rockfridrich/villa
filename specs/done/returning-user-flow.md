@@ -165,17 +165,17 @@ Redirect to /home
 
 ### Phase 1: Contract Query (Required)
 
-- [ ] Add `getNicknameByAddress(address)` helper function
-- [ ] Call VillaNicknameResolver on Base Sepolia (testnet)
-- [ ] Cache result in memory for session
-- [ ] Handle contract call failures gracefully (fallback to localStorage)
+- [x] Add `getNicknameByAddress(address)` helper function
+- [x] Call VillaNicknameResolver on Base Sepolia (testnet)
+- [x] Cache result in memory for session
+- [x] Handle contract call failures gracefully (fallback to localStorage)
 
 ### Phase 2: Routing Logic Update
 
-- [ ] Update `onboarding/page.tsx` to check nickname on sign-in
-- [ ] Add URL param `?step=avatar` for direct avatar entry
-- [ ] Skip nickname step if already claimed
-- [ ] Show "Welcome back, {nickname}!" when nickname found
+- [x] Update `onboarding/page.tsx` to check nickname on sign-in
+- [x] Add URL param `?step=avatar` for direct avatar entry
+- [x] Skip nickname step if already claimed
+- [x] Show "Welcome back, {nickname}!" when nickname found
 
 ### Phase 3: Avatar Sync (Future)
 
@@ -278,12 +278,12 @@ Redirect to /home
 
 ## Acceptance Criteria
 
-- [ ] User with nickname + avatar on localStorage → goes to /home immediately
-- [ ] User with nickname on-chain but no local avatar → goes to avatar step only
-- [ ] User with nothing → goes through full onboarding
-- [ ] Contract query failure → falls back to localStorage check
-- [ ] "Welcome back, {nickname}!" shown when nickname found
-- [ ] Avatar selection timer still works (30s auto-select)
+- [x] User with nickname + avatar on localStorage → goes to /home immediately
+- [x] User with nickname on-chain but no local avatar → goes to avatar step only
+- [x] User with nothing → goes through full onboarding
+- [x] Contract query failure → falls back to localStorage check
+- [x] "Welcome back, {nickname}!" shown when nickname found
+- [x] Avatar selection timer still works (30s auto-select)
 
 ---
 

@@ -146,7 +146,7 @@ function AuthPageContent() {
   // Post message to parent window (iframe) or opener (popup) with validated origin
   const postToParent = useCallback((message: Record<string, unknown>) => {
     if (!inPopup && !inIframe) {
-      console.log('[Villa Auth] Not in iframe or popup, message:', message)
+      // Not in iframe or popup context, skip posting
       return
     }
 

@@ -157,5 +157,5 @@ Add to developers.villa.cash/metrics:
 
 ## Approved
 
-- [ ] Human review
-- [ ] Ready for implementation
+- [x] Human review
+- [x] Ready for implementation

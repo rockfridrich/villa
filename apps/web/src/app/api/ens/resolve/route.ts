@@ -81,6 +81,7 @@ function parseCallData(callData: `0x${string}`): {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    // Note: sender is extracted from body for future contract validation but not used yet
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { sender, data: callData } = body
 

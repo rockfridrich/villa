@@ -133,7 +133,9 @@ export function AvatarSelection({
         clearInterval(timerRef.current)
       }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Note: Empty deps intentional - handleSelect is stable and we only want this to run once on mount
+  }, [])
 
   const handleSelect = useCallback(() => {
     if (isSelecting) return

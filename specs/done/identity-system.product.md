@@ -25,9 +25,9 @@ The Villa Identity System is a complete identity layer for the Proof of Retreat 
 **So I can...** be recognized by friends and communities without creating new accounts per app
 
 **Success Criteria:**
-- [ ] Identity created in under 60 seconds
-- [ ] Same identity recognized across all Village apps
-- [ ] No passwords, emails, or phone numbers required
+- [x] Identity created in under 60 seconds
+- [x] Same identity recognized across all Village apps
+- [x] No passwords, emails, or phone numbers required
 
 ### Secondary Jobs
 

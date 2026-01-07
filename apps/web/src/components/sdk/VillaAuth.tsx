@@ -80,6 +80,7 @@ export function VillaAuth({
   onComplete,
   initialStep = 'welcome',
   existingAddress,
+  // Note: appName reserved for future consent screen implementation
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   appName = 'this app',
 }: VillaAuthProps) {

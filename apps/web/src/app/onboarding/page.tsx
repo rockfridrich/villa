@@ -162,7 +162,6 @@ function OnboardingContent() {
       authenticateTinyCloud(result.address)
         .then(success => {
           if (success) {
-            console.log('TinyCloud authenticated')
             syncToTinyCloud().catch(console.warn)
           }
         })
@@ -207,7 +206,6 @@ function OnboardingContent() {
       authenticateTinyCloud(result.address)
         .then(success => {
           if (success) {
-            console.log('TinyCloud authenticated')
             syncToTinyCloud().catch(console.warn)
           }
         })

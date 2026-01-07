@@ -25,10 +25,10 @@ The Nickname Registry lets users claim a unique, memorable name that becomes the
 **So I can...** be found by friends and recognized across Village apps
 
 **Success Criteria:**
-- [ ] Claim a nickname in <10 seconds
-- [ ] Name resolves in any ENS-compatible app
-- [ ] One attempt success rate >80%
-- [ ] No confusing validation errors
+- [x] Claim a nickname in <10 seconds
+- [x] Name resolves in any ENS-compatible app
+- [x] One attempt success rate >80%
+- [x] No confusing validation errors
 
 ### Secondary Jobs
 

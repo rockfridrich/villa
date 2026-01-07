@@ -25,10 +25,10 @@ The SDK Auth Flow is the entry point to the Villa Identity System. When a third-
 **So I can...** start using the app immediately without friction
 
 **Success Criteria:**
-- [ ] Returning user signs in < 3 seconds
-- [ ] New user creates account < 60 seconds
-- [ ] No typing required for returning users
-- [ ] Works on all major browsers (Safari, Chrome, Firefox, Edge)
+- [x] Returning user signs in < 3 seconds
+- [x] New user creates account < 60 seconds
+- [x] No typing required for returning users
+- [x] Works on all major browsers (Safari, Chrome, Firefox, Edge)
 
 ### Secondary Jobs
 

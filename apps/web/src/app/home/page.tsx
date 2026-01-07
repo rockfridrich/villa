@@ -50,7 +50,6 @@ export default function HomePage() {
     authenticateTinyCloud(identity.address)
       .then(success => {
         if (success) {
-          console.log('TinyCloud authenticated on home')
           syncToTinyCloud().catch(console.warn)
         }
       })

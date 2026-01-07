@@ -131,7 +131,6 @@ export async function authenticateTinyCloud(address: string): Promise<boolean> {
 
     tinyCloudAuthenticated = true
     currentAuthAddress = address
-    console.log('TinyCloud authenticated for', address)
     return true
   } catch (error) {
     console.warn('TinyCloud authentication failed:', error)
@@ -304,18 +303,14 @@ export const sessionStore = new VillaStorage<VillaSession>(STORAGE_KEYS.session)
 export async function syncToTinyCloud(): Promise<boolean> {
   // Don't attempt sync if not authenticated
   if (!isTinyCloudConnected()) {
-    console.log('TinyCloud not connected, skipping sync')
     return false
   }
-
-  console.log('Syncing local data to TinyCloud...')
 
   // Sync avatar
   const avatarData = avatarStore.loadLocal()
   if (avatarData) {
     try {
       await avatarStore.save(avatarData)
-      console.log('Avatar synced to TinyCloud')
     } catch {
       // Continue
     }
@@ -326,7 +321,6 @@ export async function syncToTinyCloud(): Promise<boolean> {
   if (prefsData) {
     try {
       await preferencesStore.save(prefsData)
-      console.log('Preferences synced to TinyCloud')
     } catch {
       // Continue
     }
