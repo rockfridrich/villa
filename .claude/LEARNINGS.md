@@ -1547,3 +1547,13 @@ Phase 3: Features (10% token cost, 70% user value)
 - Workflow: .github/workflows/contracts.yml
 - Run: https://github.com/rockfridrich/villa/actions/runs/20751345377
 - Action: Check `gh run view 20751345377 --log-failed`
+
+### CI Failure - 2026-01-07 01:05
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20757148040
+- Action: Check `gh run view 20757148040 --log-failed`
+
+### CI Failure - 2026-01-07 02:21
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20759418150
+- Action: Check `gh run view 20759418150 --log-failed`
