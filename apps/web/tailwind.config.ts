@@ -29,6 +29,22 @@ const config: Config = {
           100: '#e0e0e6',
           200: '#c4c4cc',
         },
+        // Semantic status colors
+        error: {
+          bg: '#fef0f0',
+          border: '#fecaca',
+          text: '#dc2626',
+        },
+        success: {
+          bg: '#f0f9f0',
+          border: '#d4e8d4',
+          text: '#698f69', // Reuses accent-green
+        },
+        warning: {
+          bg: '#fffbeb',
+          border: '#ffe047', // Reuses accent-yellow
+          text: '#382207', // Reuses accent-brown
+        },
         // Keep villa for backwards compatibility
         villa: {
           500: '#ffe047', // Now yellow accent

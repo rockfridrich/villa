@@ -383,3 +383,18 @@ For detailed patterns from past sessions, see [LEARNINGS-archive.md](LEARNINGS-a
 ---
 
 *Keep this file under 500 lines. Move historical patterns to archive.*
+
+### CI Failure - 2026-01-07 19:13
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20780819395
+- Action: Check `gh run view 20780819395 --log-failed`
+
+### CI Failure - 2026-01-07 19:37
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20781442443
+- Action: Check `gh run view 20781442443 --log-failed`
+
+### CI Failure - 2026-01-07 20:01
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20782080960
+- Action: Check `gh run view 20782080960 --log-failed`

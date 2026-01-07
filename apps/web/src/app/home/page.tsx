@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Copy, Check, Pencil, X, Settings, ExternalLink, Compass } from 'lucide-react'
+import { LogOut, Copy, Check, Pencil, X, Settings, ExternalLink, Compass, Globe } from 'lucide-react'
 import { Button, Card, CardContent, Avatar, Input, Spinner } from '@/components/ui'
 import { useIdentityStore } from '@/lib/store'
 import { disconnectPorto } from '@/lib/porto'
@@ -36,6 +36,7 @@ export default function HomePage() {
   const router = useRouter()
   const { identity, clearIdentity, updateProfile } = useIdentityStore()
   const [copied, setCopied] = useState(false)
+  const [ensNameCopied, setEnsNameCopied] = useState(false)
 
   // Nickname editing state
   const [isEditing, setIsEditing] = useState(false)
@@ -49,12 +50,16 @@ export default function HomePage() {
 
   // Ref for tracking timeout to prevent memory leaks
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const ensCopyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current)
+      }
+      if (ensCopyTimeoutRef.current) {
+        clearTimeout(ensCopyTimeoutRef.current)
       }
     }
   }, [])
@@ -113,6 +118,20 @@ export default function HomePage() {
     } catch (err) {
       // Clipboard API can fail if permissions are denied or page doesn't have focus
       console.error('Failed to copy address:', err)
+    }
+  }
+
+  const handleCopyEnsName = async () => {
+    const ensName = `${identity.displayName}.villa.cash`
+    try {
+      await navigator.clipboard.writeText(ensName)
+      setEnsNameCopied(true)
+      if (ensCopyTimeoutRef.current) {
+        clearTimeout(ensCopyTimeoutRef.current)
+      }
+      ensCopyTimeoutRef.current = setTimeout(() => setEnsNameCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy ENS name:', err)
     }
   }
 
@@ -262,6 +281,20 @@ export default function HomePage() {
                   <Pencil className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               )}
+              {/* ENS Name - resolvable via CCIP-Read */}
+              <button
+                onClick={handleCopyEnsName}
+                className="inline-flex items-center gap-1.5 text-sm text-accent-green hover:text-accent-brown transition-colors"
+                title="Your ENS-compatible name - click to copy"
+              >
+                <Globe className="w-4 h-4" />
+                <span>{identity.displayName}.villa.cash</span>
+                {ensNameCopied ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4 opacity-60" />
+                )}
+              </button>
               <button
                 onClick={handleCopyAddress}
                 className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
