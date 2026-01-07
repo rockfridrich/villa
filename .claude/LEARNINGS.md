@@ -456,3 +456,13 @@ I should only orchestrate, not implement.
 - Session reflections MUST check delegation rate
 - Target: 80%+ of work delegated
 - Grade: F if orchestrator did implementation
+
+### CI Failure - 2026-01-07 21:02
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20784006701
+- Action: Check `gh run view 20784006701 --log-failed`
+
+### CI Failure - 2026-01-07 21:19
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20784416438
+- Action: Check `gh run view 20784416438 --log-failed`

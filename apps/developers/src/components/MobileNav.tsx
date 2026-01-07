@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, X, BookOpen, Map, Users, BarChart3, Layers } from 'lucide-react'
+import { Menu, X, BookOpen, Map, Users, BarChart3, Layers, Code2, Package, Play } from 'lucide-react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 
 // Page navigation items
@@ -14,6 +14,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/', label: 'Documentation', icon: BookOpen },
+  { href: '/sdk', label: 'SDK Reference', icon: Package },
+  { href: '/playground', label: 'Playground', icon: Play },
+  { href: '/examples', label: 'Examples', icon: Code2 },
   { href: '/ecosystem', label: 'Ecosystem', icon: Layers },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
   { href: '/contributors', label: 'Contributors', icon: Users },
