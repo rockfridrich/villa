@@ -539,7 +539,9 @@ function ErrorStep({
   )
 }
 
-function getErrorMessage(error: Error): string {
+// Error message helper - kept for future error handling improvements
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _getErrorMessage(error: Error): string {
   const message = error.message.toLowerCase()
 
   if (
