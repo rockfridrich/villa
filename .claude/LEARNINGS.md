@@ -398,3 +398,61 @@ For detailed patterns from past sessions, see [LEARNINGS-archive.md](LEARNINGS-a
 - Workflow: Deploy
 - Run: https://github.com/rockfridrich/villa/actions/runs/20782080960
 - Action: Check `gh run view 20782080960 --log-failed`
+
+### CI Failure - 2026-01-07 20:18
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20782802526
+- Action: Check `gh run view 20782802526 --log-failed`
+
+### 49. Orchestrator Purity Pattern (CRITICAL)
+
+**Cost Impact:** 10-15x token waste if violated
+
+```
+❌ WRONG: Orchestrator (Opus) does implementation
+1. Main Claude reads all files
+2. Main Claude implements features
+3. Main Claude tests + deploys
+Cost: $40-60/session
+
+✅ RIGHT: Orchestrator delegates, supervises
+1. Main Claude: "@router classify Sprint 4 tasks"
+2. @router: "Design tokens → @design, ENS display → @build"
+3. @design + @build work in parallel (sonnet)
+4. Main Claude: synthesizes results, guides next step
+Cost: $4-6/session (90% savings)
+```
+
+**When Opus should code:**
+- NEVER for features/components
+- NEVER for file searches
+- NEVER for testing
+- ONLY for meta-work (writing agent prompts, reflection, architecture)
+
+**Delegation matrix:**
+| Task Type | Agent | Model | Why |
+|-----------|-------|-------|-----|
+| Find files/code | @explore | haiku | Cheap, fast search |
+| Implement feature | @build | sonnet | Coding quality |
+| Design system | @design | sonnet | UI expertise |
+| Run tests | @test | haiku | Cheap, parallel |
+| Monitor CI/deploy | @ops | haiku | Background task |
+| Review code | @review | sonnet | Quality check |
+| Architecture | @architect | opus | Complex decisions |
+
+**Red flags (stop immediately):**
+- Opus reading implementation files directly
+- Opus writing component code
+- Opus running git/CI commands
+- No agent @ mentions in conversation
+
+**Recovery:**
+```
+STOP. Delegate this to @{appropriate-agent}.
+I should only orchestrate, not implement.
+```
+
+**Enforcement:**
+- Session reflections MUST check delegation rate
+- Target: 80%+ of work delegated
+- Grade: F if orchestrator did implementation
