@@ -466,3 +466,106 @@ I should only orchestrate, not implement.
 - Workflow: .github/workflows/contracts.yml
 - Run: https://github.com/rockfridrich/villa/actions/runs/20784416438
 - Action: Check `gh run view 20784416438 --log-failed`
+
+### CI Failure - 2026-01-07 21:45
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20784983050
+- Action: Check `gh run view 20784983050 --log-failed`
+
+### CI Failure - 2026-01-07 22:37
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20786441145
+- Action: Check `gh run view 20786441145 --log-failed`
+
+### CI Failure - 2026-01-08 01:52
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20792317290
+- Action: Check `gh run view 20792317290 --log-failed`
+
+### CI Failure - 2026-01-08 02:11
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20793433750
+- Action: Check `gh run view 20793433750 --log-failed`
+
+### 50. Porto Mode Selection Pattern (CRITICAL - 2026-01-08)
+
+**Cost Impact:** 2 hours token waste, user-found regression
+
+Porto has two fundamentally different modes with different ecosystem support:
+
+**Dialog Mode** (recommended for primary flows):
+```typescript
+// 1Password + ecosystem integrations work
+Mode.dialog({
+  renderer: Dialog.popup(...),
+  theme: customTheme,
+})
+```
+- Porto shows iframe dialog
+- 1Password and passkey managers hook into dialog context
+- Limited to Porto's customization options (theming only)
+- Native passkey manager experience maintained
+
+**Relay Mode** (for headless/iframe scenarios only):
+```typescript
+// 1Password + ecosystem integrations DO NOT work
+Mode.relay({
+  webAuthn: {
+    createFn: async (opts) => navigator.credentials.create(opts),
+    getFn: async (opts) => navigator.credentials.get(opts),
+  }
+})
+```
+- Villa calls WebAuthn APIs directly
+- Passkey managers don't intercept (1Password won't trigger)
+- Full custom UI control (PasskeyPrompt + animations)
+- Loses entire ecosystem support
+
+**Usage Matrix:**
+
+| Scenario | Mode | Reason |
+|----------|------|--------|
+| Main onboarding | Dialog | 1Password support essential |
+| Main login page | Dialog | 1Password support essential |
+| SDK iframe (Porto dialog won't render) | Relay | Only viable option |
+| Mobile in-app browser | Relay | Limited dialog support |
+| Custom headless integration | Relay | Developer controls flow |
+
+**Critical Anti-Pattern:**
+```
+❌ WRONG: Use relay mode for main flows to get custom UI
+❌ WRONG: Assume relay mode is just "UI wrapper" around dialog
+❌ WRONG: Assume E2E tests passing = passkey ecosystem works
+
+✅ RIGHT: Use dialog mode for main flows, customize via theme
+✅ RIGHT: Use relay mode ONLY when dialog won't render
+✅ RIGHT: Manual test with real 1Password before shipping
+```
+
+**Incident:** 2026-01-08
+- Implemented VillaAuthScreen (relay mode) for onboarding
+- E2E tests passed ✓ but 1Password integration broke ✗
+- User reported: "flow doesn't trigger 1password"
+- Root cause: Relay mode calls `navigator.credentials.*` directly
+- 1Password only hooks into Porto's dialog iframe
+- Fix: Reverted onboarding to VillaAuth (dialog mode), kept relay mode only for SDK iframe
+
+**Testing Limitation:**
+E2E tests miss ecosystem behavior because:
+- Headless Chromium doesn't support real biometric
+- Tests call WebAuthn APIs directly
+- Real flow: 1Password intercepts → shows biometric → returns credential
+
+**Validation Checklist for Auth Changes:**
+```bash
+# Before shipping ANY passkey changes:
+□ Understand Porto mode choice (dialog vs relay)
+□ Write ADR if switching modes
+□ Manual test on device with 1Password installed
+□ Verify biometric prompt appears
+□ Check passkey manager can intercept
+□ Not just: "E2E tests passed"
+```
+
+**Key Learning:** Architecture (ecosystem support) > UI customization when passkeys are involved.
+
