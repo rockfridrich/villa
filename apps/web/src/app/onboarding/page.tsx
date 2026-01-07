@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AlertCircle, ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Spinner, SuccessCelebration } from '@/components/ui'
-import { AvatarSelection, VillaAuthScreen } from '@/components/sdk'
+import { AvatarSelection, VillaAuth, type VillaAuthResponse } from '@/components/sdk'
 import { useIdentityStore } from '@/lib/store'
 import { displayNameSchema } from '@/lib/validation'
 import type { AvatarConfig } from '@/types'
@@ -17,7 +17,7 @@ import {
   getCurrentUrl,
   type InAppBrowserInfo,
 } from '@/lib/browser'
-import { getNicknameByAddress } from '@/lib/nickname'
+// Note: getNicknameByAddress removed - VillaAuth handles nickname lookup internally
 import { authenticateTinyCloud, syncToTinyCloud } from '@/lib/storage/tinycloud-client'
 
 type Step =
@@ -134,50 +134,8 @@ function OnboardingContent() {
     }
   }, [identity, router, isTestMode])
 
-  const handleAuthSuccess = async (authAddress: string) => {
-    // Store the Porto wallet address
-    setAddress(authAddress)
-
-    // After Porto success, trigger TinyCloud in background (don't block UX)
-    authenticateTinyCloud(authAddress)
-      .then(success => {
-        if (success) {
-          syncToTinyCloud().catch(console.warn)
-        }
-      })
-      .catch(console.warn)
-
-    // Check if we have a stored identity with this address (same device)
-    if (identity && identity.address === authAddress && identity.avatar) {
-      // Already have complete identity, go home
-      router.replace('/home')
-      return
-    }
-
-    // === RETURNING USER DETECTION ===
-    // Check if this address has a nickname registered (on API/chain)
-    const nicknameResult = await getNicknameByAddress(authAddress)
-
-    if (nicknameResult) {
-      // Returning user! They have a nickname registered
-      setDisplayName(nicknameResult.nickname)
-
-      // Check if we have avatar locally
-      if (identity && identity.address === authAddress && identity.avatar) {
-        // Have both nickname (API) and avatar (local) → go home
-        router.replace('/home')
-        return
-      }
-
-      // Have nickname but no avatar (new device) → show welcome-back then avatar
-      setStep('welcome-back')
-      return
-    }
-
-    // New user - no nickname found, need full onboarding
-    setStep('success')
-    timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
-  }
+  // Note: handleAuthSuccess removed - VillaAuth now handles full flow internally
+  // and returns complete identity via handleVillaAuthComplete
 
   const handleSubmitProfile = () => {
     const result = displayNameSchema.safeParse(displayName)
@@ -285,9 +243,46 @@ function OnboardingContent() {
     )
   }
 
-  // Show VillaAuthScreen for welcome/connecting steps
+  // Use VillaAuth (Porto dialog mode) for proper passkey manager integration
+  // VillaAuth handles: welcome → passkey → nickname → avatar → success
+  const handleVillaAuthComplete = async (result: VillaAuthResponse) => {
+    if (result.success) {
+      const { address: authAddress, nickname, avatar } = result.identity
+
+      // Store complete identity
+      setIdentity({
+        address: authAddress,
+        displayName: nickname,
+        avatar,
+        createdAt: Date.now(),
+      })
+
+      // Trigger TinyCloud sync in background
+      authenticateTinyCloud(authAddress)
+        .then(success => {
+          if (success) {
+            syncToTinyCloud().catch(console.warn)
+          }
+        })
+        .catch(console.warn)
+
+      // Go to home
+      router.replace('/home')
+    } else {
+      // Handle error/cancel
+      if (result.code !== 'CANCELLED') {
+        setError({
+          message: result.error,
+          retry: () => setStep('welcome'),
+        })
+        setStep('error')
+      }
+    }
+  }
+
+  // Show VillaAuth for welcome/connecting steps (uses Porto dialog mode)
   if (step === 'welcome' || step === 'connecting') {
-    return <VillaAuthScreen onSuccess={handleAuthSuccess} />
+    return <VillaAuth onComplete={handleVillaAuthComplete} />
   }
 
   return (
