@@ -21,11 +21,13 @@
 | P0 | SignInWelcome screen | @build | DONE |
 | P0 | NicknameSelection screen | @build | DONE |
 | P0 | ConsentRequest screen | @build | DONE |
-| P1 | Sidebar navigation | @build | IN PROGRESS |
-| P1 | Mobile nav drawer | @build | IN PROGRESS |
-| P1 | Alert component | @build | IN PROGRESS |
-| P1 | Badge component | @build | IN PROGRESS |
-| P1 | DropdownMenu component | @build | IN PROGRESS |
+| P1 | Sidebar navigation | @build | DONE |
+| P1 | Mobile nav drawer | @build | DONE |
+| P1 | Alert component | @build | DONE |
+| P1 | Badge component | @build | DONE |
+| P1 | DropdownMenu component | @build | DONE |
+| P1 | ENS name display on home | @build | DONE |
+| P1 | Design token semantic colors | @build | DONE |
 | P2 | Fix flaky E2E tests | @test | BACKLOG |
 
 ---
@@ -140,10 +142,12 @@ Components to add:
 
 ## Success Criteria
 
-- [ ] 3 SDK auth screens implemented
-- [ ] Developers portal has working sidebar
-- [ ] Mobile nav drawer functional
-- [ ] 3 new shadcn components added
+- [x] 3 SDK auth screens implemented
+- [x] Developers portal has working sidebar
+- [x] Mobile nav drawer functional (synced with sidebar nav items)
+- [x] 3 new shadcn components added (Alert, Badge, DropdownMenu)
+- [x] Design tokens for semantic colors (error, success, warning)
+- [x] ENS name display on home page with copy functionality
 - [ ] E2E test pass rate >90%
 - [ ] Deployed to beta.villa.cash
 

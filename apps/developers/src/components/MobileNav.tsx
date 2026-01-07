@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, X, BookOpen, Map, Users } from 'lucide-react'
+import { Menu, X, BookOpen, Map, Users, BarChart3, Layers } from 'lucide-react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 
 // Page navigation items
@@ -14,8 +14,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/', label: 'Documentation', icon: BookOpen },
+  { href: '/ecosystem', label: 'Ecosystem', icon: Layers },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
   { href: '/contributors', label: 'Contributors', icon: Users },
+  { href: '/metrics', label: 'Metrics', icon: BarChart3 },
 ]
 
 // Doc sections (only shown on docs page)

@@ -18,12 +18,12 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(
           {
             // Default: cream background with neutral border
             'bg-cream-100 text-ink border-neutral-200': variant === 'default',
-            // Destructive: light pink/cream background with error styling
-            'bg-[#fef0f0] text-[#dc2626] border-[#fecaca]': variant === 'destructive',
-            // Success: light green background
-            'bg-[#f0f9f0] text-accent-green border-[#d4e8d4]': variant === 'success',
-            // Warning: yellow accent background
-            'bg-[#fffbeb] text-accent-brown border-accent-yellow': variant === 'warning',
+            // Destructive: error styling using semantic tokens
+            'bg-error-bg text-error-text border-error-border': variant === 'destructive',
+            // Success: green background using semantic tokens
+            'bg-success-bg text-success-text border-success-border': variant === 'success',
+            // Warning: yellow accent using semantic tokens
+            'bg-warning-bg text-warning-text border-warning-border': variant === 'warning',
           },
           className
         )}
