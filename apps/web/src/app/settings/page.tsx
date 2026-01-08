@@ -262,7 +262,11 @@ export default function SettingsPage() {
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-amber-800 font-medium">
-              {currentChainId === 31337 ? 'Local blockchain not running' : 'Cannot connect to Base Sepolia'}
+              {currentChainId === 31337
+                ? 'Local blockchain not running'
+                : currentChainId === 84532
+                  ? 'Face Recovery temporarily unavailable'
+                  : 'Face Recovery not available on this network'}
             </p>
             <p className="text-amber-700 text-sm mt-1">
               {currentChainId === 31337 ? (
@@ -270,8 +274,10 @@ export default function SettingsPage() {
                   Run <code className="bg-amber-100 px-1 rounded">npm run anvil</code> then{' '}
                   <code className="bg-amber-100 px-1 rounded">npm run deploy:local</code> to enable face recovery testing.
                 </>
+              ) : currentChainId === 84532 ? (
+                <>Face recovery contracts are being deployed. Check back soon.</>
               ) : (
-                <>Check your internet connection and network configuration.</>
+                <>Face recovery is only available on Base Sepolia testnet.</>
               )}
             </p>
           </div>

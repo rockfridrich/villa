@@ -1,5 +1,20 @@
 import { Porto, Dialog, Mode } from 'porto'
+import * as Chains from 'porto/core/Chains'
 import type { ThemeFragment } from 'porto/theme'
+
+/**
+ * Get Porto chains based on environment
+ * - Production: Base mainnet only
+ * - Staging/Dev: Base Sepolia only (for testing with deployed contracts)
+ */
+function getPortoChains(): readonly [typeof Chains.base] | readonly [typeof Chains.baseSepolia] {
+  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID
+  if (chainId === '84532') {
+    return [Chains.baseSepolia] as const
+  }
+  // Default to Base mainnet for production
+  return [Chains.base] as const
+}
 
 /**
  * Proof of Retreat theme for Porto dialog
@@ -155,6 +170,7 @@ export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.cr
       // Use experimental_inline for embedded dialog
       // experimental_inline expects element as a getter function
       portoInstance = Porto.create({
+        chains: getPortoChains(),
         mode: Mode.dialog({
           renderer: Dialog.experimental_inline({ element: () => container }),
           host: 'https://id.porto.sh/dialog',
@@ -165,6 +181,7 @@ export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.cr
     } else {
       // Use popup for standalone dialog
       portoInstance = Porto.create({
+        chains: getPortoChains(),
         mode: Mode.dialog({
           renderer: Dialog.popup({
             type: 'popup',
@@ -221,6 +238,7 @@ const VILLA_KEYSTORE_HOST = process.env.NODE_ENV === 'production'
 export function getPortoRelay(): ReturnType<typeof Porto.create> {
   if (!portoRelayInstance) {
     portoRelayInstance = Porto.create({
+      chains: getPortoChains(),
       mode: Mode.relay({
         // Bind passkeys to Villa's domain instead of Porto's
         keystoreHost: VILLA_KEYSTORE_HOST,
@@ -455,7 +473,8 @@ export function isPortoSupported(): boolean {
 }
 
 /**
- * Sign a message using Porto (for SIWE authentication)
+ * Sign a message using Porto dialog mode (for interactive SIWE authentication)
+ * Note: This shows a Porto dialog - for background signing, use signMessageHeadless
  * @param message The message to sign
  * @param address The address signing the message
  * @returns The signature as a hex string
@@ -464,6 +483,24 @@ export async function signMessage(message: string, address: string): Promise<str
   const porto = getPorto()
 
   // Porto's provider.request expects typed params
+  const signature = await porto.provider.request({
+    method: 'personal_sign',
+    params: [message as `0x${string}`, address as `0x${string}`],
+  })
+
+  return signature as string
+}
+
+/**
+ * Sign a message using Porto relay mode (no UI prompt)
+ * Used by TinyCloud auth which runs in background after onboarding
+ * @param message The message to sign
+ * @param address The address signing the message
+ * @returns The signature as a hex string
+ */
+export async function signMessageHeadless(message: string, address: string): Promise<string> {
+  const porto = getPortoRelay()
+
   const signature = await porto.provider.request({
     method: 'personal_sign',
     params: [message as `0x${string}`, address as `0x${string}`],

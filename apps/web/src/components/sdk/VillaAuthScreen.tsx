@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ShieldCheck, Loader2, AlertCircle, ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { ShieldCheck, Loader2, AlertCircle, ChevronDown, ChevronUp, Info, Key, Chrome } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { setWebAuthnHandlers, createAccountHeadless, signInHeadless } from '@/lib/porto'
 import { PasskeyPrompt } from './PasskeyPrompt'
@@ -324,18 +324,12 @@ export function VillaAuthScreen({
             variants={itemVariants}
             className="pt-4"
           >
-            <p className="text-xs text-center text-ink-muted mb-3">Passkey providers supported</p>
+            <p className="text-xs text-center text-ink-muted mb-3">Works with your device biometric</p>
             <div className="grid grid-cols-3 gap-3">
-              {/* Row 1 */}
-              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">1P</span>
-                </div>
-                <span className="text-xs text-ink-muted">1Password</span>
-              </div>
+              {/* Row 1: Device Biometric Options */}
               <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-                  <span className="text-white text-xl"></span>
+                  <Key className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-xs text-ink-muted">iCloud</span>
               </div>
@@ -345,16 +339,16 @@ export function VillaAuthScreen({
                 </div>
                 <span className="text-xs text-ink-muted">Google</span>
               </div>
-              {/* Row 2 */}
               <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
                   <span className="text-white text-xl font-bold">W</span>
                 </div>
                 <span className="text-xs text-ink-muted">Windows</span>
               </div>
+              {/* Row 2: Browser & Hardware */}
               <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                  <span className="text-white text-xl"></span>
+                  <Chrome className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-xs text-ink-muted">Browser</span>
               </div>
@@ -364,7 +358,16 @@ export function VillaAuthScreen({
                 </div>
                 <span className="text-xs text-ink-muted">FIDO2</span>
               </div>
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100 opacity-50">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">1P</span>
+                </div>
+                <span className="text-xs text-ink-muted">1Password*</span>
+              </div>
             </div>
+            <p className="text-xs text-center text-ink-muted mt-2 opacity-75">
+              * For 1Password support, use the main onboarding flow
+            </p>
           </motion.div>
         </div>
 

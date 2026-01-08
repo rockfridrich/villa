@@ -8,7 +8,7 @@
  * The storage is user-controlled and decentralized.
  */
 
-import { signMessage } from '@/lib/porto'
+import { signMessageHeadless } from '@/lib/porto'
 
 // TinyCloud SDK is dynamically imported to avoid SSR issues with HTMLElement
 type TinyCloudWeb = {
@@ -140,9 +140,10 @@ export async function authenticateTinyCloud(address: string): Promise<boolean> {
       statement: 'Sign in to Villa Storage for cross-device sync',
     })
 
-    // Sign the message using Porto
+    // Sign the message using Porto relay mode (no UI prompt)
+    // This works in background because relay mode doesn't show dialogs
     const messageToSign = siweMessage.prepareMessage()
-    const signature = await signMessage(messageToSign, address)
+    const signature = await signMessageHeadless(messageToSign, address)
 
     // Authenticate with TinyCloud using the signed message
     await tc.signInWithSignature(siweMessage, signature)
@@ -151,7 +152,15 @@ export async function authenticateTinyCloud(address: string): Promise<boolean> {
     currentAuthAddress = address
     return true
   } catch (error) {
-    console.warn('TinyCloud authentication failed:', error)
+    // Detailed error logging for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.warn('TinyCloud authentication failed:', {
+      message: errorMessage,
+      stack: errorStack,
+      address: address.slice(0, 10) + '...', // Truncate for privacy
+      step: 'authenticateTinyCloud',
+    })
     tinyCloudAuthenticated = false
     currentAuthAddress = null
     return false
