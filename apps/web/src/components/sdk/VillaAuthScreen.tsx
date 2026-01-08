@@ -35,12 +35,11 @@ export function VillaAuthScreen({
   onCancel: _onCancel,
   logo,
 }: VillaAuthScreenProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadingAction, setLoadingAction] = useState<'signin' | 'create' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [passkeyMode, setPasskeyMode] = useState<'idle' | 'create' | 'authenticate'>('idle')
   const [showEducation, setShowEducation] = useState(false)
-  const [showNoPasskeyHelp, setShowNoPasskeyHelp] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingAction, setLoadingAction] = useState<'signin' | 'create' | null>(null)
 
   const shouldReduceMotion = useReducedMotion()
 
@@ -70,33 +69,16 @@ export function VillaAuthScreen({
   useEffect(() => {
     setWebAuthnHandlers({
       onPasskeyCreate: async () => {
-        setPasskeyMode('create')
+        // Passkey creation prompt will show
       },
       onPasskeyGet: async () => {
-        setPasskeyMode('authenticate')
+        // Passkey authentication prompt will show
       },
-      onComplete: (result) => {
-        setPasskeyMode('idle')
-        setIsLoading(false)
-        setLoadingAction(null)
-        setShowNoPasskeyHelp(false)
-        onSuccess?.(result.address)
+      onComplete: (_result) => {
+        // Handled in individual handlers
       },
-      onError: (error) => {
-        setPasskeyMode('idle')
-        setIsLoading(false)
-        setLoadingAction(null)
-
-        // Check if error is "no passkey found" scenario
-        const message = error.message.toLowerCase()
-        if (message.includes('notallowed') ||
-            message.includes('no credentials') ||
-            message.includes('cancel')) {
-          setShowNoPasskeyHelp(true)
-          setError('No passkey found on this device.')
-        } else {
-          setError(error.message)
-        }
+      onError: (_error) => {
+        // Handled in individual handlers
       },
     })
 
@@ -108,44 +90,40 @@ export function VillaAuthScreen({
 
   const handleSignIn = async () => {
     setError(null)
-    setShowNoPasskeyHelp(false)
     setIsLoading(true)
     setLoadingAction('signin')
+    setPasskeyMode('authenticate') // Show PasskeyPrompt overlay
 
     const result = await signInHeadless()
 
-    if (!result.success) {
-      setIsLoading(false)
-      setLoadingAction(null)
+    setPasskeyMode('idle')
+    setIsLoading(false)
+    setLoadingAction(null)
 
-      // Check if error suggests no passkey exists
-      const message = result.error.message.toLowerCase()
-      if (message.includes('notallowed') ||
-          message.includes('no credentials') ||
-          message.includes('cancel')) {
-        setShowNoPasskeyHelp(true)
-        setError('No passkey found on this device.')
-      } else {
-        setError(result.error.message)
-      }
+    if (result.success) {
+      onSuccess?.(result.address)
+    } else {
+      setError(result.error?.message || 'Sign in failed')
     }
-    // Success is handled by onComplete handler
   }
 
   const handleCreateAccount = async () => {
     setError(null)
-    setShowNoPasskeyHelp(false)
     setIsLoading(true)
     setLoadingAction('create')
+    setPasskeyMode('create') // Show PasskeyPrompt overlay
 
     const result = await createAccountHeadless()
 
-    if (!result.success) {
-      setError(result.error.message)
-      setIsLoading(false)
-      setLoadingAction(null)
+    setPasskeyMode('idle')
+    setIsLoading(false)
+    setLoadingAction(null)
+
+    if (result.success) {
+      onSuccess?.(result.address)
+    } else {
+      setError(result.error?.message || 'Account creation failed')
     }
-    // Success is handled by onComplete handler
   }
 
   return (
@@ -251,22 +229,6 @@ export function VillaAuthScreen({
             </motion.div>
           )}
 
-          {/* No Passkey Help */}
-          {showNoPasskeyHelp && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-warning-bg border border-warning-border rounded-lg space-y-3"
-            >
-              <p className="text-sm font-medium text-warning-text">
-                No passkey found for this device
-              </p>
-              <p className="text-xs text-ink-muted">
-                You can create a new Villa ID, or try signing in from a device where you previously set up a passkey.
-              </p>
-            </motion.div>
-          )}
-
           {/* CTAs */}
           <motion.div variants={itemVariants} className="space-y-4">
             {/* Primary: Sign In */}
@@ -358,16 +320,13 @@ export function VillaAuthScreen({
                 </div>
                 <span className="text-xs text-ink-muted">FIDO2</span>
               </div>
-              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100 opacity-50">
+              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-lg border border-neutral-100">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                   <span className="text-white text-xs font-bold">1P</span>
                 </div>
-                <span className="text-xs text-ink-muted">1Password*</span>
+                <span className="text-xs text-ink-muted">1Password</span>
               </div>
             </div>
-            <p className="text-xs text-center text-ink-muted mt-2 opacity-75">
-              * For 1Password support, use the main onboarding flow
-            </p>
           </motion.div>
         </div>
 

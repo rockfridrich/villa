@@ -2,17 +2,17 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useMemo, Suspense } from 'react'
-import { VillaAuth, type VillaAuthResponse, VillaAuthScreen } from '@/components/sdk'
+import { VillaAuthScreen } from '@/components/sdk'
 
 /**
  * Auth Page - SDK iframe target
  *
  * This page is loaded inside an iframe by the Villa SDK.
  * It handles the full auth flow and communicates back to the parent via postMessage.
+ * Always uses relay mode (VillaAuthScreen) for consistent UX.
  *
  * Query params:
- * - scopes: comma-separated list of requested scopes (e.g., "profile,wallet")
- * - appId: the integrating app's ID
+ * - appId: the integrating app's ID (currently unused)
  * - origin: (optional) parent origin for secure postMessage targeting
  */
 
@@ -131,9 +131,7 @@ function AuthPageContent() {
   const hasNotifiedReady = useRef(false)
 
   // Parse query params
-  const appId = searchParams.get('appId') || 'Villa'
   const queryOrigin = searchParams.get('origin')
-  const useRelayMode = searchParams.get('mode') === 'relay'
 
   // Get validated parent origin once
   const targetOrigin = useMemo(() => {
@@ -171,94 +169,44 @@ function AuthPageContent() {
     }
   }, [postToParent])
 
-  // Handle auth completion
-  const handleComplete = useCallback((result: VillaAuthResponse) => {
-    if (result.success) {
-      // Map web app's AvatarConfig to SDK's Identity avatar format
-      // Web: { style, selection, variant }
-      // SDK: { style, seed, gender }
-      const avatarConfig = result.identity.avatar
-      const seed = `${result.identity.address}-${avatarConfig.variant}`
+  // Handle auth success
+  const handleSuccess = useCallback(async (address: string) => {
+    // Create identity object with minimal data
+    // The SDK will fetch full identity details if needed
+    const identity = {
+      address,
+      nickname: '',
+      avatar: {
+        style: 'lorelei',
+        seed: `${address}-default`,
+        gender: 'female',
+      },
+    }
 
-      const identity = {
-        address: result.identity.address,
-        nickname: result.identity.nickname,
-        avatar: {
-          style: avatarConfig.style,
-          seed,
-          gender: avatarConfig.selection,
-        },
-      }
+    // Post to parent (both legacy and new formats for compatibility)
+    postToParent({ type: 'AUTH_SUCCESS', identity })
+    postToParent({ type: 'VILLA_AUTH_SUCCESS', payload: { identity } })
 
-      // Send both legacy and new message formats for compatibility
-      postToParent({ type: 'AUTH_SUCCESS', identity })
-      postToParent({ type: 'VILLA_AUTH_SUCCESS', payload: { identity } })
+    // Close popup after delay if in popup mode
+    if (inPopup) {
+      setTimeout(() => window.close(), 500)
+    }
+  }, [postToParent, inPopup])
 
-      // If in popup mode, close the window after a short delay
-      if (inPopup) {
-        setTimeout(() => {
-          window.close()
-        }, 500)
-      }
-    } else {
-      if (result.code === 'CANCELLED') {
-        postToParent({ type: 'AUTH_CLOSE' })
-        postToParent({ type: 'VILLA_AUTH_CANCEL' })
-      } else {
-        postToParent({ type: 'AUTH_ERROR', error: result.error })
-        postToParent({ type: 'VILLA_AUTH_ERROR', payload: { error: result.error, code: result.code } })
-      }
-
-      // If in popup mode, close on cancel/error too
-      if (inPopup) {
-        setTimeout(() => {
-          window.close()
-        }, 500)
-      }
+  // Handle auth cancel
+  const handleCancel = useCallback(() => {
+    postToParent({ type: 'AUTH_CLOSE' })
+    postToParent({ type: 'VILLA_AUTH_CANCEL' })
+    if (inPopup) {
+      setTimeout(() => window.close(), 500)
     }
   }, [postToParent, inPopup])
 
   return (
-    <>
-      {useRelayMode ? (
-        <VillaAuthScreen
-          onSuccess={async (address) => {
-            // Create identity object with minimal data
-            // The SDK will fetch full identity details if needed
-            const identity = {
-              address,
-              nickname: '',
-              avatar: {
-                style: 'lorelei',
-                seed: `${address}-default`,
-                gender: 'female',
-              },
-            }
-
-            // Post to parent (both legacy and new formats for compatibility)
-            postToParent({ type: 'AUTH_SUCCESS', identity })
-            postToParent({ type: 'VILLA_AUTH_SUCCESS', payload: { identity } })
-
-            // Close popup after delay if in popup mode
-            if (inPopup) {
-              setTimeout(() => window.close(), 500)
-            }
-          }}
-          onCancel={() => {
-            postToParent({ type: 'AUTH_CLOSE' })
-            postToParent({ type: 'VILLA_AUTH_CANCEL' })
-            if (inPopup) {
-              setTimeout(() => window.close(), 500)
-            }
-          }}
-        />
-      ) : (
-        <VillaAuth
-          onComplete={handleComplete}
-          appName={appId}
-        />
-      )}
-    </>
+    <VillaAuthScreen
+      onSuccess={handleSuccess}
+      onCancel={handleCancel}
+    />
   )
 }
 

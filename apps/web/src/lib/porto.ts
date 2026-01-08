@@ -212,14 +212,10 @@ export function resetPorto(): void {
  * Passkeys are permanently bound to this domain - users see "villa.cash"
  * in browser/OS passkey prompts instead of "porto.sh".
  *
- * Options:
- * - 'self': Use current domain (localhost in dev, villa.cash in prod)
- * - 'villa.cash': Always use villa.cash (recommended for prod)
- * - 'key.villa.cash': Use subdomain for passkey operations
+ * Always using 'villa.cash' ensures consistent passkey domain across
+ * all environments (dev, staging, production).
  */
-const VILLA_KEYSTORE_HOST = process.env.NODE_ENV === 'production'
-  ? 'villa.cash'
-  : 'self' // 'self' uses current domain (localhost:3000 in dev)
+const VILLA_KEYSTORE_HOST = 'villa.cash'
 
 /**
  * Get or create Porto relay instance with custom WebAuthn handlers
@@ -687,5 +683,33 @@ export async function signInHeadless(): Promise<PortoConnectResult> {
       success: false,
       error,
     }
+  }
+}
+
+/**
+ * Sign in immediately - triggers passkey prompt without delay
+ * For single-click returning user experience
+ */
+export async function signInImmediate(): Promise<PortoConnectResult> {
+  try {
+    const porto = getPortoRelay()
+    const accounts = await porto.provider.request({
+      method: 'eth_requestAccounts',
+    })
+
+    if (accounts && accounts.length > 0) {
+      const address = accounts[0]
+      webAuthnHandlers.onComplete?.({ address })
+      return { success: true, address }
+    }
+
+    return {
+      success: false,
+      error: new Error('No account selected'),
+    }
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Unknown error')
+    webAuthnHandlers.onError?.(error)
+    return { success: false, error }
   }
 }
