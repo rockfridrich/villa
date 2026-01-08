@@ -29,6 +29,7 @@ export const STORAGE_KEYS = {
   preferences: 'villa/preferences',
   session: 'villa/session',
   recentApps: 'villa/recent-apps',
+  tippingHistory: 'villa/tipping-history',
 } as const
 
 // TinyCloud authentication state
@@ -63,6 +64,25 @@ export interface RecentApp {
 
 export interface RecentAppsData {
   apps: RecentApp[]
+  lastSynced: number
+}
+
+/**
+ * Tip transaction record for tipping history
+ */
+export interface TipRecord {
+  id: string
+  fromNickname: string
+  fromAddress: string
+  toNickname: string
+  toAddress: string
+  amount: string
+  timestamp: number
+  txHash?: string
+}
+
+export interface TippingHistoryData {
+  tips: TipRecord[]
   lastSynced: number
 }
 
@@ -324,6 +344,8 @@ export const sessionStore = new VillaStorage<VillaSession>(STORAGE_KEYS.session)
 
 export const recentAppsStore = new VillaStorage<RecentAppsData>(STORAGE_KEYS.recentApps)
 
+export const tippingHistoryStore = new VillaStorage<TippingHistoryData>(STORAGE_KEYS.tippingHistory)
+
 /**
  * Sync all local data to TinyCloud
  * Call after TinyCloud authentication to push offline changes
@@ -360,6 +382,16 @@ export async function syncToTinyCloud(): Promise<boolean> {
   if (recentAppsData) {
     try {
       await recentAppsStore.save(recentAppsData)
+    } catch {
+      // Continue
+    }
+  }
+
+  // Sync tipping history
+  const tippingData = tippingHistoryStore.loadLocal()
+  if (tippingData) {
+    try {
+      await tippingHistoryStore.save(tippingData)
     } catch {
       // Continue
     }
@@ -432,4 +464,48 @@ export async function trackAppUsage(app: Omit<RecentApp, 'lastUsed' | 'usageCoun
 export async function getRecentApps(): Promise<RecentApp[]> {
   const data = await recentAppsStore.load()
   return data?.apps || []
+}
+
+/**
+ * Add a tip to the history
+ * Always writes to localStorage, syncs to TinyCloud if connected
+ * @param tip The tip record to add
+ */
+export async function addTipToHistory(tip: TipRecord): Promise<void> {
+  const MAX_TIPS = 50
+
+  // Load current data
+  let data = await tippingHistoryStore.load()
+  if (!data) {
+    data = { tips: [], lastSynced: Date.now() }
+  }
+
+  // Add new tip at the beginning
+  data.tips.unshift(tip)
+
+  // Keep only most recent
+  if (data.tips.length > MAX_TIPS) {
+    data.tips = data.tips.slice(0, MAX_TIPS)
+  }
+
+  data.lastSynced = Date.now()
+
+  // Save (writes to localStorage always, TinyCloud if connected)
+  await tippingHistoryStore.save(data)
+}
+
+/**
+ * Get tipping history
+ */
+export async function getTippingHistory(): Promise<TipRecord[]> {
+  const data = await tippingHistoryStore.load()
+  return data?.tips || []
+}
+
+/**
+ * Get tipping history from localStorage only (sync, fast)
+ */
+export function getTippingHistoryLocal(): TipRecord[] {
+  const data = tippingHistoryStore.loadLocal()
+  return data?.tips || []
 }

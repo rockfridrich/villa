@@ -8,19 +8,12 @@ import { AvatarImage } from '@/components/sdk/AvatarImage'
 import { useIdentityStore } from '@/lib/store'
 import { disconnectPorto, sendTransaction } from '@/lib/porto'
 import { parseEther } from 'viem'
-
-interface TipRecord {
-  id: string
-  fromNickname: string
-  fromAddress: string
-  toNickname: string
-  toAddress: string
-  amount: string
-  timestamp: number
-  txHash?: string
-}
-
-const STORAGE_KEY = 'villa-tipping-history'
+import {
+  addTipToHistory,
+  getTippingHistory,
+  getTippingHistoryLocal,
+  type TipRecord,
+} from '@/lib/storage/tinycloud-client'
 
 type TipStatus = 'idle' | 'resolving' | 'confirming' | 'sending' | 'success' | 'error'
 
@@ -33,24 +26,22 @@ export default function TippingPage() {
   const [status, setStatus] = useState<TipStatus>('idle')
   const [error, setError] = useState<string | null>(null)
 
-  // Load history from localStorage
+  // Load history from storage (localStorage first for instant load, then TinyCloud)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        setHistory(JSON.parse(stored))
-      } catch {
-        setHistory([])
-      }
+    // Instant load from localStorage
+    const localHistory = getTippingHistoryLocal()
+    if (localHistory.length > 0) {
+      setHistory(localHistory)
     }
+
+    // Then try to load from TinyCloud (may have newer data from other devices)
+    getTippingHistory().then((cloudHistory) => {
+      if (cloudHistory.length > 0) {
+        setHistory(cloudHistory)
+      }
+    })
   }, [])
 
-  // Save history to localStorage
-  useEffect(() => {
-    if (history.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
-    }
-  }, [history])
 
   // Resolve nickname to address
   const resolveNickname = async (nickname: string): Promise<string | null> => {
@@ -107,7 +98,7 @@ export default function TippingPage() {
 
       setStatus('success')
 
-      // Record the tip
+      // Record the tip (saves to localStorage + TinyCloud if connected)
       const record: TipRecord = {
         id: crypto.randomUUID(),
         fromNickname: identity.displayName,
@@ -119,6 +110,7 @@ export default function TippingPage() {
         txHash,
       }
 
+      await addTipToHistory(record)
       setHistory((prev) => [record, ...prev].slice(0, 50))
 
       // Reset form
