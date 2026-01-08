@@ -57,11 +57,15 @@ test.describe('SDK Iframe - Authentication Flow', () => {
     // Frame content test - check iframe loads the auth page
     const iframeLocator = page.frameLocator('[data-testid="villa-auth-iframe"]')
 
-    // Should show Villa auth UI - look for any Villa element
-    // Could be VillaAuth (Create Villa ID) or VillaAuthScreen (Sign In)
+    // Wait for frame to be ready - look for the heading first
     await expect(
-      iframeLocator.getByRole('button', { name: /villa|sign in|create/i })
+      iframeLocator.getByRole('heading', { name: /your identity|villa/i })
     ).toBeVisible({ timeout: 15000 })
+
+    // Then check for auth buttons - SignInWelcome has "Sign In" and "Create Villa ID"
+    await expect(
+      iframeLocator.getByRole('button', { name: /sign in/i }).first()
+    ).toBeVisible({ timeout: 5000 })
   })
 
   test('escape key closes iframe', async ({ page }) => {
