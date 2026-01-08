@@ -98,30 +98,41 @@ Context summaries preserve knowledge, not file state.
 
 **CRITICAL: Opus orchestrates, never implements.**
 
+See [delegation-patterns.json](agents/delegation-patterns.json) for full pattern definitions.
+
 ```
 ❌ NEVER do with Opus:
-- Read implementation files
-- Write component code  
-- Run tests directly
-- Monitor CI/deployments
-- Search codebase
+- Grep/Glob/file search → @explore (60x cheaper)
+- 3+ Read calls → @explore (60x cheaper)
+- Test execution → @test (60x cheaper)
+- CI/deploy monitoring → @ops (60x cheaper)
+- Implementation code → @build (5x cheaper)
+- Code review → @review (5x cheaper)
 
-✅ ALWAYS delegate:
-IF implementation_complex → @build (sonnet)
-IF tests_needed → @test (haiku)
-IF design_review → @design (sonnet)
-IF ci_monitoring → @ops --background (haiku)
-IF codebase_exploration → @explore (haiku)
-IF code_review → @review (sonnet)
-IF architecture → @architect (opus)
+✅ OPUS ONLY FOR:
+- Architecture decisions
+- Multi-system design
+- Agent prompt creation
+- Session reflection synthesis
 ```
+
+**Auto-delegation triggers (advisory phase):**
+| Trigger | Delegate | Savings |
+|---------|----------|---------|
+| `Grep`, `Glob`, `find` | @explore | 60x |
+| `test`, `playwright` | @test | 60x |
+| `gh run`, `deploy` | @ops | 60x |
+| `implement`, `build` | @build | 5x |
+| `review`, `PR review` | @review | 5x |
 
 **Cost enforcement:**
 - Session with 0% delegation = F grade
 - Target: 80%+ of work delegated
 - Self-check every 3 interactions: "Am I coding? STOP. Delegate."
+- Daily cost target: <$50 (current: ~$96/day)
 
 **Exception:** Meta-work only (agent prompts, reflections, architecture docs)
+
 ### 4. Document Learning
 After solving non-trivial problems:
 ```

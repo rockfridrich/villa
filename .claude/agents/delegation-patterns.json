@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Delegation patterns for cost-optimized agent routing",
+  "version": "1.0.0",
+  "patterns": [
+    {
+      "id": "file-search",
+      "trigger": ["Grep", "Glob", "find", "search"],
+      "delegate": "@explore",
+      "model": "haiku",
+      "cost_ratio": "60x cheaper than Opus",
+      "confidence": "high",
+      "example": "Find all files using the Stripe API"
+    },
+    {
+      "id": "multi-read",
+      "trigger": ["3+ Read calls", "read multiple files"],
+      "delegate": "@explore",
+      "model": "haiku",
+      "cost_ratio": "60x cheaper than Opus",
+      "confidence": "high",
+      "example": "Read all config files to understand the setup"
+    },
+    {
+      "id": "test-execution",
+      "trigger": ["test", "playwright", "vitest", "jest", "pnpm test"],
+      "delegate": "@test",
+      "model": "haiku",
+      "cost_ratio": "60x cheaper than Opus",
+      "confidence": "high",
+      "example": "Run the E2E tests for authentication"
+    },
+    {
+      "id": "ci-monitoring",
+      "trigger": ["gh run", "CI status", "deployment", "deploy"],
+      "delegate": "@ops",
+      "model": "haiku",
+      "cost_ratio": "60x cheaper than Opus",
+      "confidence": "high",
+      "example": "Check if the CI pipeline passed"
+    },
+    {
+      "id": "git-operations",
+      "trigger": ["git commit", "git push", "PR", "pull request"],
+      "delegate": "@ops",
+      "model": "haiku",
+      "cost_ratio": "60x cheaper than Opus",
+      "confidence": "medium",
+      "example": "Create a PR for this feature"
+    },
+    {
+      "id": "implementation",
+      "trigger": ["implement", "build", "create component", "write code"],
+      "delegate": "@build",
+      "model": "sonnet",
+      "cost_ratio": "5x cheaper than Opus",
+      "confidence": "high",
+      "example": "Implement the login form component"
+    },
+    {
+      "id": "code-review",
+      "trigger": ["review", "PR review", "check code"],
+      "delegate": "@review",
+      "model": "sonnet",
+      "cost_ratio": "5x cheaper than Opus",
+      "confidence": "high",
+      "example": "Review the changes in this PR"
+    },
+    {
+      "id": "ui-design",
+      "trigger": ["design", "UI", "UX", "animation", "style"],
+      "delegate": "@design",
+      "model": "sonnet",
+      "cost_ratio": "5x cheaper than Opus",
+      "confidence": "medium",
+      "example": "Review the button styling"
+    }
+  ],
+  "metrics": {
+    "target_delegation_rate": 0.8,
+    "target_daily_cost": 50,
+    "alert_threshold": 0.5
+  },
+  "overrides": {
+    "allow_opus_for": [
+      "Architecture decisions",
+      "Complex multi-system design",
+      "Agent prompt creation",
+      "Session reflection synthesis"
+    ]
+  }
+}
