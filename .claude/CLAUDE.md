@@ -72,6 +72,27 @@ bd show <id>         # Task details
 
 ---
 
+## Collaboration Protocol
+
+### Session Start
+Confirm with human: **Goal** (specific outcome), **Scope** (minimal or comprehensive), **Handoff** (testing participation?)
+
+### CI Time-Box (ENFORCED)
+- 1st failure: Fix and push
+- 2nd same failure: **STOP** → Ask user for direction
+- Never >3 attempts without explicit approval
+
+### Human Testing Handoff
+When user offers to test:
+1. Push current state (even imperfect)
+2. Provide: URL, steps, expected behavior
+3. **WAIT** — do NOT continue "fixing"
+
+### Clean Exit
+Before ending: `git status` clean, `pnpm verify` passes, summary of done/pending/blocked
+
+---
+
 ## Domain Architecture
 
 | Domain | Environment | Trigger |
