@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Villa SDK - Plain HTML Example</title>
+  <style>
+    /* Villa Design System Colors */
+    :root {
+      --cream-50: #fffcf8;
+      --cream-100: #fef9f0;
+      --ink: #0d0d17;
+      --ink-light: #45454f;
+      --ink-muted: #61616b;
+      --accent-yellow: #ffe047;
+      --accent-green: #698f69;
+      --neutral-100: #e0e0e6;
+      --neutral-200: #c4c4cc;
+      --error-bg: #fef0f0;
+      --error-text: #dc2626;
+      --success-bg: #f0f9f0;
+      --success-text: #698f69;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--cream-50);
+      color: var(--ink);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-top: 32px;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+
+    .subtitle {
+      color: var(--ink-muted);
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(13, 13, 23, 0.08);
+    }
+
+    .button {
+      background: var(--accent-yellow);
+      color: var(--ink);
+      border: none;
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 224, 71, 0.4);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .button-secondary {
+      background: var(--neutral-100);
+      color: var(--ink);
+    }
+
+    .button-secondary:hover {
+      background: var(--neutral-200);
+      box-shadow: none;
+    }
+
+    .auth-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+    }
+
+    .auth-status.authenticated {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--accent-green);
+    }
+
+    .auth-status.unauthenticated {
+      background: var(--cream-100);
+      color: var(--ink-muted);
+      border: 1px solid var(--neutral-200);
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .user-address {
+      font-size: 0.9rem;
+      color: var(--ink-muted);
+      font-family: 'Courier New', monospace;
+    }
+
+    .iframe-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(13, 13, 23, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .iframe-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 600px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .iframe-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s;
+      z-index: 10;
+    }
+
+    .close-button:hover {
+      background: var(--neutral-100);
+      transform: scale(1.1);
+    }
+
+    .log-container {
+      background: var(--ink);
+      color: var(--cream-100);
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
+
+    .log-entry {
+      padding: 8px;
+      margin-bottom: 4px;
+      border-left: 3px solid transparent;
+    }
+
+    .log-entry.info {
+      border-left-color: var(--accent-yellow);
+    }
+
+    .log-entry.success {
+      border-left-color: var(--accent-green);
+    }
+
+    .log-entry.error {
+      border-left-color: var(--error-text);
+    }
+
+    .log-time {
+      color: var(--ink-muted);
+      margin-right: 8px;
+    }
+
+    .code-block {
+      background: var(--cream-100);
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--neutral-200);
+    }
+
+    pre {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    section {
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: var(--ink);
+    }
+
+    p {
+      color: var(--ink-light);
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      color: var(--ink-light);
+      margin-bottom: 8px;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .iframe-wrapper {
+        height: 100%;
+        max-height: 90vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Villa SDK</h1>
+      <p class="subtitle">Plain HTML/JavaScript Integration</p>
+    </header>
+
+    <!-- Authentication Status -->
+    <div id="authStatus" class="auth-status unauthenticated">
+      <div class="avatar">?</div>
+      <div class="user-info">
+        <div class="user-name">Not authenticated</div>
+        <div class="user-address">Click "Sign In" to authenticate</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <h2>Actions</h2>
+      <div class="button-group">
+        <button id="signInBtn" class="button">Sign In with Villa</button>
+        <button id="signOutBtn" class="button button-secondary hidden">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="card">
+      <h2>Event Log</h2>
+      <div id="logContainer" class="log-container"></div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="card">
+      <h2>How It Works</h2>
+      <p>This example demonstrates Villa SDK integration using plain HTML and JavaScript with no build tools.</p>
+
+      <h3>Implementation</h3>
+      <ul>
+        <li>Creates an iframe pointing to <code>https://beta.villa.cash/auth</code></li>
+        <li>Communicates via postMessage API</li>
+        <li>Handles authentication events (success, error, cancel)</li>
+        <li>Persists session in localStorage</li>
+      </ul>
+
+      <h3>Message Protocol</h3>
+      <div class="code-block">
+        <pre>// Success
+{
+  type: "VILLA_AUTH_SUCCESS",
+  payload: {
+    identity: {
+      address: "0x...",
+      nickname: "user",
+      avatar: { style, seed, gender }
+    }
+  }
+}
+
+// Error
+{
+  type: "VILLA_AUTH_ERROR",
+  payload: { error: string, code?: string }
+}
+
+// Cancel
+{ type: "VILLA_AUTH_CANCEL" }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Iframe (dynamically injected) -->
+  <div id="iframeContainer" class="hidden"></div>
+
+  <script>
+    // Configuration
+    const VILLA_AUTH_URL = 'https://beta.villa.cash/auth'
+    const APP_ID = 'Villa HTML Demo'
+    const SESSION_KEY = 'villa_session'
+
+    // State
+    let authIframe = null
+    let messageHandler = null
+
+    // DOM elements
+    const authStatus = document.getElementById('authStatus')
+    const signInBtn = document.getElementById('signInBtn')
+    const signOutBtn = document.getElementById('signOutBtn')
+    const logContainer = document.getElementById('logContainer')
+    const iframeContainer = document.getElementById('iframeContainer')
+
+    // Logging
+    function log(type, message, data) {
+      const time = new Date().toLocaleTimeString()
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      entry.innerHTML = `<span class="log-time">[${time}]</span><strong>${type.toUpperCase()}:</strong> ${message}`
+
+      if (data) {
+        const dataStr = JSON.stringify(data, null, 2)
+        entry.innerHTML += `<pre style="margin-top: 8px; opacity: 0.8;">${dataStr}</pre>`
+      }
+
+      logContainer.appendChild(entry)
+      logContainer.scrollTop = logContainer.scrollHeight
+      console.log(`[Villa SDK] ${message}`, data || '')
+    }
+
+    // Update UI based on authentication state
+    function updateAuthUI(identity) {
+      if (identity) {
+        // Authenticated
+        authStatus.className = 'auth-status authenticated'
+
+        // Show avatar initial
+        const initial = identity.nickname?.[0]?.toUpperCase() || '?'
+        authStatus.innerHTML = `
+          <div class="avatar">${initial}</div>
+          <div class="user-info">
+            <div class="user-name">${identity.nickname || 'Anonymous'}</div>
+            <div class="user-address">${identity.address.slice(0, 6)}...${identity.address.slice(-4)}</div>
+          </div>
+        `
+
+        signInBtn.classList.add('hidden')
+        signOutBtn.classList.remove('hidden')
+      } else {
+        // Not authenticated
+        authStatus.className = 'auth-status unauthenticated'
+        authStatus.innerHTML = `
+          <div class="avatar">?</div>
+          <div class="user-info">
+            <div class="user-name">Not authenticated</div>
+            <div class="user-address">Click "Sign In" to authenticate</div>
+          </div>
+        `
+
+        signInBtn.classList.remove('hidden')
+        signOutBtn.classList.add('hidden')
+      }
+    }
+
+    // Session management
+    function saveSession(identity) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(identity))
+      log('info', 'Session saved to localStorage')
+    }
+
+    function loadSession() {
+      const data = localStorage.getItem(SESSION_KEY)
+      if (data) {
+        try {
+          return JSON.parse(data)
+        } catch (e) {
+          log('error', 'Failed to parse session data', { error: e.message })
+          return null
+        }
+      }
+      return null
+    }
+
+    function clearSession() {
+      localStorage.removeItem(SESSION_KEY)
+      log('info', 'Session cleared from localStorage')
+    }
+
+    // Iframe management
+    function openAuthIframe() {
+      if (authIframe) {
+        log('info', 'Auth iframe already open')
+        return
+      }
+
+      log('info', 'Opening auth iframe', { url: VILLA_AUTH_URL })
+
+      // Create iframe wrapper
+      const wrapper = document.createElement('div')
+      wrapper.className = 'iframe-container'
+
+      // Create close button
+      const closeBtn = document.createElement('button')
+      closeBtn.className = 'close-button'
+      closeBtn.innerHTML = '×'
+      closeBtn.onclick = closeAuthIframe
+
+      // Create iframe
+      authIframe = document.createElement('iframe')
+      authIframe.src = `${VILLA_AUTH_URL}?appId=${encodeURIComponent(APP_ID)}&origin=${encodeURIComponent(window.location.origin)}`
+      authIframe.allow = 'publickey-credentials-get *; publickey-credentials-create *'
+
+      // Assemble
+      const iframeWrapper = document.createElement('div')
+      iframeWrapper.className = 'iframe-wrapper'
+      iframeWrapper.appendChild(closeBtn)
+      iframeWrapper.appendChild(authIframe)
+      wrapper.appendChild(iframeWrapper)
+
+      iframeContainer.innerHTML = ''
+      iframeContainer.appendChild(wrapper)
+      iframeContainer.classList.remove('hidden')
+
+      // Setup message listener
+      messageHandler = (event) => handleAuthMessage(event)
+      window.addEventListener('message', messageHandler)
+
+      log('info', 'Waiting for VILLA_READY message')
+    }
+
+    function closeAuthIframe() {
+      if (!authIframe) return
+
+      log('info', 'Closing auth iframe')
+
+      // Remove message listener
+      if (messageHandler) {
+        window.removeEventListener('message', messageHandler)
+        messageHandler = null
+      }
+
+      // Remove iframe
+      iframeContainer.innerHTML = ''
+      iframeContainer.classList.add('hidden')
+      authIframe = null
+    }
+
+    // Message handling
+    function handleAuthMessage(event) {
+      // Validate origin (in production, check against beta.villa.cash)
+      if (!event.origin.includes('villa.cash') && !event.origin.includes('localhost')) {
+        return
+      }
+
+      const message = event.data
+      if (!message || !message.type) return
+
+      // Handle different message types
+      switch (message.type) {
+        case 'VILLA_READY':
+          log('info', 'Villa auth iframe ready')
+          break
+
+        case 'VILLA_AUTH_SUCCESS':
+          log('success', 'Authentication successful!', message.payload.identity)
+          handleAuthSuccess(message.payload.identity)
+          break
+
+        case 'VILLA_AUTH_ERROR':
+          log('error', 'Authentication error', message.payload)
+          closeAuthIframe()
+          alert(`Authentication failed: ${message.payload.error}`)
+          break
+
+        case 'VILLA_AUTH_CANCEL':
+          log('info', 'User cancelled authentication')
+          closeAuthIframe()
+          break
+
+        // Legacy message types (for compatibility)
+        case 'AUTH_SUCCESS':
+          log('success', 'Authentication successful (legacy)', message.identity)
+          handleAuthSuccess(message.identity)
+          break
+
+        case 'AUTH_ERROR':
+          log('error', 'Authentication error (legacy)', { error: message.error })
+          closeAuthIframe()
+          alert(`Authentication failed: ${message.error}`)
+          break
+
+        case 'AUTH_CLOSE':
+          log('info', 'User cancelled authentication (legacy)')
+          closeAuthIframe()
+          break
+      }
+    }
+
+    function handleAuthSuccess(identity) {
+      // Save session
+      saveSession(identity)
+
+      // Update UI
+      updateAuthUI(identity)
+
+      // Close iframe after a short delay
+      setTimeout(closeAuthIframe, 500)
+    }
+
+    // Button handlers
+    signInBtn.addEventListener('click', () => {
+      log('info', 'Sign in button clicked')
+      openAuthIframe()
+    })
+
+    signOutBtn.addEventListener('click', () => {
+      log('info', 'Sign out button clicked')
+      clearSession()
+      updateAuthUI(null)
+    })
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      log('info', 'Villa SDK initialized')
+
+      // Check for existing session
+      const session = loadSession()
+      if (session) {
+        log('info', 'Existing session found', session)
+        updateAuthUI(session)
+      } else {
+        log('info', 'No existing session')
+        updateAuthUI(null)
+      }
+    })
+  </script>
+</body>
+</html>

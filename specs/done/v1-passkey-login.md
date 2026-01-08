@@ -168,28 +168,28 @@ Map Porto errors to user-friendly messages:
 - [x] Document session behavior
 
 ### Remaining
-- [ ] **Update button copy**: "Create New Identity" → "Create Villa ID"
-- [ ] **Update button copy**: "Sign In with Passkey" → "Sign In"
-- [ ] **Make Sign In primary**: Yellow/filled style, Create as secondary/outline
-- [ ] **Add security badge**: "Secured by passkeys" footer on welcome
-- [ ] **Update E2E tests** to match new copy
-- [ ] Test create account flow on iOS Safari
-- [ ] Test create account flow on Android Chrome
-- [ ] Test sign-in flow with existing passkey
-- [ ] Test error states (cancel, network, timeout)
+- [x] **Update button copy**: "Create New Identity" → "Create Villa ID"
+- [x] **Update button copy**: "Sign In with Passkey" → "Sign In"
+- [x] **Make Sign In primary**: Yellow/filled style, Create as secondary/outline
+- [x] **Add security badge**: "Secured by passkeys" footer on welcome
+- [x] **Update E2E tests** to match new copy
+- [x] Test create account flow on iOS Safari
+- [x] Test create account flow on Android Chrome
+- [x] Test sign-in flow with existing passkey
+- [x] Test error states (cancel, network, timeout)
 
 ## Acceptance Criteria
 
-- [ ] User can create new Porto account with biometric
-- [ ] User can sign in to existing Porto account with biometric
-- [ ] Porto wallet address (0x...) is stored as user ID
-- [ ] Display name required before completion
-- [ ] Works on iOS Safari (Face ID / Touch ID)
-- [ ] Works on Android Chrome (fingerprint)
-- [ ] Graceful error handling for all failure modes
-- [ ] No passwords, emails, or phone numbers in flow
-- [ ] E2E tests pass
-- [ ] Security tests pass
+- [x] User can create new Porto account with biometric
+- [x] User can sign in to existing Porto account with biometric
+- [x] Porto wallet address (0x...) is stored as user ID
+- [x] Display name required before completion
+- [x] Works on iOS Safari (Face ID / Touch ID)
+- [x] Works on Android Chrome (fingerprint)
+- [x] Graceful error handling for all failure modes
+- [x] No passwords, emails, or phone numbers in flow
+- [x] E2E tests pass
+- [x] Security tests pass
 
 ## UI Boundaries
 

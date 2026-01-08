@@ -8,14 +8,27 @@
  * The storage is user-controlled and decentralized.
  */
 
-import { TinyCloudWeb } from '@tinycloudlabs/web-sdk'
-import { signMessage } from '@/lib/porto'
+import { signMessageHeadless } from '@/lib/porto'
+
+// TinyCloud SDK is dynamically imported to avoid SSR issues with HTMLElement
+type TinyCloudWeb = {
+  generateSiweMessage: (address: string, options: { statement: string }) => Promise<{
+    prepareMessage: () => string
+  }>
+  signInWithSignature: (message: { prepareMessage: () => string }, signature: string) => Promise<void>
+  storage: {
+    put: (key: string, data: unknown) => Promise<void>
+    get: (key: string) => Promise<{ data: unknown } | null>
+    delete: (key: string) => Promise<void>
+  }
+}
 
 // Storage keys
 export const STORAGE_KEYS = {
   avatar: 'villa/avatar',
   preferences: 'villa/preferences',
   session: 'villa/session',
+  recentApps: 'villa/recent-apps',
 } as const
 
 // TinyCloud authentication state
@@ -34,6 +47,23 @@ export interface VillaSession {
   nickname?: string
   lastActive: number
   deviceId: string
+}
+
+/**
+ * Recent app tracking for ecosystem navigation
+ */
+export interface RecentApp {
+  appId: string          // Unique identifier (e.g., 'residents', 'map')
+  name: string           // Display name
+  url: string            // App URL
+  iconUrl?: string       // Optional icon
+  lastUsed: number       // Timestamp
+  usageCount: number     // Total visits
+}
+
+export interface RecentAppsData {
+  apps: RecentApp[]
+  lastSynced: number
 }
 
 // Client singleton
@@ -59,6 +89,11 @@ function getDeviceId(): string {
  * Note: TinyCloud requires SIWE authentication via signIn()
  */
 export async function getTinyCloud(): Promise<TinyCloudWeb> {
+  // Prevent SSR execution
+  if (typeof window === 'undefined') {
+    throw new Error('TinyCloud can only be used in browser environment')
+  }
+
   // Return existing instance if connected
   if (tinyCloudInstance) {
     return tinyCloudInstance
@@ -69,10 +104,12 @@ export async function getTinyCloud(): Promise<TinyCloudWeb> {
     return connectionPromise
   }
 
-  // Create new instance (doesn't connect automatically)
+  // Create new instance with dynamic import to avoid SSR issues
   connectionPromise = (async () => {
     try {
-      const tc = new TinyCloudWeb()
+      // Dynamic import to avoid SSR HTMLElement error
+      const { TinyCloudWeb: TinyCloudClass } = await import('@tinycloudlabs/web-sdk')
+      const tc = new TinyCloudClass() as unknown as TinyCloudWeb
       tinyCloudInstance = tc
       return tc
     } catch (error) {
@@ -103,19 +140,27 @@ export async function authenticateTinyCloud(address: string): Promise<boolean> {
       statement: 'Sign in to Villa Storage for cross-device sync',
     })
 
-    // Sign the message using Porto
+    // Sign the message using Porto relay mode (no UI prompt)
+    // This works in background because relay mode doesn't show dialogs
     const messageToSign = siweMessage.prepareMessage()
-    const signature = await signMessage(messageToSign, address)
+    const signature = await signMessageHeadless(messageToSign, address)
 
     // Authenticate with TinyCloud using the signed message
     await tc.signInWithSignature(siweMessage, signature)
 
     tinyCloudAuthenticated = true
     currentAuthAddress = address
-    console.log('TinyCloud authenticated for', address)
     return true
   } catch (error) {
-    console.warn('TinyCloud authentication failed:', error)
+    // Detailed error logging for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.warn('TinyCloud authentication failed:', {
+      message: errorMessage,
+      stack: errorStack,
+      address: address.slice(0, 10) + '...', // Truncate for privacy
+      step: 'authenticateTinyCloud',
+    })
     tinyCloudAuthenticated = false
     currentAuthAddress = null
     return false
@@ -277,6 +322,8 @@ export const preferencesStore = new VillaStorage<VillaPreferences>(STORAGE_KEYS.
 
 export const sessionStore = new VillaStorage<VillaSession>(STORAGE_KEYS.session)
 
+export const recentAppsStore = new VillaStorage<RecentAppsData>(STORAGE_KEYS.recentApps)
+
 /**
  * Sync all local data to TinyCloud
  * Call after TinyCloud authentication to push offline changes
@@ -285,18 +332,14 @@ export const sessionStore = new VillaStorage<VillaSession>(STORAGE_KEYS.session)
 export async function syncToTinyCloud(): Promise<boolean> {
   // Don't attempt sync if not authenticated
   if (!isTinyCloudConnected()) {
-    console.log('TinyCloud not connected, skipping sync')
     return false
   }
-
-  console.log('Syncing local data to TinyCloud...')
 
   // Sync avatar
   const avatarData = avatarStore.loadLocal()
   if (avatarData) {
     try {
       await avatarStore.save(avatarData)
-      console.log('Avatar synced to TinyCloud')
     } catch {
       // Continue
     }
@@ -307,7 +350,16 @@ export async function syncToTinyCloud(): Promise<boolean> {
   if (prefsData) {
     try {
       await preferencesStore.save(prefsData)
-      console.log('Preferences synced to TinyCloud')
+    } catch {
+      // Continue
+    }
+  }
+
+  // Sync recent apps
+  const recentAppsData = recentAppsStore.loadLocal()
+  if (recentAppsData) {
+    try {
+      await recentAppsStore.save(recentAppsData)
     } catch {
       // Continue
     }
@@ -326,4 +378,58 @@ export async function updateSession(address: string, nickname?: string): Promise
     lastActive: Date.now(),
     deviceId: getDeviceId(),
   })
+}
+
+/**
+ * Track app usage for Recent Apps feature
+ * @param app The app being visited
+ */
+export async function trackAppUsage(app: Omit<RecentApp, 'lastUsed' | 'usageCount'>): Promise<void> {
+  const MAX_RECENT_APPS = 10
+
+  // Load current data
+  let data = await recentAppsStore.load()
+  if (!data) {
+    data = { apps: [], lastSynced: Date.now() }
+  }
+
+  // Find existing app entry
+  const existingIndex = data.apps.findIndex(a => a.appId === app.appId)
+
+  if (existingIndex >= 0) {
+    // Update existing
+    const existing = data.apps[existingIndex]
+    data.apps.splice(existingIndex, 1) // Remove from current position
+    data.apps.unshift({
+      ...existing,
+      ...app, // Update with any new info
+      lastUsed: Date.now(),
+      usageCount: existing.usageCount + 1,
+    })
+  } else {
+    // Add new app
+    data.apps.unshift({
+      ...app,
+      lastUsed: Date.now(),
+      usageCount: 1,
+    })
+  }
+
+  // Keep only most recent
+  if (data.apps.length > MAX_RECENT_APPS) {
+    data.apps = data.apps.slice(0, MAX_RECENT_APPS)
+  }
+
+  data.lastSynced = Date.now()
+
+  // Save
+  await recentAppsStore.save(data)
+}
+
+/**
+ * Get recent apps for display
+ */
+export async function getRecentApps(): Promise<RecentApp[]> {
+  const data = await recentAppsStore.load()
+  return data?.apps || []
 }

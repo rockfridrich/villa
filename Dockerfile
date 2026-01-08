@@ -32,6 +32,10 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Next.js public env vars must be set at build time (inlined into client bundle)
+ARG NEXT_PUBLIC_CHAIN_ID=84532
+ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
+
 # Build with Turborepo (builds all dependencies first)
 RUN --mount=type=cache,target=/app/apps/web/.next/cache \
     pnpm --filter @villa/web build

@@ -1,20 +1,28 @@
 {
-  "_comment": "REAL cost data from Anthropic console export. Source: claude_api_cost_2026_01_01_to_2026_01_06.csv",
-  "_source_file": ".claude/costs/claude_api_cost_2026_01_01_to_2026_01_06.csv",
+  "_comment": "REAL cost data from Anthropic console export. Updated 2026-01-07",
+  "_source_file": ".claude/costs/claude_api_cost_2026_01_01_to_2026_01_07.csv",
   "currency": "USD",
   "period": {
-    "start": "2026-01-01",
-    "end": "2026-01-06",
+    "start": "2026-01-02",
+    "end": "2026-01-07",
     "days": 6
   },
   "summary": {
-    "total": 694.04,
-    "dailyAverage": 115.67,
+    "total": 763.61,
+    "dailyAverage": 127.27,
+    "target": 50,
+    "overBudgetBy": 77.27,
     "byModel": {
-      "claude-opus-4.5": 652.11,
-      "claude-sonnet-4.5": 29.76,
-      "claude-haiku-4.5": 11.76,
-      "web-search": 0.41
+      "claude-opus-4.5": 708.83,
+      "claude-sonnet-4.5": 39.81,
+      "claude-haiku-4.5": 14.55,
+      "web-search": 0.42
+    },
+    "percentageByModel": {
+      "opus": 92.8,
+      "sonnet": 5.2,
+      "haiku": 1.9,
+      "web": 0.1
     }
   },
   "entries": [
@@ -71,6 +79,27 @@
         "web_search": 0.03
       },
       "source": "console-export"
+    },
+    {
+      "date": "2026-01-07",
+      "amount": 69.57,
+      "breakdown": {
+        "opus": 56.72,
+        "sonnet": 10.05,
+        "haiku": 2.79,
+        "web_search": 0.01
+      },
+      "source": "console-export"
     }
-  ]
+  ],
+  "analysis": {
+    "problem": "Opus consuming 92.8% of budget",
+    "cause": "Orchestrator doing manual work instead of delegating",
+    "solution": "Issue #31 - Auto-delegation layer",
+    "targetModel": {
+      "opus": 30,
+      "sonnet": 50,
+      "haiku": 20
+    }
+  }
 }

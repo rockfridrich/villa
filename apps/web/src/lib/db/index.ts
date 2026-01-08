@@ -1,6 +1,9 @@
 /**
  * Database connection module
  * Uses postgres.js for efficient connection pooling
+ *
+ * Graceful degradation: Returns appropriate errors if DATABASE_URL not set,
+ * allowing app to start without DB (for CI E2E tests that don't need DB).
  */
 import postgres from 'postgres'
 
@@ -9,8 +12,17 @@ let sql: ReturnType<typeof postgres> | null = null
 let migrationRun = false
 
 /**
+ * Check if database is configured
+ * Used by API routes to return graceful errors instead of crashing
+ */
+export function isDatabaseAvailable(): boolean {
+  return !!process.env.DATABASE_URL
+}
+
+/**
  * Get database connection
  * Creates a connection pool on first call, reuses on subsequent calls
+ * Throws if DATABASE_URL not set - callers should check isDatabaseAvailable() first
  */
 export function getDb() {
   if (sql) return sql
@@ -39,9 +51,11 @@ export function getDb() {
  *
  * Migrations run on app startup within DigitalOcean VPC.
  * CI/CD cannot access the private database network.
+ * Gracefully skips if DATABASE_URL not configured.
  */
 export async function ensureTables() {
   if (migrationRun) return
+  if (!isDatabaseAvailable()) return // Skip migration if no DB
 
   const db = getDb()
 
@@ -61,10 +75,34 @@ export async function ensureTables() {
     )
   `
 
+  // Create webauthn_credentials table if not exists
+  await db`
+    CREATE TABLE IF NOT EXISTS webauthn_credentials (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      public_key TEXT NOT NULL,
+      counter BIGINT DEFAULT 0,
+      address VARCHAR(42) NOT NULL,
+      nickname VARCHAR(32) NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `
+
   // Create indexes (IF NOT EXISTS is implicit for CREATE INDEX in PG 9.5+)
   await db`
     CREATE INDEX IF NOT EXISTS idx_profiles_nickname
     ON profiles(nickname_normalized)
+  `
+
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_webauthn_user_id
+    ON webauthn_credentials(user_id)
+  `
+
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_webauthn_address
+    ON webauthn_credentials(address)
   `
 
   // Migration: Add nickname change tracking columns if they don't exist

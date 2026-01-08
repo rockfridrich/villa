@@ -52,6 +52,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./apps/developers/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./apps/developers/public 2>/dev/null || true
 
+# Copy beads data for roadmap API (read-only snapshot at build time)
+COPY --from=builder --chown=nextjs:nodejs /app/.beads ./.beads
+
 USER nextjs
 EXPOSE 3000
 

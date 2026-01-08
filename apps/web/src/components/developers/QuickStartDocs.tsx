@@ -50,9 +50,9 @@ export function QuickStartDocs() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const installCode = 'npm install @villa/sdk'
+  const installCode = 'npm install @rockfridrich/villa-sdk'
 
-  const reactCode = `import { Villa } from '@villa/sdk'
+  const reactCode = `import { Villa } from '@rockfridrich/villa-sdk'
 
 function App() {
   const villa = new Villa({
@@ -76,7 +76,7 @@ function App() {
   return <button onClick={handleSignIn}>Sign In with Villa</button>
 }`
 
-  const vanillaCode = `import { Villa } from '@villa/sdk'
+  const vanillaCode = `import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
   appId: 'your-app-id',
@@ -237,60 +237,65 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
         <h2 className="text-xl font-serif text-ink mb-4">Next Steps</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <a
-            href="/developers/docs/authentication"
+            href="/sdk-demo"
             className="bg-cream-100 rounded-lg p-6 border border-neutral-100 hover:shadow transition-shadow duration-150 flex items-start justify-between group"
           >
             <div>
               <h3 className="text-base font-serif text-ink mb-2">
-                Authentication
+                Interactive Demo
               </h3>
               <p className="text-sm text-ink-muted">
-                Learn about passkey authentication and session management
+                Test the full authentication flow in your browser
               </p>
             </div>
             <ExternalLink className="w-5 h-5 text-ink-muted group-hover:text-ink transition-colors duration-150" />
           </a>
 
           <a
-            href="/developers/docs/user-data"
+            href="/llms.txt"
+            target="_blank"
             className="bg-cream-100 rounded-lg p-6 border border-neutral-100 hover:shadow transition-shadow duration-150 flex items-start justify-between group"
           >
             <div>
               <h3 className="text-base font-serif text-ink mb-2">
-                User Data
+                AI Integration Guide
               </h3>
               <p className="text-sm text-ink-muted">
-                Access user profiles, avatars, and app-specific storage
+                Machine-readable docs for AI coding assistants
               </p>
             </div>
             <ExternalLink className="w-5 h-5 text-ink-muted group-hover:text-ink transition-colors duration-150" />
           </a>
 
           <a
-            href="/developers/docs/consent"
+            href="https://github.com/rockfridrich/villa/tree/main/packages/sdk"
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-cream-100 rounded-lg p-6 border border-neutral-100 hover:shadow transition-shadow duration-150 flex items-start justify-between group"
           >
             <div>
               <h3 className="text-base font-serif text-ink mb-2">
-                Permissions
+                Source Code
               </h3>
               <p className="text-sm text-ink-muted">
-                Understand consent flow and data access scopes
+                Browse SDK source, examples, and types on GitHub
               </p>
             </div>
             <ExternalLink className="w-5 h-5 text-ink-muted group-hover:text-ink transition-colors duration-150" />
           </a>
 
           <a
-            href="/developers/docs/api-reference"
+            href="https://www.npmjs.com/package/@rockfridrich/villa-sdk"
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-cream-100 rounded-lg p-6 border border-neutral-100 hover:shadow transition-shadow duration-150 flex items-start justify-between group"
           >
             <div>
               <h3 className="text-base font-serif text-ink mb-2">
-                API Reference
+                npm Package
               </h3>
               <p className="text-sm text-ink-muted">
-                Complete SDK method documentation and types
+                View package details, versions, and install instructions
               </p>
             </div>
             <ExternalLink className="w-5 h-5 text-ink-muted group-hover:text-ink transition-colors duration-150" />

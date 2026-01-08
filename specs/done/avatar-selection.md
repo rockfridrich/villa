@@ -25,10 +25,10 @@ The Avatar Selection experience lets new users pick a visual identity through a 
 **So I can...** be visually recognized across Village apps and feel like "me"
 
 **Success Criteria:**
-- [ ] Avatar selected in <30 seconds (timer enforces this)
-- [ ] User feels represented by their avatar
-- [ ] Same avatar displays consistently across all apps
-- [ ] Selection is fun, not stressful
+- [x] Avatar selected in <30 seconds (timer enforces this)
+- [x] User feels represented by their avatar
+- [x] Same avatar displays consistently across all apps
+- [x] Selection is fun, not stressful
 
 ### Secondary Jobs
 

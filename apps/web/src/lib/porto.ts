@@ -1,5 +1,20 @@
 import { Porto, Dialog, Mode } from 'porto'
+import * as Chains from 'porto/core/Chains'
 import type { ThemeFragment } from 'porto/theme'
+
+/**
+ * Get Porto chains based on environment
+ * - Production: Base mainnet only
+ * - Staging/Dev: Base Sepolia only (for testing with deployed contracts)
+ */
+function getPortoChains(): readonly [typeof Chains.base] | readonly [typeof Chains.baseSepolia] {
+  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID
+  if (chainId === '84532') {
+    return [Chains.baseSepolia] as const
+  }
+  // Default to Base mainnet for production
+  return [Chains.base] as const
+}
 
 /**
  * Proof of Retreat theme for Porto dialog
@@ -76,8 +91,34 @@ export const villaTheme: ThemeFragment = {
 
 // Porto instance management
 let portoInstance: ReturnType<typeof Porto.create> | null = null
+let portoRelayInstance: ReturnType<typeof Porto.create> | null = null
 let themeController: Dialog.ThemeController | null = null
 let currentMode: 'popup' | 'inline' = 'popup'
+
+/**
+ * Custom WebAuthn handlers for relay mode
+ * Allows Villa UI to display custom animations/feedback during passkey operations
+ */
+export interface VillaWebAuthnHandlers {
+  /** Called before passkey creation starts */
+  onPasskeyCreate?: (options: CredentialCreationOptions) => Promise<void>
+  /** Called before passkey selection starts */
+  onPasskeyGet?: (options: CredentialRequestOptions) => Promise<void>
+  /** Called when authentication completes successfully */
+  onComplete?: (result: { address: string }) => void
+  /** Called when authentication fails */
+  onError?: (error: Error) => void
+}
+
+let webAuthnHandlers: VillaWebAuthnHandlers = {}
+
+/**
+ * Set custom WebAuthn handlers for relay mode
+ * Must be called before using relay mode functions
+ */
+export function setWebAuthnHandlers(handlers: VillaWebAuthnHandlers): void {
+  webAuthnHandlers = handlers
+}
 
 // Note: Porto SDK labels customization is documented but not yet in types
 // When available, add: signInPrompt, signIn, signUp, createAccount, dialogTitle
@@ -129,6 +170,7 @@ export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.cr
       // Use experimental_inline for embedded dialog
       // experimental_inline expects element as a getter function
       portoInstance = Porto.create({
+        chains: getPortoChains(),
         mode: Mode.dialog({
           renderer: Dialog.experimental_inline({ element: () => container }),
           host: 'https://id.porto.sh/dialog',
@@ -139,6 +181,7 @@ export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.cr
     } else {
       // Use popup for standalone dialog
       portoInstance = Porto.create({
+        chains: getPortoChains(),
         mode: Mode.dialog({
           renderer: Dialog.popup({
             type: 'popup',
@@ -160,6 +203,71 @@ export function getPorto(options: PortoOptions = {}): ReturnType<typeof Porto.cr
 export function resetPorto(): void {
   portoInstance = null
   themeController = null
+}
+
+/**
+ * Villa Passkey Domain Configuration
+ *
+ * keystoreHost determines the WebAuthn Relying Party ID (rpId).
+ * Passkeys are permanently bound to this domain - users see "villa.cash"
+ * in browser/OS passkey prompts instead of "porto.sh".
+ *
+ * Options:
+ * - 'self': Use current domain (localhost in dev, villa.cash in prod)
+ * - 'villa.cash': Always use villa.cash (recommended for prod)
+ * - 'key.villa.cash': Use subdomain for passkey operations
+ */
+const VILLA_KEYSTORE_HOST = process.env.NODE_ENV === 'production'
+  ? 'villa.cash'
+  : 'self' // 'self' uses current domain (localhost:3000 in dev)
+
+/**
+ * Get or create Porto relay instance with custom WebAuthn handlers
+ *
+ * IMPORTANT: This mode binds passkeys to Villa's domain (villa.cash),
+ * NOT Porto's domain (id.porto.sh). Users see "villa.cash" in:
+ * - Browser passkey prompts
+ * - 1Password/iCloud Keychain
+ * - System passkey manager
+ *
+ * Porto still provides:
+ * - Smart account contracts on Base
+ * - Bundler/relayer for gas sponsorship
+ * - Account abstraction infrastructure
+ */
+export function getPortoRelay(): ReturnType<typeof Porto.create> {
+  if (!portoRelayInstance) {
+    portoRelayInstance = Porto.create({
+      chains: getPortoChains(),
+      mode: Mode.relay({
+        // Bind passkeys to Villa's domain instead of Porto's
+        keystoreHost: VILLA_KEYSTORE_HOST,
+        webAuthn: {
+          createFn: async (options) => {
+            if (!options) {
+              throw new Error('WebAuthn creation options are required')
+            }
+            // Notify Villa UI that passkey creation is starting
+            await webAuthnHandlers.onPasskeyCreate?.(options as CredentialCreationOptions)
+            // Browser shows biometric prompt - user sees "villa.cash"
+            const credential = await navigator.credentials.create(options as CredentialCreationOptions)
+            return credential as PublicKeyCredential
+          },
+          getFn: async (options) => {
+            if (!options) {
+              throw new Error('WebAuthn request options are required')
+            }
+            // Notify Villa UI that passkey selection is starting
+            await webAuthnHandlers.onPasskeyGet?.(options as CredentialRequestOptions)
+            // Browser shows biometric prompt - user sees "villa.cash"
+            const assertion = await navigator.credentials.get(options as CredentialRequestOptions)
+            return assertion as PublicKeyCredential
+          },
+        },
+      }),
+    })
+  }
+  return portoRelayInstance
 }
 
 /**
@@ -365,7 +473,8 @@ export function isPortoSupported(): boolean {
 }
 
 /**
- * Sign a message using Porto (for SIWE authentication)
+ * Sign a message using Porto dialog mode (for interactive SIWE authentication)
+ * Note: This shows a Porto dialog - for background signing, use signMessageHeadless
  * @param message The message to sign
  * @param address The address signing the message
  * @returns The signature as a hex string
@@ -374,6 +483,24 @@ export async function signMessage(message: string, address: string): Promise<str
   const porto = getPorto()
 
   // Porto's provider.request expects typed params
+  const signature = await porto.provider.request({
+    method: 'personal_sign',
+    params: [message as `0x${string}`, address as `0x${string}`],
+  })
+
+  return signature as string
+}
+
+/**
+ * Sign a message using Porto relay mode (no UI prompt)
+ * Used by TinyCloud auth which runs in background after onboarding
+ * @param message The message to sign
+ * @param address The address signing the message
+ * @returns The signature as a hex string
+ */
+export async function signMessageHeadless(message: string, address: string): Promise<string> {
+  const porto = getPortoRelay()
+
   const signature = await porto.provider.request({
     method: 'personal_sign',
     params: [message as `0x${string}`, address as `0x${string}`],
@@ -452,4 +579,75 @@ export async function signSiweMessage(address: string, options?: {
   const signature = await signMessage(message, address)
 
   return { message, signature }
+}
+
+/**
+ * Create a new Porto account using relay mode
+ * Uses Villa's custom UI with WebAuthn handlers for feedback
+ * No Porto dialog is shown - Villa controls the entire flow
+ */
+export async function createAccountHeadless(): Promise<PortoConnectResult> {
+  try {
+    const porto = getPortoRelay()
+    const result = await porto.provider.request({
+      method: 'wallet_connect',
+      params: [{
+        capabilities: {
+          email: false,
+        },
+      }],
+    })
+
+    const response = result as unknown as { accounts: readonly { address: string }[] }
+
+    if (response.accounts && response.accounts.length > 0) {
+      const address = response.accounts[0].address
+      webAuthnHandlers.onComplete?.({ address })
+      return { success: true, address }
+    }
+
+    return {
+      success: false,
+      error: new Error('No account returned from Porto'),
+    }
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Unknown error')
+    webAuthnHandlers.onError?.(error)
+    return {
+      success: false,
+      error,
+    }
+  }
+}
+
+/**
+ * Sign in with existing Porto account using relay mode
+ * Uses Villa's custom UI with WebAuthn handlers for feedback
+ * No Porto dialog is shown - Villa controls the entire flow
+ */
+export async function signInHeadless(): Promise<PortoConnectResult> {
+  try {
+    const porto = getPortoRelay()
+    const accounts = await porto.provider.request({
+      method: 'eth_requestAccounts',
+    })
+
+    if (accounts && accounts.length > 0) {
+      const address = accounts[0]
+      webAuthnHandlers.onComplete?.({ address })
+      return { success: true, address }
+    }
+
+    return {
+      success: false,
+      error: new Error('No account selected'),
+    }
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Unknown error')
+    webAuthnHandlers.onError?.(error)
+    return {
+      success: false,
+      error,
+    }
+  }
 }

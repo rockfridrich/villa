@@ -2,17 +2,14 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Fingerprint, AlertCircle, ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
 import { Button, Input, Spinner, SuccessCelebration } from '@/components/ui'
-import { AvatarSelection } from '@/components/sdk'
+import { AvatarSelection, VillaAuth, type VillaAuthResponse } from '@/components/sdk'
 import { useIdentityStore } from '@/lib/store'
 import { displayNameSchema } from '@/lib/validation'
 import type { AvatarConfig } from '@/types'
 import {
-  createAccount,
-  signIn,
   isPortoSupported,
-  resetPorto,
 } from '@/lib/porto'
 import {
   detectInAppBrowser,
@@ -20,7 +17,7 @@ import {
   getCurrentUrl,
   type InAppBrowserInfo,
 } from '@/lib/browser'
-import { getNicknameByAddress } from '@/lib/nickname'
+import { authenticateTinyCloud, syncToTinyCloud } from '@/lib/storage/tinycloud-client'
 
 type Step =
   | 'inapp-browser'
@@ -88,9 +85,6 @@ function OnboardingContent() {
     setParamsLoaded(true)
   }, [testStep, testAddress, testDisplayName])
 
-  // Ref for inline Porto container
-  const portoContainerRef = useRef<HTMLDivElement | null>(null)
-
   // Ref for tracking timeouts to prevent memory leaks
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -139,102 +133,8 @@ function OnboardingContent() {
     }
   }, [identity, router, isTestMode])
 
-  const handleCreateAccount = async () => {
-    setStep('connecting')
-
-    // Wait for container to be available
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    try {
-      // createAccount handles instance management internally with forceRecreate
-      // No separate resetPorto() needed - avoids race condition
-      const result = await createAccount({ container: portoContainerRef.current })
-
-      if (!result.success) {
-        throw result.error
-      }
-
-      // Store the Porto wallet address
-      setAddress(result.address)
-
-      // Show success and move to profile
-      setStep('success')
-      timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
-    } catch (err) {
-      const message = getErrorMessage(err as Error)
-      setError({
-        message,
-        retry: () => {
-          setError(null)
-          resetPorto()
-          setStep('welcome')
-        },
-      })
-      setStep('error')
-    }
-  }
-
-  const handleSignIn = async () => {
-    setStep('connecting')
-
-    // Wait for container to be available
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    try {
-      // signIn handles instance management internally with forceRecreate
-      // No separate resetPorto() needed - avoids race condition
-      const result = await signIn({ container: portoContainerRef.current })
-
-      if (!result.success) {
-        throw result.error
-      }
-
-      // Store the Porto wallet address
-      setAddress(result.address)
-
-      // Check if we have a stored identity with this address (same device)
-      if (identity && identity.address === result.address && identity.avatar) {
-        // Already have complete identity, go home
-        router.replace('/home')
-        return
-      }
-
-      // === RETURNING USER DETECTION ===
-      // Check if this address has a nickname registered (on API/chain)
-      const nicknameResult = await getNicknameByAddress(result.address)
-
-      if (nicknameResult) {
-        // Returning user! They have a nickname registered
-        setDisplayName(nicknameResult.nickname)
-
-        // Check if we have avatar locally
-        if (identity && identity.address === result.address && identity.avatar) {
-          // Have both nickname (API) and avatar (local) → go home
-          router.replace('/home')
-          return
-        }
-
-        // Have nickname but no avatar (new device) → show welcome-back then avatar
-        setStep('welcome-back')
-        return
-      }
-
-      // New user - no nickname found, need full onboarding
-      setStep('success')
-      timeoutRef.current = setTimeout(() => setStep('profile'), 1500)
-    } catch (err) {
-      const message = getErrorMessage(err as Error)
-      setError({
-        message,
-        retry: () => {
-          setError(null)
-          resetPorto()
-          setStep('welcome')
-        },
-      })
-      setStep('error')
-    }
-  }
+  // Note: handleAuthSuccess removed - VillaAuth now handles full flow internally
+  // and returns complete identity via handleVillaAuthComplete
 
   const handleSubmitProfile = () => {
     const result = displayNameSchema.safeParse(displayName)
@@ -314,8 +214,9 @@ function OnboardingContent() {
       createdAt: Date.now(),
     })
 
-    // Fire and forget - persist to API
+    // Fire and forget - persist to API and sync to TinyCloud
     saveProfile(address, result.data, config)
+    syncToTinyCloud().catch(console.warn)
 
     router.replace('/home')
   }
@@ -342,22 +243,63 @@ function OnboardingContent() {
     )
   }
 
+  // Handle VillaAuth completion (dialog mode - proper 1Password/passkey manager support)
+  // VillaAuth handles full flow internally: passkey → nickname → avatar
+  const handleAuthComplete = async (result: VillaAuthResponse) => {
+    if (!result.success) {
+      // User cancelled or error occurred
+      if (result.code === 'CANCELLED') {
+        setStep('welcome')
+      } else {
+        setStep('error')
+      }
+      return
+    }
+
+    // Success! VillaAuth has already collected: address, nickname, avatar
+    const { address: authAddress, nickname, avatar } = result.identity
+
+    // Update local state (for any remaining steps)
+    setAddress(authAddress)
+    setDisplayName(nickname)
+
+    // Save to Zustand store
+    setIdentity({
+      address: authAddress,
+      displayName: nickname,
+      avatar,
+      createdAt: Date.now(),
+    })
+
+    // Trigger TinyCloud auth and sync in background
+    // syncToTinyCloud reads from store, so must happen after setIdentity
+    authenticateTinyCloud(authAddress)
+      .then(() => syncToTinyCloud())
+      .catch(console.warn)
+
+    // Show success then redirect to home
+    setStep('success')
+    setTimeout(() => {
+      router.push('/home')
+    }, 2000)
+  }
+
+  // Show VillaAuth for welcome step
+  // Uses Porto dialog mode - properly triggers 1Password, iCloud Keychain, Google Password Manager
+  // CRITICAL: Do NOT use VillaAuthScreen here - relay mode bypasses passkey manager hooks
+  if (step === 'welcome' || step === 'connecting') {
+    return (
+      <VillaAuth
+        onComplete={handleAuthComplete}
+      />
+    )
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-cream-50">
       <div className="w-full max-w-md">
         {step === 'inapp-browser' && inAppBrowser && (
           <InAppBrowserStep browserInfo={inAppBrowser} />
-        )}
-
-        {step === 'welcome' && (
-          <WelcomeStep
-            onCreateNew={handleCreateAccount}
-            onSignIn={handleSignIn}
-          />
-        )}
-
-        {step === 'connecting' && (
-          <ConnectingStep portoContainerRef={portoContainerRef} />
         )}
 
         {step === 'success' && <SuccessStep />}
@@ -483,61 +425,6 @@ function InAppBrowserStep({
   )
 }
 
-function WelcomeStep({
-  onCreateNew,
-  onSignIn,
-}: {
-  onCreateNew: () => void
-  onSignIn: () => void
-}) {
-  return (
-    <div className="text-center space-y-8">
-      <div className="space-y-4">
-        <div className="w-16 h-16 mx-auto bg-accent-yellow rounded-2xl flex items-center justify-center">
-          <Fingerprint className="w-8 h-8 text-accent-brown" />
-        </div>
-        <h1 className="text-3xl font-serif tracking-tight text-ink">Villa</h1>
-        <p className="text-ink-muted text-lg">
-          Your identity. No passwords.
-        </p>
-      </div>
-      <div className="space-y-3">
-        <Button size="lg" className="w-full" onClick={onSignIn}>
-          Sign In
-        </Button>
-        <Button size="lg" variant="secondary" className="w-full" onClick={onCreateNew}>
-          Create Villa ID
-        </Button>
-      </div>
-      <footer className="pt-4">
-        <p className="text-ink-muted text-sm">Secured by passkeys</p>
-      </footer>
-    </div>
-  )
-}
-
-function ConnectingStep({
-  portoContainerRef,
-}: {
-  portoContainerRef: React.MutableRefObject<HTMLDivElement | null>
-}) {
-  return (
-    <div className="text-center space-y-4">
-      <div className="space-y-2">
-        <h2 className="text-xl font-serif text-ink">Connecting...</h2>
-        <p className="text-ink-muted text-sm">
-          Complete the biometric prompt
-        </p>
-      </div>
-      {/* Inline Porto container - full height for dialog */}
-      <div
-        ref={portoContainerRef}
-        className="min-h-[520px] h-[60vh] max-h-[640px] w-full rounded-lg bg-cream-100 border border-neutral-100 overflow-hidden"
-      />
-    </div>
-  )
-}
-
 function SuccessStep() {
   return (
     <div className="text-center space-y-6">
@@ -657,7 +544,9 @@ function ErrorStep({
   )
 }
 
-function getErrorMessage(error: Error): string {
+// Error message helper - kept for future error handling improvements
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _getErrorMessage(error: Error): string {
   const message = error.message.toLowerCase()
 
   if (

@@ -1,11 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { type Identity, identitySchema, displayNameSchema } from './validation'
+import { type Identity, type AvatarConfigValidated, identitySchema, displayNameSchema } from './validation'
+
+// Avatar can be string (legacy), AvatarConfig (new format), or undefined
+type AvatarValue = string | AvatarConfigValidated | undefined
 
 interface IdentityStore {
   identity: Identity | null
   setIdentity: (identity: Identity) => boolean
-  updateProfile: (displayName: string, avatar?: string) => boolean
+  updateProfile: (displayName: string, avatar?: AvatarValue) => boolean
   clearIdentity: () => void
 }
 
@@ -25,7 +28,7 @@ export const useIdentityStore = create<IdentityStore>()(
         return false
       },
 
-      updateProfile: (displayName: string, avatar?: string) => {
+      updateProfile: (displayName: string, avatar?: AvatarValue) => {
         const current = get().identity
         if (!current) return false
 

@@ -15,7 +15,8 @@ import {
 import {
   enrollFace,
   waitForTransaction,
-  isAnvilRunning,
+  isChainConnected,
+  getCurrentChain,
   ANVIL_ACCOUNTS,
 } from '@/lib/contracts'
 
@@ -54,7 +55,8 @@ export function FaceRecoverySetup({
   })
   const [faceDetected, setFaceDetected] = useState(false)
   const [txHash, setTxHash] = useState<string | null>(null)
-  const [anvilConnected, setAnvilConnected] = useState<boolean | null>(null)
+  const [chainConnected, setChainConnected] = useState<boolean | null>(null)
+  const [currentChainId, setCurrentChainId] = useState<number>(31337)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -70,11 +72,13 @@ export function FaceRecoverySetup({
     }
   }, [])
 
-  // Check Anvil connection on mount
+  // Check chain connection on mount
   useEffect(() => {
-    isAnvilRunning().then((connected) => {
+    const chain = getCurrentChain()
+    setCurrentChainId(chain.id)
+    isChainConnected(chain.id).then((connected) => {
       if (isMountedRef.current) {
-        setAnvilConnected(connected)
+        setChainConnected(connected)
       }
     })
   }, [])
@@ -165,10 +169,15 @@ export function FaceRecoverySetup({
       // Now register on-chain
       setStep('registering_key')
 
-      // Check if Anvil is running
-      const connected = await isAnvilRunning()
+      // Check if chain is connected
+      const chain = getCurrentChain()
+      const connected = await isChainConnected(chain.id)
       if (!connected) {
-        throw new Error('Local blockchain not running. Start Anvil with: npm run anvil')
+        const chainName = chain.id === 31337 ? 'Anvil local blockchain' : 'Base Sepolia testnet'
+        const helpText = chain.id === 31337
+          ? 'Start Anvil with: npm run anvil'
+          : 'Check your internet connection and network configuration'
+        throw new Error(`${chainName} not connected. ${helpText}`)
       }
 
       // Call enrollFace contract
@@ -179,6 +188,7 @@ export function FaceRecoverySetup({
         faceKeyHash: faceKeyHash as `0x${string}`,
         livenessProof: proofHex,
         privateKey: ANVIL_ACCOUNTS.user1.privateKey,
+        chainId: chain.id,
       })
 
       setTxHash(hash)
@@ -267,12 +277,18 @@ export function FaceRecoverySetup({
               data never leaves your device.
             </p>
 
-            {/* Anvil warning */}
-            {anvilConnected === false && (
+            {/* Chain connection warning */}
+            {chainConnected === false && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-left">
                 <p className="text-amber-800 text-sm">
-                  <strong>Note:</strong> Run{' '}
-                  <code className="bg-amber-100 px-1 rounded">npm run anvil</code> first.
+                  <strong>Note:</strong>{' '}
+                  {currentChainId === 31337 ? (
+                    <>
+                      Run <code className="bg-amber-100 px-1 rounded">npm run anvil</code> first.
+                    </>
+                  ) : (
+                    'Check your internet connection to Base Sepolia testnet.'
+                  )}
                 </p>
               </div>
             )}
@@ -281,7 +297,7 @@ export function FaceRecoverySetup({
               onClick={startCamera}
               size="lg"
               className="w-full"
-              disabled={anvilConnected === false}
+              disabled={chainConnected === false}
             >
               <Camera className="h-5 w-5 mr-2" />
               Start Camera

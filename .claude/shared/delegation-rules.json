@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "description": "Auto-delegation rules for cost optimization",
+  "rules": [
+    {
+      "trigger": "file_read_count",
+      "threshold": 3,
+      "action": "delegate",
+      "agent": "@explore",
+      "model": "haiku",
+      "reasoning": "Reading >3 files suggests exploration task. @explore (haiku) is 12x cheaper than opus."
+    },
+    {
+      "trigger": "grep_pattern",
+      "threshold": 2,
+      "action": "delegate",
+      "agent": "@explore",
+      "model": "haiku",
+      "reasoning": "Multiple grep searches = codebase exploration. Delegate to @explore."
+    },
+    {
+      "trigger": "test_run",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@test",
+      "model": "haiku",
+      "reasoning": "Test execution always goes to @test. Parse results, don't read raw output."
+    },
+    {
+      "trigger": "git_operation",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@ops",
+      "model": "haiku",
+      "reasoning": "Git operations (commit, push, PR) always go to @ops."
+    },
+    {
+      "trigger": "implementation",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@build",
+      "model": "sonnet",
+      "reasoning": "Feature implementation goes to @build (sonnet for quality)."
+    },
+    {
+      "trigger": "ui_styling",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@design",
+      "model": "sonnet",
+      "reasoning": "UI/styling changes go to @design (sonnet for quality)."
+    },
+    {
+      "trigger": "code_review",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@review",
+      "model": "sonnet",
+      "reasoning": "Code review goes to @review (sonnet for thoroughness)."
+    },
+    {
+      "trigger": "deployment",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@ops",
+      "model": "haiku",
+      "reasoning": "Deploy monitoring goes to @ops in background."
+    },
+    {
+      "trigger": "database_work",
+      "threshold": 1,
+      "action": "delegate",
+      "agent": "@data",
+      "model": "sonnet",
+      "reasoning": "Schema/migration work goes to @data."
+    },
+    {
+      "trigger": "glob_search",
+      "threshold": 2,
+      "action": "delegate",
+      "agent": "@explore",
+      "model": "haiku",
+      "reasoning": "Multiple glob searches = file discovery. Delegate to @explore."
+    }
+  ],
+  "cost_targets": {
+    "daily_budget": 50,
+    "model_distribution_target": {
+      "haiku": "60%",
+      "sonnet": "35%",
+      "opus": "5%"
+    }
+  },
+  "orchestrator_only": [
+    "Writing agent prompts",
+    "Session reflection",
+    "Architecture decisions",
+    "Synthesizing agent results",
+    "Human communication"
+  ]
+}

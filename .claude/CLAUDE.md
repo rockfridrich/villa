@@ -34,7 +34,6 @@ Claude learns your preferences over time. See [shared/preferences.schema.ts](sha
 
 ```bash
 pnpm dev             # Local dev (apps/web)
-pnpm dev:https       # Passkey testing (requires mkcert)
 pnpm verify          # ALWAYS run before pushing
 pnpm qa              # Mobile QA via ngrok
 pnpm build           # Build all packages
@@ -164,9 +163,9 @@ specs/             # active/, reference/
 
 | Problem | Fix |
 |---------|-----|
-| Blank page | `pnpm dev:clean` |
+| Blank page | Clear `.next/` cache: `rm -rf apps/web/.next && pnpm dev` |
 | Port in use | `pkill -f "next dev"` |
-| Passkeys fail | Use `pnpm dev:https` |
+| Passkeys fail | Use HTTPS: `mkcert -install && pnpm dev` then open https://localhost:3000 |
 | Tests fail | Run `pnpm verify` locally first! |
 
 ---

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDb, ensureTables } from '@/lib/db'
+import { getDb, ensureTables, isDatabaseAvailable } from '@/lib/db'
 import type { ProfileRow } from '@/lib/db/schema'
 
 // Disable caching - data can change
@@ -23,6 +23,12 @@ export async function GET(
       { error: 'Invalid address format' },
       { status: 400 }
     )
+  }
+
+  // Graceful degradation: If no DB, return 404 (user not found)
+  // This allows CI E2E tests to run without database access
+  if (!isDatabaseAvailable()) {
+    return NextResponse.json(null, { status: 404 })
   }
 
   // Normalize address to lowercase

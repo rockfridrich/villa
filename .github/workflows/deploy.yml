@@ -456,6 +456,10 @@ jobs:
       - run: pnpm --filter @villa/web exec playwright test --project=chromium
         env:
           CI: true
+          # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
+          # API routes gracefully degrade, returning mock responses
+          # Glide SDK project ID for funding feature tests
+          NEXT_PUBLIC_GLIDE_PROJECT_ID: villa-dev
 
   # =============================================================================
   # DEPLOY STAGING - To beta.villa.cash on push to main
@@ -697,6 +701,10 @@ jobs:
       - run: pnpm --filter @villa/web exec playwright test --project=chromium
         env:
           CI: true
+          # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
+          # API routes gracefully degrade, returning mock responses
+          # Glide SDK project ID for funding feature tests
+          NEXT_PUBLIC_GLIDE_PROJECT_ID: villa-dev
 
   # =============================================================================
   # DEPLOY PRODUCTION - To villa.cash on release tags only

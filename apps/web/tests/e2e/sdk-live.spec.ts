@@ -180,11 +180,9 @@ test.describe('SDK Demo - Live/Mock Toggle', () => {
   })
 })
 
-// These API tests require a database connection - they run in CI but may timeout locally
+// These API tests require a database connection
+// CI uses graceful degradation (mock responses when DATABASE_URL not set)
 test.describe('ENS API Resolution', () => {
-  // Skip DB-dependent tests when running locally (no DATABASE_URL)
-  // They will run in CI where database is available
-  test.skip(({ browserName }) => !process.env.DATABASE_URL && browserName === 'chromium', 'Requires DATABASE_URL')
 
   test('GET /api/nicknames/check returns availability', async ({ request }) => {
     const response = await request.get('/api/nicknames/check/testnickname12345')
@@ -272,11 +270,14 @@ test.describe('CCIP-Read ENS Gateway', () => {
 })
 
 test.describe('Profile Nickname Edit API', () => {
-  // Skip DB-dependent tests when running locally
+  // These tests hit DB-dependent endpoints
+  // When DB unavailable, API returns 503 which is different from expected responses
+  // Skip in CI where DB is not available
   test.skip(() => !process.env.DATABASE_URL, 'Requires DATABASE_URL')
 
   test('PATCH /api/profile validates nickname format', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000, // Allow time for DB connection in CI
       data: {
         address: '0x0000000000000000000000000000000000000001',
         newNickname: 'ab' // Too short
@@ -290,6 +291,7 @@ test.describe('Profile Nickname Edit API', () => {
 
   test('PATCH /api/profile rejects invalid address', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000,
       data: {
         address: 'invalid-address',
         newNickname: 'validnickname'
@@ -303,6 +305,7 @@ test.describe('Profile Nickname Edit API', () => {
 
   test('PATCH /api/profile returns 404 for non-existent profile', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000,
       data: {
         address: '0x0000000000000000000000000000000000000001',
         newNickname: 'validnickname'

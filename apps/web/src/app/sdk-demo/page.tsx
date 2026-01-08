@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { VillaAuth } from '@/components/sdk/VillaAuth'
+import { VillaAuthScreen } from '@/components/sdk/VillaAuthScreen'
 import { ProfileSettings } from '@/components/sdk/ProfileSettings'
 import { AvatarPreview } from '@/components/sdk/AvatarPreview'
 import type { AvatarConfig } from '@/types'
@@ -45,6 +46,7 @@ interface DemoConfig {
   useLiveApi: boolean
   simulateErrors: boolean
   errorType: 'network' | 'notFound' | 'rateLimit' | null
+  authMode: 'dialog' | 'relay'
 }
 
 /**
@@ -78,6 +80,7 @@ export default function SDKDemoPage() {
     useLiveApi: false,
     simulateErrors: false,
     errorType: null,
+    authMode: 'dialog',
   })
 
   // Logs
@@ -384,6 +387,25 @@ export default function SDKDemoPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+              {/* Auth Mode Toggle */}
+              <button
+                onClick={() => setDemoConfig(prev => ({
+                  ...prev,
+                  authMode: prev.authMode === 'dialog' ? 'relay' : 'dialog'
+                }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg min-h-[44px] transition-colors ${
+                  demoConfig.authMode === 'relay'
+                    ? 'bg-accent-yellow/20 text-accent-brown border-2 border-accent-yellow'
+                    : 'bg-neutral-100 text-ink-muted border-2 border-transparent'
+                }`}
+                title={demoConfig.authMode === 'relay' ? 'Relay mode (VillaAuthScreen)' : 'Dialog mode (VillaAuth)'}
+              >
+                <Fingerprint className={`w-4 h-4 ${demoConfig.authMode === 'relay' ? 'text-accent-brown' : 'text-ink-muted'}`} />
+                <span className="text-sm font-medium">
+                  {demoConfig.authMode === 'relay' ? 'Relay' : 'Dialog'}
+                </span>
+              </button>
+
               {/* Live API Toggle */}
               <button
                 onClick={() => setDemoConfig(prev => ({ ...prev, useLiveApi: !prev.useLiveApi }))}
@@ -531,8 +553,14 @@ export default function SDKDemoPage() {
                 <CardHeader>
                   <CardTitle>Authentication</CardTitle>
                   <p className="text-sm text-ink-muted mt-1">
-                    VillaAuth handles passkey → nickname → avatar in one popup
+                    {demoConfig.authMode === 'dialog'
+                      ? 'VillaAuth: Popup dialog for quick integration'
+                      : 'VillaAuthScreen: Full-screen relay mode for custom UI'}
                   </p>
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <strong>Current mode:</strong> {demoConfig.authMode === 'dialog' ? 'Dialog' : 'Relay'} —
+                    Toggle in the header to compare both auth flows
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {user ? (
@@ -608,7 +636,7 @@ if (!user) redirect('/login')`}
                         <div className="absolute top-2 right-2 z-10">
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`import { VillaAuth } from '@villa/sdk'
+                              const dialogCode = `import { VillaAuth } from '@villa/sdk'
 
 <VillaAuth
   appName="Your App"
@@ -619,7 +647,19 @@ if (!user) redirect('/login')`}
       // result.identity.avatar
     }
   }}
-/>`)
+/>`
+                              const relayCode = `import { VillaAuthScreen } from '@villa/sdk'
+
+<VillaAuthScreen
+  onSuccess={(address) => {
+    // User authenticated
+    console.log('Address:', address)
+  }}
+  onCancel={() => {
+    // User cancelled
+  }}
+/>`
+                              navigator.clipboard.writeText(demoConfig.authMode === 'dialog' ? dialogCode : relayCode)
                               setCopiedLog(-1)
                               setTimeout(() => setCopiedLog(null), 2000)
                             }}
@@ -635,7 +675,7 @@ if (!user) redirect('/login')`}
                         </div>
                         <div className="p-3 bg-neutral-900 rounded-lg">
                           <pre className="text-xs text-green-400 overflow-x-auto">
-{`import { VillaAuth } from '@villa/sdk'
+{demoConfig.authMode === 'dialog' ? `import { VillaAuth } from '@villa/sdk'
 
 <VillaAuth
   appName="Your App"
@@ -645,6 +685,16 @@ if (!user) redirect('/login')`}
       // result.identity.nickname
       // result.identity.avatar
     }
+  }}
+/>` : `import { VillaAuthScreen } from '@villa/sdk'
+
+<VillaAuthScreen
+  onSuccess={(address) => {
+    // User authenticated
+    console.log('Address:', address)
+  }}
+  onCancel={() => {
+    // User cancelled
   }}
 />`}
                           </pre>
@@ -953,8 +1003,8 @@ const address = await provider.resolveName('alice.villa.cash')`}
         </div>
       </div>
 
-      {/* VillaAuth Modal */}
-      {showAuth && (
+      {/* VillaAuth Modal - Dialog Mode */}
+      {showAuth && demoConfig.authMode === 'dialog' && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => {
@@ -969,6 +1019,45 @@ const address = await provider.resolveName('alice.villa.cash')`}
               onComplete={handleAuthComplete}
             />
           </div>
+        </div>
+      )}
+
+      {/* VillaAuthScreen - Relay Mode */}
+      {showAuth && demoConfig.authMode === 'relay' && (
+        <div className="fixed inset-0 z-50">
+          <VillaAuthScreen
+            onSuccess={(address) => {
+              const logId = addLog({
+                method: 'VillaAuthScreen.onSuccess',
+                args: { address },
+              })
+              // For demo purposes, create a mock profile
+              const mockNickname = `user${address.slice(2, 8)}`
+              const profile: UserProfile = {
+                address,
+                nickname: mockNickname,
+                displayName: mockNickname,
+                avatar: { style: 'avataaars', selection: 'female', variant: 0 },
+                ensName: `${mockNickname}.villa.cash`,
+              }
+              setUser(profile)
+              updateLog(logId, {
+                result: {
+                  address: profile.address,
+                  nickname: profile.nickname,
+                  ensName: profile.ensName,
+                },
+                duration: 0,
+              })
+              setShowAuth(false)
+            }}
+            onCancel={() => {
+              addLog({
+                method: 'VillaAuthScreen.onCancel',
+              })
+              setShowAuth(false)
+            }}
+          />
         </div>
       )}
 

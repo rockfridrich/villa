@@ -996,6 +996,283 @@ const bridge = new VillaBridge({
         </div>
       </section>
 
+      {/* Smart Contracts */}
+      <section id="contracts" className="py-20">
+        <div className="max-w-3xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="font-serif text-3xl">Smart Contracts</h2>
+            <p className="text-ink-muted">On-chain infrastructure for nicknames and recovery</p>
+          </div>
+
+          {/* Overview */}
+          <div className="space-y-4">
+            <p className="text-ink-muted text-sm">
+              Villa uses smart contracts on Base to enable ENS-compatible nickname resolution
+              and biometric wallet recovery. While most interactions happen off-chain for speed,
+              the contracts provide a trustless fallback and enable future on-chain features.
+            </p>
+          </div>
+
+          {/* Deployed Contracts */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">Deployed Contracts (Base Sepolia)</h3>
+            <p className="text-ink-muted text-sm">
+              Current deployments on Base Sepolia testnet. Mainnet deployments coming soon.
+            </p>
+            <div className="bg-cream-50 border border-ink/5 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ink/5">
+                    <th className="text-left p-3 font-medium">Contract</th>
+                    <th className="text-left p-3 font-medium">Proxy Address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-ink/5">
+                    <td className="p-3">VillaNicknameResolver</td>
+                    <td className="p-3 font-mono text-xs">
+                      <code className="code-inline">0xf4648423aC6b3f6328018c49B2102f4E9bA6D800</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3">BiometricRecoverySigner</td>
+                    <td className="p-3 font-mono text-xs">
+                      <code className="code-inline">0xdFb55a363bdF549EE5C2e77D0aAaC39276ED5836</code>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-ink-muted text-xs">
+              View on{' '}
+              <a
+                href="https://sepolia.basescan.org/address/0xf4648423aC6b3f6328018c49B2102f4E9bA6D800"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-yellow hover:underline"
+              >
+                BaseScan
+              </a>
+            </p>
+          </div>
+
+          {/* Contract Addresses in SDK */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">Access Contract Addresses</h3>
+            <p className="text-ink-muted text-sm">
+              Import contract addresses directly from the SDK
+            </p>
+            <CodeBlock
+              code={`import { getContracts, getNicknameResolverAddress } from '@rockfridrich/villa-sdk'
+import { baseSepolia } from 'viem/chains'
+
+// Get all contracts for a chain
+const contracts = getContracts(baseSepolia.id)
+if (contracts) {
+  console.log('Resolver:', contracts.nicknameResolver.proxy)
+  console.log('Recovery:', contracts.recoverySigner.proxy)
+}
+
+// Get specific contract address
+const resolverAddress = getNicknameResolverAddress(84532)
+// Returns: '0xf4648423aC6b3f6328018c49B2102f4E9bA6D800'`}
+              language="typescript"
+            />
+          </div>
+
+          {/* Nickname Resolution */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">ENS Resolution (CCIP-Read)</h3>
+            <p className="text-ink-muted text-sm">
+              Villa uses CCIP-Read to resolve nicknames off-chain while maintaining ENS compatibility.
+              When you query <code className="code-inline">alice.villa.cash</code> through ENS,
+              the resolver contract makes a CCIP-Read callback to our API.
+            </p>
+            <CodeBlock
+              code={`// Resolution flow (automatic in ENS-compatible clients):
+// 1. Query: alice.villa.cash
+// 2. Contract: VillaNicknameResolver (on-chain)
+// 3. CCIP-Read callback: https://villa.cash/api/ens/resolve
+// 4. Database lookup: profiles table
+// 5. Return: 0x1234... (wallet address)
+
+// Use with viem
+import { createPublicClient, http } from 'viem'
+import { baseSepolia } from 'viem/chains'
+import { normalize } from 'viem/ens'
+
+const client = createPublicClient({
+  chain: baseSepolia,
+  transport: http()
+})
+
+// Resolve nickname to address
+const address = await client.getEnsAddress({
+  name: normalize('alice.villa.cash')
+})
+
+// Or use Villa SDK helper
+const villa = new Villa({ network: 'base-sepolia' })
+const address = await villa.resolveEns('alice.villa.cash')`}
+              language="typescript"
+            />
+            <div className="bg-cream-100/50 border border-ink/5 rounded-lg p-4 space-y-2">
+              <h4 className="font-medium text-sm">Why CCIP-Read?</h4>
+              <ul className="text-sm text-ink-muted space-y-1">
+                <li>• <strong>Fast:</strong> Off-chain lookups (no gas costs)</li>
+                <li>• <strong>Compatible:</strong> Works with all ENS clients</li>
+                <li>• <strong>Future-proof:</strong> Can migrate to on-chain later</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Claiming Nicknames */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">How to Claim a Nickname</h3>
+            <p className="text-ink-muted text-sm">
+              Nicknames are currently <strong>free</strong> and stored in the database.
+              Future versions will support paid on-chain claims via smart contract.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-cream-50 border border-ink/5 rounded-lg p-4 space-y-3">
+                <h4 className="font-medium">Current: Database (Free)</h4>
+                <ul className="text-ink-muted text-sm space-y-1">
+                  <li>• Claim via Villa SDK authentication</li>
+                  <li>• Instant (no blockchain wait)</li>
+                  <li>• No gas fees required</li>
+                  <li>• Stored in PostgreSQL</li>
+                  <li>• Resolves via CCIP-Read</li>
+                </ul>
+              </div>
+              <div className="bg-cream-50 border border-ink/5 rounded-lg p-4 space-y-3">
+                <h4 className="font-medium">Coming Soon: On-Chain ($1 USDC)</h4>
+                <ul className="text-ink-muted text-sm space-y-1">
+                  <li>• Pay $1 USDC to claim on-chain</li>
+                  <li>• Permanent, decentralized record</li>
+                  <li>• Transferable NFT</li>
+                  <li>• Works without Villa API</li>
+                  <li>• Full ENS compatibility</li>
+                </ul>
+              </div>
+            </div>
+            <CodeBlock
+              code={`// Current flow (automatic in SDK)
+const result = await villa.signIn()
+if (result.success) {
+  // User chose nickname during auth
+  console.log(result.identity.nickname)  // "alice"
+
+  // Nickname is immediately available
+  const resolved = await villa.resolveEns('alice.villa.cash')
+  // Returns: result.identity.address
+}
+
+// Future on-chain claim (coming soon)
+import { claimNicknameOnChain } from '@rockfridrich/villa-sdk'
+
+const tx = await claimNicknameOnChain({
+  nickname: 'alice',
+  paymentToken: 'USDC',
+  amount: parseUnits('1', 6)  // $1 USDC
+})
+
+// Wait for confirmation
+await tx.wait()`}
+              language="typescript"
+            />
+          </div>
+
+          {/* Architecture Diagram */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">Resolution Architecture</h3>
+            <div className="bg-cream-50 border border-ink/5 rounded-lg p-6 space-y-4">
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">1</div>
+                <div>
+                  <h4 className="font-medium">ENS query</h4>
+                  <p className="text-ink-muted text-sm">Client queries alice.villa.cash via ENS protocol</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">2</div>
+                <div>
+                  <h4 className="font-medium">Contract receives query</h4>
+                  <p className="text-ink-muted text-sm">VillaNicknameResolver on Base Sepolia</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">3</div>
+                <div>
+                  <h4 className="font-medium">CCIP-Read callback</h4>
+                  <p className="text-ink-muted text-sm">Contract calls https://villa.cash/api/ens/resolve</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">4</div>
+                <div>
+                  <h4 className="font-medium">Database lookup</h4>
+                  <p className="text-ink-muted text-sm">API queries profiles table for nickname</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">5</div>
+                <div>
+                  <h4 className="font-medium">Return address</h4>
+                  <p className="text-ink-muted text-sm">API returns ABI-encoded address to contract</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-accent-yellow rounded-full flex items-center justify-center font-mono text-sm font-medium flex-shrink-0">6</div>
+                <div>
+                  <h4 className="font-medium">Client receives result</h4>
+                  <p className="text-ink-muted text-sm">ENS client gets resolved address</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recovery Signer */}
+          <div className="space-y-4">
+            <h3 className="font-mono text-lg">BiometricRecoverySigner</h3>
+            <p className="text-ink-muted text-sm">
+              Enables face-based wallet recovery using WebAuthn and smart contract verification.
+              (Feature coming soon)
+            </p>
+            <CodeBlock
+              code={`// Recovery flow (coming soon)
+import { recoverWallet } from '@rockfridrich/villa-sdk'
+
+// User lost device, wants to recover wallet
+const result = await recoverWallet({
+  verificationMethod: 'face',  // Uses WebAuthn
+})
+
+if (result.success) {
+  console.log('Recovered address:', result.address)
+  // User can now access their wallet from new device
+}`}
+              language="typescript"
+            />
+          </div>
+
+          {/* Learn More */}
+          <div className="bg-cream-50 border border-ink/5 rounded-lg p-6 space-y-4">
+            <h3 className="font-medium text-lg">Learn More</h3>
+            <ul className="text-ink-muted text-sm space-y-2">
+              <li>
+                • <a href="https://docs.ens.domains/resolvers/ccip-read" target="_blank" rel="noopener noreferrer" className="text-accent-yellow hover:underline">CCIP-Read specification</a>
+              </li>
+              <li>
+                • <a href="https://github.com/rockfridrich/villa/tree/main/contracts" target="_blank" rel="noopener noreferrer" className="text-accent-yellow hover:underline">Villa contracts source code</a>
+              </li>
+              <li>
+                • <a href="https://base.org" target="_blank" rel="noopener noreferrer" className="text-accent-yellow hover:underline">Base network documentation</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Full Example */}
       <section className="py-20 bg-ink/[0.02]">
         <div className="max-w-3xl mx-auto space-y-8">

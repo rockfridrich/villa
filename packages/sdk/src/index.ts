@@ -90,3 +90,16 @@ export type {
   VillaSession,
   Result,
 } from './types'
+
+// WebAuthn types - authentication primitives
+export type {
+  WebAuthnCredential,
+  AuthChallenge,
+  VillaIdentity,
+  RegistrationOptions,
+  RegistrationResponse,
+  AuthenticationOptions,
+  AuthenticationResponse,
+  VillaAuthConfig,
+} from './webauthn'
+// Note: AuthMessage and AuthMessageType not exported to avoid conflict with iframe.ts

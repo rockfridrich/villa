@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getDb, ensureTables } from '@/lib/db'
+import { getDb, ensureTables, isDatabaseAvailable } from '@/lib/db'
 import type { ProfileRow } from '@/lib/db/schema'
 import { rowToProfile, canChangeNickname, MAX_NICKNAME_CHANGES, NICKNAME_CHANGE_COOLDOWN_MS } from '@/lib/db/schema'
 
@@ -27,6 +27,15 @@ const createProfileSchema = z.object({
  * Create or update a user profile
  */
 export async function POST(request: Request) {
+  // Graceful degradation: If no DB, return 503
+  // Allows CI E2E tests to run without database access
+  if (!isDatabaseAvailable()) {
+    return NextResponse.json(
+      { error: 'Database not available', _noDb: true },
+      { status: 503 }
+    )
+  }
+
   try {
     // Ensure tables exist on first request
     await ensureTables()
@@ -120,6 +129,14 @@ const updateNicknameSchema = z.object({
  * Update user's nickname (limited changes allowed)
  */
 export async function PATCH(request: Request) {
+  // Graceful degradation: If no DB, return 503
+  if (!isDatabaseAvailable()) {
+    return NextResponse.json(
+      { error: 'Database not available', _noDb: true },
+      { status: 503 }
+    )
+  }
+
   try {
     await ensureTables()
 

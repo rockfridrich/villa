@@ -20,7 +20,11 @@ export { AvatarImage, AvatarImageWithFallback } from './AvatarImage'
 export { ConsentRequest } from './ConsentRequest'
 export { FaceRecoverySetup } from './FaceRecoverySetup'
 export { NicknameSelection } from './NicknameSelection'
+export { PasskeyPrompt } from './PasskeyPrompt'
+export type { PasskeyPromptProps } from './PasskeyPrompt'
 export { SignInWelcome } from './SignInWelcome'
+export { VillaAuthScreen } from './VillaAuthScreen'
+export type { VillaAuthScreenProps } from './VillaAuthScreen'
 
 // Profile sub-components
 export { ProfileSection, EditableField } from './profile'

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useMemo, Suspense } from 'react'
-import { VillaAuth, type VillaAuthResponse } from '@/components/sdk'
+import { VillaAuth, type VillaAuthResponse, VillaAuthScreen } from '@/components/sdk'
 
 /**
  * Auth Page - SDK iframe target
@@ -133,6 +133,7 @@ function AuthPageContent() {
   // Parse query params
   const appId = searchParams.get('appId') || 'Villa'
   const queryOrigin = searchParams.get('origin')
+  const useRelayMode = searchParams.get('mode') === 'relay'
 
   // Get validated parent origin once
   const targetOrigin = useMemo(() => {
@@ -146,7 +147,7 @@ function AuthPageContent() {
   // Post message to parent window (iframe) or opener (popup) with validated origin
   const postToParent = useCallback((message: Record<string, unknown>) => {
     if (!inPopup && !inIframe) {
-      console.log('[Villa Auth] Not in iframe or popup, message:', message)
+      // Not in iframe or popup context, skip posting
       return
     }
 
@@ -218,10 +219,46 @@ function AuthPageContent() {
   }, [postToParent, inPopup])
 
   return (
-    <VillaAuth
-      onComplete={handleComplete}
-      appName={appId}
-    />
+    <>
+      {useRelayMode ? (
+        <VillaAuthScreen
+          onSuccess={async (address) => {
+            // Create identity object with minimal data
+            // The SDK will fetch full identity details if needed
+            const identity = {
+              address,
+              nickname: '',
+              avatar: {
+                style: 'lorelei',
+                seed: `${address}-default`,
+                gender: 'female',
+              },
+            }
+
+            // Post to parent (both legacy and new formats for compatibility)
+            postToParent({ type: 'AUTH_SUCCESS', identity })
+            postToParent({ type: 'VILLA_AUTH_SUCCESS', payload: { identity } })
+
+            // Close popup after delay if in popup mode
+            if (inPopup) {
+              setTimeout(() => window.close(), 500)
+            }
+          }}
+          onCancel={() => {
+            postToParent({ type: 'AUTH_CLOSE' })
+            postToParent({ type: 'VILLA_AUTH_CANCEL' })
+            if (inPopup) {
+              setTimeout(() => window.close(), 500)
+            }
+          }}
+        />
+      ) : (
+        <VillaAuth
+          onComplete={handleComplete}
+          appName={appId}
+        />
+      )}
+    </>
   )
 }
 

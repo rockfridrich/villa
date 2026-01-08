@@ -93,15 +93,35 @@ Context summaries preserve knowledge, not file state.
 ✅ CI wait → Background agent, continue working
 ```
 
-### 3. Delegate Heavy Work
+
+### 3. Delegate Heavy Work (ENFORCED)
+
+**CRITICAL: Opus orchestrates, never implements.**
+
 ```
-IF implementation_complex → @build
-IF tests_needed → @test
-IF design_review → @design
-IF ci_monitoring → @ops --background
-IF codebase_exploration → @explore
+❌ NEVER do with Opus:
+- Read implementation files
+- Write component code  
+- Run tests directly
+- Monitor CI/deployments
+- Search codebase
+
+✅ ALWAYS delegate:
+IF implementation_complex → @build (sonnet)
+IF tests_needed → @test (haiku)
+IF design_review → @design (sonnet)
+IF ci_monitoring → @ops --background (haiku)
+IF codebase_exploration → @explore (haiku)
+IF code_review → @review (sonnet)
+IF architecture → @architect (opus)
 ```
 
+**Cost enforcement:**
+- Session with 0% delegation = F grade
+- Target: 80%+ of work delegated
+- Self-check every 3 interactions: "Am I coding? STOP. Delegate."
+
+**Exception:** Meta-work only (agent prompts, reflections, architecture docs)
 ### 4. Document Learning
 After solving non-trivial problems:
 ```

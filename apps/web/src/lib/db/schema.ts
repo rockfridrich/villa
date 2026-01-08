@@ -18,9 +18,23 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- WebAuthn credentials (passkey storage)
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  public_key TEXT NOT NULL,
+  counter BIGINT DEFAULT 0,
+  address VARCHAR(42) NOT NULL,
+  nickname VARCHAR(32) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Indexes for efficient lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_nickname ON profiles(nickname_normalized);
 CREATE INDEX IF NOT EXISTS idx_profiles_created ON profiles(created_at);
+CREATE INDEX IF NOT EXISTS idx_webauthn_user_id ON webauthn_credentials(user_id);
+CREATE INDEX IF NOT EXISTS idx_webauthn_address ON webauthn_credentials(address);
 
 -- Trigger to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -23,8 +23,8 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(
             'bg-accent-yellow text-accent-brown': variant === 'default',
             // Secondary: cream background with ink text
             'bg-cream-100 text-ink-muted': variant === 'secondary',
-            // Destructive: error styling
-            'bg-[#fecaca] text-[#dc2626]': variant === 'destructive',
+            // Destructive: error styling using semantic tokens
+            'bg-error-border text-error-text': variant === 'destructive',
             // Outline: bordered style
             'border border-neutral-200 text-ink-muted': variant === 'outline',
             // Sizes
