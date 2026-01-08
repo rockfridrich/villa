@@ -1,0 +1,305 @@
+# Villa SDK - Lovable Integration Guide
+
+Villa SDK provides privacy-first passkey authentication on Base network.
+Use this guide when integrating Villa authentication in Lovable projects.
+
+## One-Click Integration for Lovable
+
+When prompted to "add Villa authentication" or "integrate passkey login", use this pattern:
+
+### Step 1: Install Dependencies
+
+```bash
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
+```
+
+### Step 2: Wrap Your App with VillaProvider
+
+```tsx
+// src/App.tsx
+import { VillaProvider } from '@rockfridrich/villa-sdk-react'
+import { AppRoutes } from './routes'
+
+export default function App() {
+  return (
+    <VillaProvider config={{ appId: 'your-app-id' }}>
+      <AppRoutes />
+    </VillaProvider>
+  )
+}
+```
+
+### Step 3: Add Authentication Component
+
+```tsx
+// src/components/LoginPage.tsx
+import { useState } from 'react'
+import { VillaAuth, type VillaAuthResult } from '@rockfridrich/villa-sdk-react'
+
+export function LoginPage() {
+  const [user, setUser] = useState(null)
+
+  const handleAuthComplete = (result: VillaAuthResult) => {
+    if (result.success) {
+      setUser(result.identity)
+      // Store user session, redirect, etc.
+    } else {
+      console.error('Auth failed:', result.error)
+    }
+  }
+
+  if (user) {
+    return (
+      <div>
+        <h1>Welcome, @{user.nickname}!</h1>
+        <p>Address: {user.address}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <VillaAuth onComplete={handleAuthComplete} />
+    </div>
+  )
+}
+```
+
+## What Villa Returns After Authentication
+
+```typescript
+interface VillaAuthResult {
+  success: true
+  identity: {
+    address: string      // User's Ethereum address (0x...)
+    nickname: string     // User's unique username
+    avatar: AvatarConfig // Avatar configuration for rendering
+  }
+}
+
+// Or on error:
+interface VillaAuthError {
+  success: false
+  error: string
+  code: 'CANCELLED' | 'AUTH_FAILED' | 'NETWORK_ERROR'
+}
+```
+
+## Headless API (Non-React Projects)
+
+If you're building without React (vanilla JS, Vue, Svelte, etc.):
+
+```typescript
+import { Villa } from '@rockfridrich/villa-sdk'
+
+const villa = new Villa({ appId: 'your-app-id' })
+
+// Sign in
+const result = await villa.signIn()
+
+if (result.success) {
+  console.log('User:', result.identity.nickname)
+  console.log('Address:', result.identity.address)
+}
+
+// Sign out
+await villa.signOut()
+```
+
+## Avatar Rendering
+
+Villa provides avatar configuration. To render the avatar:
+
+```tsx
+import { VillaAvatar } from '@rockfridrich/villa-sdk-react'
+
+function UserProfile({ identity }) {
+  return (
+    <div>
+      <VillaAvatar config={identity.avatar} size={64} />
+      <span>@{identity.nickname}</span>
+    </div>
+  )
+}
+```
+
+## Network Configuration
+
+- **Production**: Base (Chain ID: 8453)
+- **Testnet**: Base Sepolia (Chain ID: 84532)
+
+Villa automatically uses the correct network. No additional configuration needed.
+
+## State Management Integration
+
+### With Context API
+
+```tsx
+// src/contexts/AuthContext.tsx
+import { createContext, useContext, useState, ReactNode } from 'react'
+import type { VillaIdentity } from '@rockfridrich/villa-sdk'
+
+const AuthContext = createContext(null)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<VillaIdentity | null>(null)
+
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)
+```
+
+### With Zustand
+
+```typescript
+import { create } from 'zustand'
+import type { VillaIdentity } from '@rockfridrich/villa-sdk'
+
+interface AuthStore {
+  user: VillaIdentity | null
+  setUser: (user: VillaIdentity | null) => void
+  logout: () => void
+}
+
+export const useAuthStore = create<AuthStore>((set) => ({
+  user: null,
+  setUser: (user) => set({ user }),
+  logout: () => set({ user: null })
+}))
+```
+
+## Protected Routes
+
+```tsx
+// src/components/ProtectedRoute.tsx
+import { useAuth } from '@/contexts/AuthContext'
+import { Navigate } from 'react-router-dom'
+
+export function ProtectedRoute({ children }) {
+  const { user } = useAuth()
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+// Usage in routes
+<Route path="/dashboard" element={
+  <ProtectedRoute>
+    <Dashboard />
+  </ProtectedRoute>
+} />
+```
+
+## Common Patterns
+
+### Loading State
+
+```tsx
+function AuthButton() {
+  const [loading, setLoading] = useState(false)
+
+  return (
+    <VillaAuth
+      onComplete={(result) => {
+        setLoading(false)
+        if (result.success) {
+          // Handle success
+        }
+      }}
+      onStart={() => setLoading(true)}
+    />
+  )
+}
+```
+
+### Error Handling
+
+```tsx
+function AuthFlow() {
+  const [error, setError] = useState<string | null>(null)
+
+  const handleComplete = (result: VillaAuthResult) => {
+    if (!result.success) {
+      switch (result.code) {
+        case 'CANCELLED':
+          setError('Authentication was cancelled')
+          break
+        case 'AUTH_FAILED':
+          setError('Authentication failed. Please try again.')
+          break
+        case 'NETWORK_ERROR':
+          setError('Network error. Check your connection.')
+          break
+      }
+    }
+  }
+
+  return (
+    <div>
+      {error && <div className="error">{error}</div>}
+      <VillaAuth onComplete={handleComplete} />
+    </div>
+  )
+}
+```
+
+## Styling
+
+Villa components are headless and fully customizable. Apply your own CSS classes:
+
+```tsx
+<VillaAuth
+  className="custom-auth-container"
+  buttonClassName="custom-button"
+/>
+```
+
+Or use Tailwind classes directly:
+
+```tsx
+<VillaAuth
+  className="flex flex-col items-center gap-4 p-8 bg-white rounded-lg shadow-lg"
+/>
+```
+
+## Best Practices for Lovable Projects
+
+1. **Always wrap with VillaProvider** at the root level
+2. **Use TypeScript** for better type safety with VillaAuthResult
+3. **Handle all error cases** (CANCELLED, AUTH_FAILED, NETWORK_ERROR)
+4. **Store identity in global state** (Context, Zustand, Redux, etc.)
+5. **Protect sensitive routes** with authentication checks
+6. **Show loading states** during authentication flow
+7. **Test on mobile** - passkeys work with Face ID/Touch ID
+
+## Troubleshooting
+
+**Issue**: "Module not found: @rockfridrich/villa-sdk-react"
+**Fix**: Run `npm install @rockfridrich/villa-sdk-react`
+
+**Issue**: Authentication modal doesn't appear
+**Fix**: Ensure VillaProvider wraps your app and appId is set
+
+**Issue**: TypeScript errors with VillaAuthResult
+**Fix**: Import types: `import type { VillaAuthResult } from '@rockfridrich/villa-sdk-react'`
+
+## Documentation
+
+Full docs: https://developers.villa.cash
+
+## Support
+
+- GitHub: https://github.com/rockfridrich/villa
+- Discord: [Coming soon]
+
+---
+
+Built for Lovable developers 🚀
