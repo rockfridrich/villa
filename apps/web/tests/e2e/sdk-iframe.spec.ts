@@ -117,6 +117,9 @@ test.describe('SDK Iframe - Loading States', () => {
   test('shows overlay with iframe when triggered', async ({ page }) => {
     await page.goto('/test')
 
+    // Ensure page loads before triggering signIn
+    await expect(page.getByText('SDK Test Harness')).toBeVisible({ timeout: 5000 })
+
     await triggerSignIn(page)
 
     // Should show auth overlay
@@ -130,6 +133,9 @@ test.describe('SDK Iframe - Loading States', () => {
 
   test('iframe eventually loads and becomes ready', async ({ page }) => {
     await page.goto('/test')
+
+    // Ensure page loads before triggering signIn
+    await expect(page.getByText('SDK Test Harness')).toBeVisible({ timeout: 5000 })
 
     await triggerSignIn(page)
 

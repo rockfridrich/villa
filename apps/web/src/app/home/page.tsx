@@ -15,6 +15,7 @@ import {
   trackAppUsage,
   type RecentApp,
 } from '@/lib/storage/tinycloud-client'
+import { AddFundsButton } from '@/components/funding'
 
 // Featured ecosystem apps
 const ECOSYSTEM_APPS = [
@@ -322,6 +323,9 @@ export default function HomePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Funds - Cross-chain deposits via Glide */}
+        <AddFundsButton recipientAddress={identity.address} variant="primary" />
 
         {/* Ecosystem Apps */}
         <Card>

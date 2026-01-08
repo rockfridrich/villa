@@ -275,8 +275,12 @@ test.describe('Profile Nickname Edit API', () => {
   // Skip DB-dependent tests when running locally
   test.skip(() => !process.env.DATABASE_URL, 'Requires DATABASE_URL')
 
+  // Increase timeout for DB-dependent tests (default 10s can timeout in CI)
+  test.setTimeout(30000)
+
   test('PATCH /api/profile validates nickname format', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000, // Allow time for DB connection in CI
       data: {
         address: '0x0000000000000000000000000000000000000001',
         newNickname: 'ab' // Too short
@@ -290,6 +294,7 @@ test.describe('Profile Nickname Edit API', () => {
 
   test('PATCH /api/profile rejects invalid address', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000,
       data: {
         address: 'invalid-address',
         newNickname: 'validnickname'
@@ -303,6 +308,7 @@ test.describe('Profile Nickname Edit API', () => {
 
   test('PATCH /api/profile returns 404 for non-existent profile', async ({ request }) => {
     const response = await request.patch('/api/profile', {
+      timeout: 20000,
       data: {
         address: '0x0000000000000000000000000000000000000001',
         newNickname: 'validnickname'

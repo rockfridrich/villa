@@ -37,6 +37,8 @@ services:
         value: staging
       - key: NEXT_PUBLIC_DOMAIN
         value: beta.villa.cash
+      - key: NEXT_PUBLIC_GLIDE_PROJECT_ID
+        value: villa-dev
       - key: DATABASE_URL
         value: "${DATABASE_URL}"
         type: SECRET
