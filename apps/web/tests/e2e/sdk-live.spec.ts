@@ -246,8 +246,8 @@ test.describe('CCIP-Read ENS Gateway', () => {
   })
 
   test('POST /api/ens/resolve returns encoded address for known nickname', async ({ request }) => {
-    // Skip if no DATABASE_URL (requires DB to look up nickname)
-    if (!process.env.DATABASE_URL) {
+    // Skip in CI - GitHub Actions can't reach DigitalOcean DB (firewall)
+    if (!process.env.DATABASE_URL || process.env.CI === 'true') {
       test.skip()
       return
     }
@@ -272,10 +272,11 @@ test.describe('CCIP-Read ENS Gateway', () => {
 })
 
 test.describe('Profile Nickname Edit API', () => {
-  // Skip DB-dependent tests when running locally
-  test.skip(() => !process.env.DATABASE_URL, 'Requires DATABASE_URL')
+  // Skip in CI - GitHub Actions can't reach DigitalOcean DB (firewall)
+  // These tests run locally with DATABASE_URL set
+  test.skip(() => !process.env.DATABASE_URL || process.env.CI === 'true', 'Requires DATABASE_URL and non-CI environment')
 
-  // Increase timeout for DB-dependent tests (default 10s can timeout in CI)
+  // Increase timeout for DB-dependent tests
   test.setTimeout(30000)
 
   test('PATCH /api/profile validates nickname format', async ({ request }) => {

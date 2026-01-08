@@ -95,15 +95,28 @@ bd show <id>         # Task details
 
 ---
 
-## Debugging Principles
+## Self-Awareness Protocol (CRITICAL)
 
-**Two-Strike Rule:** Same CI failure twice? STOP. Check deployment first:
-```bash
-curl -s https://beta.villa.cash/api/health | jq .timestamp
-# Old timestamp = deploy issue, not code issue → delegate to @ops
+**When in trouble, conflict, or confusion:**
+
+```
+1. STOP current action immediately
+2. Check .claude/ for context:
+   - LEARNINGS.md → Known patterns/solutions
+   - reflections/ → Recent session insights
+   - agents/ → Delegate to specialist
+3. If still unclear → ASK the user
+4. NEVER keep trying blindly
 ```
 
-**Time-Box:** Max 10 min on CI debugging. Then delegate or move on.
+**Parallel Terminal Conflict:**
+- User may be working in another terminal
+- Before git operations → ASK if git state is safe
+- Never assume git state matches what you last saw
+
+**Two-Strike Rule:** Same failure twice? STOP. Delegate to agent or ask user.
+
+**Time-Box:** Max 10 min on any debugging. Then delegate or ask.
 
 ---
 
