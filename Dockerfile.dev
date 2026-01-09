@@ -30,5 +30,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 EXPOSE 3000
 
-# Start dev server with turbo
-CMD ["pnpm", "turbo", "run", "dev", "--filter=@villa/web"]
+# Start dev server directly (turbo exits after initial compile)
+WORKDIR /app/apps/web
+CMD ["pnpm", "dev"]

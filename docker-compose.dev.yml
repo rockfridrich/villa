@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    mem_limit: 4g
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_CHAIN_ID=84532
