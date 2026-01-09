@@ -33,6 +33,8 @@ const VILLA_ORIGINS = [
 
 // Development origins (localhost only - NEVER use wildcard)
 const DEV_ORIGINS = [
+  'https://localhost',
+  'https://localhost:443',
   'https://localhost:3000',
   'https://localhost:3001',
   'http://localhost:3000',
@@ -69,13 +71,18 @@ function isInPopup(): boolean {
 }
 
 /**
- * Check if we're on the key.villa.cash domain (auth subdomain)
- * When on key.villa.cash, use dialog mode for 1Password support
+ * Check if we're on the key.villa.cash domain (auth subdomain) or localhost
+ * When on key.villa.cash or localhost, use dialog mode for 1Password support
  */
 function isKeyDomain(): boolean {
   if (typeof window === 'undefined') return false
   const hostname = window.location.hostname
-  return hostname === 'key.villa.cash' || hostname === 'beta-key.villa.cash'
+  return (
+    hostname === 'key.villa.cash' ||
+    hostname === 'beta-key.villa.cash' ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  )
 }
 
 /**
@@ -134,7 +141,7 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
         }
       }
       // Default to https localhost for passkey compatibility
-      return 'https://localhost:3000'
+      return 'https://localhost'
     }
   }
 

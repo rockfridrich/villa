@@ -43,6 +43,20 @@ const AUTH_URLS = {
   'base-sepolia': 'https://beta-key.villa.cash/auth',
 } as const
 
+/** Development auth URL - for local testing */
+const DEV_AUTH_URL = 'https://localhost/auth'
+
+/**
+ * Get auth URL based on network and environment
+ */
+function getAuthUrl(network: 'base' | 'base-sepolia'): string {
+  // Check if running in development
+  if (isDevelopment()) {
+    return DEV_AUTH_URL
+  }
+  return AUTH_URLS[network]
+}
+
 /**
  * VillaBridge - Secure postMessage bridge for Villa SDK
  *
@@ -105,7 +119,7 @@ export class VillaBridge {
       }
       this.authUrl = `${this.config.origin}/auth`
     } else {
-      this.authUrl = AUTH_URLS[this.config.network]
+      this.authUrl = getAuthUrl(this.config.network)
     }
 
     this.log('Initialized with config:', {
