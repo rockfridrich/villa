@@ -177,11 +177,17 @@ function OnboardingContent() {
     const chainId = process.env.NEXT_PUBLIC_CHAIN_ID
     const network = chainId === '84532' ? 'base-sepolia' : 'base'
 
+    // Check if running on localhost for local development
+    const isLocalhost = typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
     // Create VillaBridge to open auth iframe
+    // On localhost, explicitly set origin to use local auth page
     const bridge = new VillaBridge({
       appId: 'villa-web',
       network,
       debug: process.env.NODE_ENV === 'development',
+      origin: isLocalhost ? 'https://localhost' : undefined,
     })
     bridgeRef.current = bridge
 
