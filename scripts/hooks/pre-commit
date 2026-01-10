@@ -1,0 +1,55 @@
+#!/bin/bash
+# Pre-commit hook: Enforces quality gate before every commit
+# Install: cp scripts/hooks/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "🔍 Pre-commit quality gate..."
+
+# Check if this is a merge commit (skip checks)
+if git rev-parse -q --verify MERGE_HEAD > /dev/null; then
+  echo "Merge commit - skipping checks"
+  exit 0
+fi
+
+# Type check (fast)
+echo "  → Type checking..."
+if ! pnpm typecheck --filter @villa/web 2>/dev/null; then
+  echo ""
+  echo "❌ Type check failed"
+  echo "Run 'pnpm typecheck' to see errors"
+  exit 1
+fi
+
+# Check for secrets in staged files
+echo "  → Scanning for secrets..."
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+if echo "$STAGED_FILES" | xargs grep -l -E "(API_KEY|SECRET_KEY|PRIVATE_KEY|PASSWORD)=" 2>/dev/null; then
+  echo ""
+  echo "❌ Possible secrets detected in staged files"
+  echo "Review and remove sensitive data before committing"
+  exit 1
+fi
+
+# Check for .env files
+if echo "$STAGED_FILES" | grep -E "^\.env($|\.)" | grep -v "\.example"; then
+  echo ""
+  echo "❌ .env file staged - this should not be committed"
+  echo "Add to .gitignore or unstage with: git reset HEAD <file>"
+  exit 1
+fi
+
+# Check for large files (>1MB)
+for file in $STAGED_FILES; do
+  if [ -f "$file" ]; then
+    SIZE=$(wc -c < "$file" 2>/dev/null || echo 0)
+    if [ "$SIZE" -gt 1048576 ]; then
+      echo ""
+      echo "❌ Large file detected: $file ($(( SIZE / 1024 ))KB)"
+      echo "Consider using Git LFS for large files"
+      exit 1
+    fi
+  fi
+done
+
+echo "✅ Pre-commit checks passed"

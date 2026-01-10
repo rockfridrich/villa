@@ -1,0 +1,79 @@
+# Codecov configuration for Villa project
+# Docs: https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 0%
+        if_ci_failed: error
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        if_ci_failed: error
+
+  precision: 2
+  round: down
+  range: 70...100
+
+# Package-specific flags
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+      - type: patch
+        target: 80%
+
+flags:
+  web:
+    paths:
+      - apps/web/src/
+    carryforward: true
+
+  sdk:
+    paths:
+      - packages/sdk/src/
+    carryforward: true
+
+  ui:
+    paths:
+      - packages/ui/src/
+    carryforward: true
+
+  api:
+    paths:
+      - apps/api/src/
+    carryforward: true
+
+  contracts:
+    paths:
+      - contracts/src/
+    carryforward: true
+
+# Pull request comments
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+# Ignore paths (generated code, test files, config)
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/node_modules/**"
+  - "**/*.config.ts"
+  - "**/*.config.js"
+  - "**/playwright-report/**"
+  - "**/coverage/**"

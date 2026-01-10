@@ -31,26 +31,23 @@ test.describe('Authentication Flows', () => {
       await expect(page).toHaveURL(/\/onboarding/)
     })
 
-    test('shows welcome screen with authentication options', async ({ page }) => {
+    test('shows welcome screen with get started button', async ({ page }) => {
       await page.goto('/onboarding')
 
       // Wait for page to be fully loaded
       await page.waitForLoadState('networkidle')
 
-      // Check for main elements - heading is "Your identity. No passwords."
-      await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible({ timeout: 10000 })
+      // Check for main elements - heading is "Welcome to Villa", subtext has "Your identity"
+      await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText(/your identity.*no passwords/i)).toBeVisible()
 
-      // Check for CTA buttons with more flexible selectors
-      const signInButton = page.getByRole('button', { name: /sign in/i })
-      const createButton = page.getByRole('button', { name: /create.*villa id/i })
+      // Check for Get Started button (onboarding welcome step)
+      const getStartedButton = page.getByRole('button', { name: /get started/i })
+      await expect(getStartedButton).toBeVisible({ timeout: 10000 })
+      await expect(getStartedButton).toBeEnabled()
 
-      await expect(signInButton).toBeVisible({ timeout: 10000 })
-      await expect(createButton).toBeVisible({ timeout: 10000 })
-      await expect(signInButton).toBeEnabled()
-      await expect(createButton).toBeEnabled()
-
-      // Check for security badge
-      await expect(page.getByText(/secured by passkeys/i)).toBeVisible()
+      // Check for passkey support info
+      await expect(page.getByText(/fingerprint.*face.*security key/i)).toBeVisible()
     })
 
     // Skip: Timing-sensitive test - WebAuthn ceremony starts too quickly to capture loading state

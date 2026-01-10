@@ -1,0 +1,125 @@
+# Docker Compose configuration for Villa test infrastructure
+# Usage: docker compose -f docker-compose.test.yml up --abort-on-container-exit
+#
+# Services:
+# - postgres-test: Ephemeral PostgreSQL for integration tests
+# - test-unit: Unit tests with vitest
+# - test-integration: Integration tests with MSW
+# - test-e2e: E2E tests with Playwright (4 replicas for parallel execution)
+
+services:
+  # Ephemeral PostgreSQL for integration tests (no persistent volume)
+  postgres-test:
+    image: postgres:17-alpine
+    container_name: villa-postgres-test
+    environment:
+      POSTGRES_USER: villa_test
+      POSTGRES_PASSWORD: villa_test_password
+      POSTGRES_DB: villa_test
+    tmpfs:
+      - /var/lib/postgresql/data  # In-memory database for speed
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U villa_test -d villa_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-net
+
+  # Unit tests - fast, no external dependencies
+  test-unit:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runner
+    container_name: villa-test-unit
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TEST_TYPE=unit
+    command: ["pnpm", "--filter", "@villa/web", "test:unit"]
+    volumes:
+      # Mount test results for CI artifacts
+      - ./apps/web/coverage:/app/apps/web/coverage
+    networks:
+      - test-net
+    profiles:
+      - unit
+      - all
+
+  # Integration tests - uses MSW for API mocking
+  test-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runner
+    container_name: villa-test-integration
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TEST_TYPE=integration
+      - DATABASE_URL=postgresql://villa_test:villa_test_password@postgres-test:5432/villa_test
+    command: ["pnpm", "--filter", "@villa/web", "test:integration"]
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./apps/web/coverage:/app/apps/web/coverage
+    networks:
+      - test-net
+    profiles:
+      - integration
+      - all
+
+  # E2E tests - parallel execution with 4 workers
+  test-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runner
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TEST_TYPE=e2e
+      - DATABASE_URL=postgresql://villa_test:villa_test_password@postgres-test:5432/villa_test
+      - BASE_URL=http://localhost:3000
+    command: ["pnpm", "--filter", "@villa/web", "test:e2e:chromium"]
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./apps/web/test-results:/app/apps/web/test-results
+      - ./apps/web/playwright-report:/app/apps/web/playwright-report
+    networks:
+      - test-net
+    profiles:
+      - e2e
+      - all
+    deploy:
+      replicas: 4  # Parallel E2E execution (matches CI sharding strategy)
+
+  # Security tests - validate shell scripts and auth flows
+  test-security:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runner
+    container_name: villa-test-security
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TEST_TYPE=security
+    command: ["pnpm", "--filter", "@villa/web", "test:security"]
+    volumes:
+      - ./apps/web/coverage:/app/apps/web/coverage
+    networks:
+      - test-net
+    profiles:
+      - security
+      - all
+
+networks:
+  test-net:
+    driver: bridge
+
+# No volumes defined - ephemeral testing only

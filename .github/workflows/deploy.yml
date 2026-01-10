@@ -47,27 +47,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          install-playwright: 'false'
 
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: apps/web/.next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-
-            nextjs-${{ runner.os }}-
+      - name: Run linting and type checking
+        run: pnpm run typecheck && pnpm run lint
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run typecheck
-      - run: pnpm run lint
       # Skip unit tests temporarily - jest-dom matchers issue in CI
       # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
 
@@ -91,10 +78,10 @@ jobs:
           fi
 
   # =============================================================================
-  # E2E TESTS - Sharded for parallel execution
+  # E2E TESTS - Sharded for parallel execution on separate machines
   # =============================================================================
   e2e-tests:
-    name: "🧪 E2E (${{ matrix.shard }})"
+    name: "🧪 E2E (Shard ${{ matrix.shard }}/4)"
     needs: quick-ci
     if: |
       github.event_name == 'pull_request' &&
@@ -107,33 +94,80 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: pnpm --filter @villa/web exec playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-      - run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/2
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
+
+      - name: Run E2E tests (shard ${{ matrix.shard }}/4)
+        run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
         env:
           CI: true
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload test results (shard ${{ matrix.shard }})
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-shard-${{ matrix.shard }}
-          path: playwright-report/
+          name: e2e-report-shard-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+            test-results.json
           retention-days: 7
+          include-hidden-files: true
+
+  # =============================================================================
+  # MERGE E2E REPORTS - Combine results from all shards
+  # =============================================================================
+  merge-e2e-reports:
+    name: "📊 Merge E2E Reports"
+    needs: e2e-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
+        with:
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
+
+      - name: Download all shard reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-report-shard-*
+          path: all-reports/
+          merge-multiple: false
+
+      - name: Merge Playwright reports
+        run: |
+          # Merge all shard reports into single HTML report
+          pnpm --filter @villa/web exec playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
+        continue-on-error: true
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-report-merged
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Check if any shard failed
+        run: |
+          # Check if any shard had failures
+          if find all-reports -name "test-results.json" -exec grep -q '"status":"failed"' {} \;; then
+            echo "Some E2E tests failed"
+            exit 1
+          else
+            echo "All E2E tests passed"
+          fi
 
   # =============================================================================
   # CHECK PERMISSION - For preview deploys
@@ -324,13 +358,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
 
       - name: Wait for healthy deployment
         run: |
@@ -435,25 +468,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run typecheck & pnpm run lint & wait
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
+
+      - name: Run linting and type checking
+        run: pnpm run typecheck & pnpm run lint & wait
+
       # Skip unit tests temporarily - jest-dom matchers issue in CI
       # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: pnpm --filter @villa/web exec playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-      - run: pnpm --filter @villa/web exec playwright test --project=chromium
+
+      - name: Run E2E tests
+        run: pnpm --filter @villa/web exec playwright test --project=chromium
         env:
           CI: true
           # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
@@ -629,13 +658,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
 
       - name: Wait for fresh build
         run: |
@@ -680,25 +708,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run typecheck & pnpm run lint & wait
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
+
+      - name: Run linting and type checking
+        run: pnpm run typecheck & pnpm run lint & wait
+
       # Skip unit tests temporarily - jest-dom matchers issue in CI
       # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: pnpm --filter @villa/web exec playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-      - run: pnpm --filter @villa/web exec playwright test --project=chromium
+
+      - name: Run E2E tests
+        run: pnpm --filter @villa/web exec playwright test --project=chromium
         env:
           CI: true
           # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
@@ -926,13 +950,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @villa/web exec playwright install --with-deps chromium
+          install-playwright: 'true'
+          playwright-browser: 'chromium'
 
       - name: Wait for fresh build
         run: |

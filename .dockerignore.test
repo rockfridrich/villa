@@ -1,0 +1,62 @@
+# .dockerignore.test - Optimized for test builds
+# Usage: Build test images with --file to use this ignore file
+
+# Dependencies (will be installed in container)
+node_modules
+.pnpm-store
+
+# Build outputs (will be generated)
+.next
+out
+build
+dist
+
+# Test outputs (will be generated)
+coverage
+playwright-report
+test-results
+
+# Environment files (use Docker env vars instead)
+.env
+.env.local
+.env*.local
+
+# IDE and OS
+.idea
+.vscode
+*.swp
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-compose.dev.yml
+.docker
+
+# Documentation (not needed for tests)
+docs
+*.md
+!README.md
+
+# CI/CD artifacts
+.github
+.do
+
+# Claude development (large, not needed)
+.claude/reflections
+.claude/archive
+.beads
+costs
+
+# Keep test files for test builds
+# (Different from production .dockerignore)
+# tests/
+# *.spec.ts
+# *.test.ts
+# vitest.config*
+# playwright.config*

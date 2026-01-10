@@ -9,7 +9,7 @@ export default defineConfig({
     name: 'integration',
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
+    setupFiles: ['./tests/setup.integration.ts'],
     include: ['tests/integration/**/*.test.ts'],
     coverage: {
       provider: 'v8',

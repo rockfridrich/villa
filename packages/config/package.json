@@ -5,5 +5,13 @@
   "exports": {
     "./tsconfig/base": "./tsconfig/base.json",
     "./tsconfig/nextjs": "./tsconfig/nextjs.json"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
   }
 }

@@ -1,0 +1,58 @@
+name: 'Setup Test Environment'
+description: 'Reusable composite action for test environment setup with caching'
+inputs:
+  install-playwright:
+    description: 'Whether to install Playwright browsers'
+    required: false
+    default: 'true'
+  playwright-browser:
+    description: 'Which Playwright browser to install (chromium, firefox, webkit, or all)'
+    required: false
+    default: 'chromium'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'pnpm'
+
+    - name: Cache Next.js build
+      uses: actions/cache@v4
+      with:
+        path: apps/web/.next/cache
+        key: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+        restore-keys: |
+          nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-
+          nextjs-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Cache Playwright browsers
+      if: inputs.install-playwright == 'true'
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ inputs.playwright-browser }}
+
+    - name: Install Playwright browsers (full)
+      if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm --filter @villa/web exec playwright install --with-deps ${{ inputs.playwright-browser }}
+
+    - name: Install Playwright browser dependencies
+      if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: pnpm --filter @villa/web exec playwright install-deps ${{ inputs.playwright-browser }}

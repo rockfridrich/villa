@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1.4
+# Test Dockerfile for Villa Monorepo
+# Optimized for running unit, integration, and E2E tests in CI/CD
+
+# Stage 1: Dependencies with pnpm
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+WORKDIR /app
+
+# Copy package files for all workspaces
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/config/package.json ./packages/config/
+
+# Install dependencies (including devDependencies for tests)
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# Stage 2: Playwright browsers (heavy, cache separately)
+FROM mcr.microsoft.com/playwright:v1.45.0-jammy AS playwright-base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+WORKDIR /app
+
+# Copy deps from previous stage
+COPY --from=deps /app/node_modules ./node_modules/
+COPY --from=deps /app/apps ./apps/
+COPY --from=deps /app/packages ./packages/
+
+# Stage 3: Test runner
+FROM playwright-base AS test-runner
+
+# Security: non-root user
+RUN groupadd --system --gid 1001 testuser && \
+    useradd --system --uid 1001 --gid testuser testuser && \
+    chown -R testuser:testuser /app
+
+# Copy all source code
+COPY --chown=testuser:testuser . .
+
+# Environment variables for CI mode
+ENV CI=true
+ENV NODE_ENV=test
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Build Next.js for E2E tests (needed for test server)
+RUN --mount=type=cache,target=/app/apps/web/.next/cache \
+    pnpm --filter @villa/web build
+
+USER testuser
+
+# Default command runs all tests
+CMD ["pnpm", "test"]

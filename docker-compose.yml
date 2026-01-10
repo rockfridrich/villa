@@ -1,97 +1,277 @@
-# Villa Development Environment
-# Usage: docker compose up -d
+# Villa Unified Docker Development Environment
+# =============================================================================
+# Single source of truth for all Docker development modes.
 #
-# Services:
-# - postgres: Local PostgreSQL 17 for development
-# - caddy: HTTPS reverse proxy (for passkey testing)
-# - app: Next.js dev server (optional, can run locally)
+# Usage:
+#   docker compose up -d                           # Default: postgres only
+#   docker compose --profile dev up -d             # Dev: postgres + caddy
+#   docker compose --profile test up               # Test: postgres-test + tests
+#   docker compose --profile https up -d           # HTTPS: caddy proxy only
+#   docker compose --profile full up -d            # Full: all services
+#
+# Environment:
+#   Copy .env.docker to .env for local overrides
+#
+# Troubleshooting:
+#   See DOCKER.md for detailed documentation
+# =============================================================================
 
 services:
-  # PostgreSQL for local development
+  # ===========================================================================
+  # PostgreSQL - Development Database
+  # ===========================================================================
   postgres:
     image: postgres:17-alpine
     container_name: villa-postgres
     restart: unless-stopped
+    profiles:
+      - dev
+      - full
+      - ""  # Default profile (runs with no profile specified)
     environment:
-      POSTGRES_USER: villa
-      POSTGRES_PASSWORD: villa_dev_password
-      POSTGRES_DB: villa_dev
+      POSTGRES_USER: ${POSTGRES_USER:-villa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-villa_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-villa_dev}
+      # Performance tuning
+      POSTGRES_SHARED_BUFFERS: ${POSTGRES_SHARED_BUFFERS:-256MB}
+      POSTGRES_MAX_CONNECTIONS: ${POSTGRES_MAX_CONNECTIONS:-100}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U villa -d villa_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-villa} -d ${POSTGRES_DB:-villa_dev}"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - villa-net
 
-  # Optional: Run app in Docker (most devs run locally with `pnpm dev`)
+  # ===========================================================================
+  # PostgreSQL Test - Ephemeral Test Database
+  # ===========================================================================
+  postgres-test:
+    image: postgres:17-alpine
+    container_name: villa-postgres-test
+    profiles:
+      - test
+    environment:
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-villa_test}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-test_password}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-villa_test}
+      # Optimize for speed over durability (test data is ephemeral)
+      POSTGRES_FSYNC: "off"
+      POSTGRES_SYNCHRONOUS_COMMIT: "off"
+      POSTGRES_FULL_PAGE_WRITES: "off"
+    ports:
+      - "${POSTGRES_TEST_PORT:-5433}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER:-villa_test} -d ${POSTGRES_TEST_DB:-villa_test}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - villa-net
+    tmpfs:
+      # Use tmpfs for faster test performance (data lives in memory)
+      - /var/lib/postgresql/data:size=1G
+
+  # ===========================================================================
+  # Next.js Application - Development Server
+  # ===========================================================================
   app:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    container_name: villa-app
     profiles:
-      - full  # Only starts with `docker compose --profile full up`
+      - full
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    mem_limit: ${APP_MEM_LIMIT:-6g}
+    environment:
+      # Node
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-postgresql://villa:villa_dev_password@postgres:5432/villa_dev}
+      # Porto
+      - NEXT_PUBLIC_PORTO_ENV=${NEXT_PUBLIC_PORTO_ENV:-stg}
+      - NEXT_PUBLIC_PORTO_DIALOG_HOST=${NEXT_PUBLIC_PORTO_DIALOG_HOST:-https://id.porto.sh}
+      # App
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_CHAIN_ID=${NEXT_PUBLIC_CHAIN_ID:-84532}
+      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=${NEXT_PUBLIC_ENABLE_DEV_TOOLS:-true}
+      - NEXT_PUBLIC_LOG_LEVEL=${NEXT_PUBLIC_LOG_LEVEL:-debug}
     volumes:
-      - .:/app
+      # Mount source for hot reload
+      - ./apps/web/src:/app/apps/web/src
+      - ./packages/sdk/src:/app/packages/sdk/src
+      - ./packages/ui/src:/app/packages/ui/src
+      # Exclude node_modules and build artifacts
       - /app/node_modules
       - /app/.next
-    environment:
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - DATABASE_URL=postgresql://villa:villa_dev_password@postgres:5432/villa_dev
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       - villa-net
 
-  # Caddy provides automatic HTTPS with local certificates
+  # ===========================================================================
+  # Caddy - HTTPS Reverse Proxy
+  # ===========================================================================
+  # Provides HTTPS for passkey testing (WebAuthn requires secure context)
   caddy:
     image: caddy:2-alpine
     container_name: villa-caddy
     profiles:
-      - https  # Only starts with `docker compose --profile https up`
+      - dev
+      - https
+      - full
     ports:
-      - "80:80"
-      - "443:443"
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      # Use appropriate Caddyfile based on mode
+      - ${CADDYFILE:-./Caddyfile.local}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    environment:
+      - CADDY_DOMAIN=${CADDY_DOMAIN:-local.villa.cash}
+    extra_hosts:
+      # Allow Caddy to reach host machine (for hybrid mode)
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost/caddy-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - villa-net
     depends_on:
-      - app
+      # Only depend on app if full profile (app is in container)
+      app:
+        condition: service_healthy
+        required: false
+
+  # ===========================================================================
+  # Test Runner - Unit Tests
+  # ===========================================================================
+  test-unit:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: villa-test-unit
+    profiles:
+      - test
+    environment:
+      - NODE_ENV=test
+      - CI=${CI:-false}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: pnpm test
     networks:
       - villa-net
 
-  # API service (for testing API separately)
+  # ===========================================================================
+  # Test Runner - E2E Tests (Playwright)
+  # ===========================================================================
+  test-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: villa-test-e2e
+    profiles:
+      - test
+    environment:
+      - NODE_ENV=test
+      - CI=${CI:-true}
+      - BASE_URL=${BASE_URL:-http://app:3000}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://villa_test:test_password@postgres-test:5432/villa_test}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: pnpm test:e2e:chromium
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    networks:
+      - villa-net
+    ipc: host  # Playwright requires shared memory
+
+  # ===========================================================================
+  # API Service (Optional)
+  # ===========================================================================
   api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
+    container_name: villa-api
     profiles:
-      - api  # Only starts with `docker compose --profile api up`
+      - api
+      - full
     ports:
-      - "3001:3001"
+      - "${API_PORT:-3001}:3001"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3001
-      - DATABASE_URL=postgresql://villa:villa_dev_password@postgres:5432/villa_dev
+      - APP_ENV=${APP_ENV:-local}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://villa:villa_dev_password@postgres:5432/villa_dev}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - villa-net
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   villa-net:
+    name: villa-network
     driver: bridge
 
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
+  # Persistent data
   postgres_data:
+    name: villa-postgres-data
+
+  # Ephemeral test data
+  postgres_test_data:
+    name: villa-postgres-test-data
+
+  # Caddy certificates and config
   caddy_data:
+    name: villa-caddy-data
   caddy_config:
+    name: villa-caddy-config
