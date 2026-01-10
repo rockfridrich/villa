@@ -1,0 +1,39 @@
+#!/bin/bash
+# Commit-msg hook: Enforces commit message format
+# Install: cp scripts/hooks/commit-msg .git/hooks/ && chmod +x .git/hooks/commit-msg
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+echo "🔍 Validating commit message..."
+
+# Check for conventional commit format
+if ! echo "$COMMIT_MSG" | head -1 | grep -qE "^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .+"; then
+  echo ""
+  echo "⚠️  Commit message should follow conventional format:"
+  echo "   type(scope): description"
+  echo ""
+  echo "   Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
+  echo "   Example: feat(auth): add passkey support"
+  echo ""
+  # Warning only, don't block
+fi
+
+# Check for Co-Authored-By (required for Claude collaboration)
+if ! echo "$COMMIT_MSG" | grep -q "Co-Authored-By:"; then
+  echo ""
+  echo "📝 Adding Co-Authored-By line..."
+  echo "" >> "$COMMIT_MSG_FILE"
+  echo "Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>" >> "$COMMIT_MSG_FILE"
+  echo "✅ Added Co-Authored-By"
+fi
+
+# Check message length
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
+if [ ${#FIRST_LINE} -gt 72 ]; then
+  echo ""
+  echo "⚠️  First line is ${#FIRST_LINE} chars (recommended: ≤72)"
+  # Warning only, don't block
+fi
+
+echo "✅ Commit message validated"
