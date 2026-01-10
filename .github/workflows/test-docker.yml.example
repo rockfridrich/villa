@@ -1,0 +1,153 @@
+# Example GitHub Actions workflow for Docker-based testing
+# Rename to test-docker.yml to enable
+
+name: Docker Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Prevent concurrent runs on same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast unit + integration tests in parallel
+  fast-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-test-
+
+      - name: Run unit + integration tests in parallel
+        run: ./scripts/run-tests-docker.sh --parallel
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-fast
+          path: apps/web/coverage/
+          retention-days: 7
+
+  # E2E tests with parallel workers
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-test-
+
+      - name: Run E2E tests with 4 workers
+        run: ./scripts/run-tests-docker.sh --e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/web/test-results/
+          retention-days: 14
+
+  # Security tests
+  security-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run security tests
+        run: ./scripts/run-tests-docker.sh --security
+
+  # Full test suite (optional, can be required for main branch)
+  full-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-test-
+
+      - name: Run all tests with cleanup
+        run: ./scripts/run-tests-docker.sh --all --cleanup
+
+      - name: Upload all artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-full
+          path: |
+            apps/web/coverage/
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 30
+
+  # Summary job (useful for branch protection rules)
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [fast-tests, e2e-tests, security-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.fast-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.e2e-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.security-tests.result }}" != "success" ]]; then
+            echo "Some tests failed"
+            exit 1
+          fi
+          echo "All tests passed!"
