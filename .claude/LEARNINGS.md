@@ -1100,6 +1100,66 @@ CMD ["pnpm", "dev"]
 
 **Applied to:** `Dockerfile.dev` line 35
 
+---
+
+### 65. API Verification Before Planning (2026-01-10)
+
+**Token Impact:** Saves 200+ tokens per API error
+
+**The Issue:** Spec referenced `Mode.rpcServer` from Porto SDK - which doesn't exist!
+
+**What Happened:**
+```typescript
+// ❌ Plan specified (doesn't exist):
+Mode.rpcServer({ keystoreHost: 'key.villa.cash' })
+
+// ✅ Actual Porto SDK API:
+Mode.dialog({ host: 'key.villa.cash/auth', ... })
+Mode.relay({ keystoreHost: 'key.villa.cash' })
+```
+
+**Root Cause:** Plan was written from research/speculation, not verified against actual SDK.
+
+**Prevention Checklist:**
+```
+[ ] Read official API reference (not blogs/tutorials)
+[ ] Check TypeScript types in node_modules
+[ ] Test minimal example locally
+[ ] THEN write spec
+```
+
+**Applied to:** passkey-ux.md planning phase
+
+---
+
+### 66. Session Resume Protocol (2026-01-10)
+
+**Token Impact:** Saves 300+ tokens per session resume
+
+**The Issue:** After compaction, re-reading entire codebase wastes tokens.
+
+**Solution:**
+```bash
+# ✅ DO (efficient resume):
+git log --since="[last session date]" --oneline
+git diff HEAD~5..HEAD --name-only
+# Read ONLY changed files + plan checkpoint
+
+# ❌ DON'T (wasteful):
+# Re-read entire porto.ts (600 lines)
+# Re-read entire plan file (480 lines)
+# Re-read unchanged components
+```
+
+**Checkpoint Pattern:**
+```markdown
+<!-- CHECKPOINT: 2026-01-10 14:30 -->
+<!-- COMPLETED: Phases 1-3 -->
+<!-- NEXT: Phase 4 - Testing -->
+```
+
+**Applied to:** All resumed sessions after compaction
+
 
 ### CI Failure - 2026-01-09 14:47
 - Workflow: CI Pipeline
