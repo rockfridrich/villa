@@ -30,11 +30,21 @@ NC='\033[0m' # No Color
 
 # Configuration
 COMPOSE_FILE="$PROJECT_ROOT/docker-compose.test.yml"
-COMPOSE_CMD="docker compose -f $COMPOSE_FILE"
 BUILD_ARGS=""
 RUN_MODE=""
 CLEANUP=false
 VERBOSE=false
+
+# Detect docker compose command (V2 can be "docker compose" or "docker-compose")
+if docker compose version &>/dev/null; then
+    COMPOSE_CMD="docker compose -f $COMPOSE_FILE"
+elif docker-compose version &>/dev/null; then
+    COMPOSE_CMD="docker-compose -f $COMPOSE_FILE"
+else
+    echo -e "${RED}Error: docker compose is not available${NC}"
+    echo "Please install Docker Desktop or Docker Compose V2"
+    exit 1
+fi
 
 # Usage
 usage() {
@@ -136,9 +146,9 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! docker compose version &> /dev/null; then
+if ! docker compose version &> /dev/null && ! docker-compose version &> /dev/null; then
     echo -e "${RED}Error: docker compose is not available${NC}" >&2
-    echo "Try: docker-compose or upgrade to Docker Compose V2" >&2
+    echo "Please install Docker Desktop or Docker Compose V2" >&2
     exit 1
 fi
 
