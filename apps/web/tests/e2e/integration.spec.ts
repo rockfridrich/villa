@@ -17,35 +17,24 @@ test.describe('Onboarding Flow Integration', () => {
   })
 
   test('navigates through onboarding steps correctly', async ({ page }) => {
-    // Step 1: Welcome screen - VillaAuth uses SignInWelcome with heading "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
+    // Step 1: Welcome screen - Onboarding page has "Welcome to Villa" heading
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
 
-    // Click Create Villa ID
-    await page.getByRole('button', { name: /create.*villa id/i }).click()
+    // Click Get Started to open SDK auth iframe
+    await page.getByRole('button', { name: /get started/i }).click()
 
-    // Step 2: VillaAuth transitions to connecting step or WebAuthn starts immediately
-    // Either "Connecting..." text OR an error state is acceptable
-    await expect(
-      page.getByText(/connecting/i)
-        .or(page.getByRole('heading', { name: /something went wrong/i }))
-    ).toBeVisible({ timeout: 10000 })
+    // Step 2: SDK iframe opens, showing "Opening..." state or the iframe content
+    // The iframe loads key.villa.cash/auth which has its own UI
+    // Check for iframe specifically since both button text and iframe may be visible
+    await expect(page.locator('iframe[title="Villa Authentication"]')).toBeVisible({ timeout: 10000 })
   })
 
-  test('shows error step with retry button on failure', async ({ page }) => {
-    // Click create to trigger Porto flow - VillaAuthScreen uses "Create new Villa ID" aria-label
-    await page.getByRole('button', { name: /create.*villa id/i }).click()
+  test('shows loading state when get started clicked', async ({ page }) => {
+    // Click Get Started to open SDK auth iframe
+    await page.getByRole('button', { name: /get started/i }).click()
 
-    // Wait for either connecting or error state
-    await page.waitForTimeout(2000)
-
-    // VillaAuthScreen shows inline error alert, not a heading
-    const errorAlert = page.getByRole('alert').filter({ hasText: /error|failed/i })
-    const isErrorVisible = await errorAlert.isVisible().catch(() => false)
-
-    if (isErrorVisible) {
-      // Verify error UI elements
-      await expect(errorAlert).toBeVisible()
-    }
+    // Should show iframe (SDK auth iframe)
+    await expect(page.locator('iframe[title="Villa Authentication"]')).toBeVisible({ timeout: 10000 })
   })
 
   test.skip('retry button returns to welcome screen', async () => {
@@ -74,15 +63,11 @@ test.describe('Onboarding Flow Integration', () => {
     // The actual validation is tested via the display name input maxLength
   })
 
-  test('sign in flow navigates correctly', async ({ page }) => {
-    // Click Sign In button
-    await page.getByRole('button', { name: /sign in/i }).click()
-
-    // VillaAuth transitions to connecting step or WebAuthn starts immediately
-    await expect(
-      page.getByText(/connecting/i)
-        .or(page.getByRole('heading', { name: /something went wrong/i }))
-    ).toBeVisible({ timeout: 10000 })
+  // Skip: Onboarding page now uses "Get Started" which opens SDK iframe
+  // Sign in is handled in the SDK iframe, not on the main onboarding page
+  test.skip('sign in flow navigates correctly', async ({ page: _page }) => {
+    // The onboarding page now uses VillaBridge SDK for auth
+    // Sign in happens in the SDK iframe at key.villa.cash/auth
   })
 })
 
@@ -143,8 +128,8 @@ test.describe('State Persistence Integration', () => {
     // Should redirect to onboarding
     await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
-    // Heading is "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
+    // Onboarding page has "Welcome to Villa" heading
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
   })
 
   test('invalid identity data does not break the app', async ({ page }) => {
@@ -249,8 +234,8 @@ test.describe('Home Screen Integration', () => {
 
     expect(storedIdentity?.state?.identity).toBeNull()
 
-    // Should show welcome screen - heading is "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
+    // Should show welcome screen - onboarding has "Welcome to Villa" heading
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
   })
 
   test('logout button in header works', async ({ page }) => {
@@ -261,8 +246,8 @@ test.describe('Home Screen Integration', () => {
     // Should redirect to onboarding
     await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
-    // Heading is "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
+    // Onboarding page has "Welcome to Villa" heading
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
   })
 
   test('avatar displays correct initials', async ({ page }) => {
@@ -286,18 +271,15 @@ test.describe('Mobile Integration', () => {
     await page.evaluate(() => localStorage.clear())
     await page.goto('/onboarding')
 
-    // Verify buttons are tappable
-    const createButton = page.getByRole('button', { name: /create.*villa id/i })
-    await expect(createButton).toBeVisible()
+    // Verify buttons are tappable - onboarding page has "Get Started" button
+    const getStartedButton = page.getByRole('button', { name: /get started/i })
+    await expect(getStartedButton).toBeVisible()
 
     // Click works on mobile viewports
-    await createButton.click()
+    await getStartedButton.click()
 
-    // VillaAuth transitions to connecting state or error
-    await expect(
-      page.getByText(/connecting/i)
-        .or(page.getByRole('heading', { name: /something went wrong/i }))
-    ).toBeVisible({ timeout: 10000 })
+    // SDK iframe opens after clicking Get Started
+    await expect(page.locator('iframe[title="Villa Authentication"]')).toBeVisible({ timeout: 10000 })
   })
 
   test('viewport meta is correctly configured', async ({ page }) => {
@@ -359,15 +341,15 @@ test.describe('Mobile Integration', () => {
     await page.goto('/onboarding')
 
     // Check button sizes (should be at least 44x44px for accessibility)
-    // VillaAuthScreen uses "Create new Villa ID" aria-label
-    const createButton = page.getByRole('button', { name: /create.*villa id/i })
-    const buttonBox = await createButton.boundingBox()
+    // Onboarding page has "Get Started" button
+    const getStartedButton = page.getByRole('button', { name: /get started/i })
+    const buttonBox = await getStartedButton.boundingBox()
 
     expect(buttonBox).not.toBeNull()
     expect(buttonBox!.height).toBeGreaterThanOrEqual(44)
 
     // Verify button is within viewport
-    await expect(createButton).toBeInViewport()
+    await expect(getStartedButton).toBeInViewport()
   })
 
   test('copy functionality works on mobile', async ({ page }) => {
@@ -408,21 +390,18 @@ test.describe('Mobile Integration', () => {
     await page.evaluate(() => localStorage.clear())
     await page.goto('/onboarding')
 
-    // Click Create Villa ID (click works for mobile viewports)
-    await page.getByRole('button', { name: /create.*villa id/i }).click()
+    // Click Get Started (click works for mobile viewports)
+    await page.getByRole('button', { name: /get started/i }).click()
 
-    // VillaAuth transitions to connecting state or error
-    await expect(
-      page.getByText(/connecting/i)
-        .or(page.getByRole('heading', { name: /something went wrong/i }))
-    ).toBeVisible({ timeout: 10000 })
+    // SDK iframe opens after clicking Get Started
+    await expect(page.locator('iframe[title="Villa Authentication"]')).toBeVisible({ timeout: 10000 })
   })
 
   test('text is readable on mobile viewport', async ({ page }) => {
     await page.goto('/onboarding')
 
-    // Check font sizes are appropriate - heading is "Your identity. No passwords."
-    const heading = page.getByRole('heading', { name: /your identity/i })
+    // Check font sizes are appropriate - onboarding page has "Welcome to Villa" heading
+    const heading = page.getByRole('heading', { name: /welcome to villa/i })
     const fontSize = await heading.evaluate(el => {
       return window.getComputedStyle(el).fontSize
     })

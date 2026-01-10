@@ -31,12 +31,11 @@ test.describe('Porto SDK Integration', () => {
 
     await page.waitForLoadState('networkidle')
 
-    // Check welcome screen renders - heading is "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
+    // Check welcome screen renders - onboarding page has "Welcome to Villa" heading
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
 
-    // Check both auth buttons are present
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /create villa id/i })).toBeVisible()
+    // Check Get Started button is present (opens SDK auth iframe)
+    await expect(page.getByRole('button', { name: /get started/i })).toBeVisible()
 
     // Filter out expected/benign errors
     const criticalErrors = consoleErrors.filter(

@@ -13,14 +13,13 @@ test.describe('Onboarding Flow', () => {
     await expect(page).toHaveURL(/\/onboarding/)
   })
 
-  test('shows welcome screen with create and sign in buttons', async ({ page }) => {
+  test('shows welcome screen with get started button', async ({ page }) => {
     await page.goto('/onboarding')
 
-    // VillaAuth uses SignInWelcome which has heading "Your identity. No passwords."
-    await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /create.*villa id/i })).toBeVisible()
-    await expect(page.getByText(/secured by passkeys/i)).toBeVisible()
+    // Onboarding page has "Welcome to Villa" heading and "Get Started" button
+    await expect(page.getByRole('heading', { name: /welcome to villa/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /get started/i })).toBeVisible()
+    await expect(page.getByText(/your identity.*no passwords/i)).toBeVisible()
   })
 
   // Skip: WebAuthn ceremony starts immediately, hard to capture "Connecting..." state
@@ -100,9 +99,9 @@ test.describe('Mobile Responsiveness', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload()
 
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeInViewport()
-    await expect(page.getByRole('button', { name: /create.*villa id/i })).toBeVisible()
+    // Onboarding uses "Get Started" button
+    await expect(page.getByRole('button', { name: /get started/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /get started/i })).toBeInViewport()
   })
 
   test('profile screen fits mobile viewport', async ({ page }) => {

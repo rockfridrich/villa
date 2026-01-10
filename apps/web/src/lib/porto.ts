@@ -328,14 +328,14 @@ export async function createAccount(options: AuthOptions | HTMLElement | null = 
     // getPorto handles mode switching atomically - no separate resetPorto() needed
     const porto = getPorto({ container: opts.container, forceRecreate: opts.forceRecreate })
 
-    // Use wallet_connect which shows the full Porto dialog
-    // Porto will show create account UI for new users
+    // Use wallet_connect with createAccount: true to force account creation
+    // This ensures Porto shows the passkey creation flow, not sign-in
     const result = await porto.provider.request({
       method: 'wallet_connect',
       params: [{
         capabilities: {
-          // Don't require email for v1
-          email: false,
+          createAccount: true,  // Force account creation flow
+          email: false,         // Don't require email for v1
         },
       }],
     })
@@ -627,6 +627,7 @@ export async function createAccountHeadless(): Promise<PortoConnectResult> {
       method: 'wallet_connect',
       params: [{
         capabilities: {
+          createAccount: true,  // Force account creation flow
           email: false,
         },
       }],
@@ -748,6 +749,7 @@ export function getPortoIframe(container?: HTMLElement): ReturnType<typeof Porto
 /**
  * Create account using dialog mode (for key.villa.cash iframe)
  * Shows Porto dialog, 1Password can intercept
+ * Uses createAccount: true capability to force new account creation
  */
 export async function createAccountDialog(container?: HTMLElement): Promise<PortoConnectResult> {
   try {
@@ -756,6 +758,7 @@ export async function createAccountDialog(container?: HTMLElement): Promise<Port
       method: 'wallet_connect',
       params: [{
         capabilities: {
+          createAccount: true,  // Force account creation flow
           email: false,
         },
       }],
