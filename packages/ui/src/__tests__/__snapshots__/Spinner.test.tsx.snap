@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Spinner > visual regression > renders consistently with all size variants > spinner-lg 1`] = `
+<div
+  aria-label="Loading"
+  class="animate-spin rounded-full border-yellow-500 border-t-transparent w-12 h-12 border-4"
+  role="status"
+/>
+`;
+
+exports[`Spinner > visual regression > renders consistently with all size variants > spinner-md 1`] = `
+<div
+  aria-label="Loading"
+  class="animate-spin rounded-full border-yellow-500 border-t-transparent w-8 h-8 border-4"
+  role="status"
+/>
+`;
+
+exports[`Spinner > visual regression > renders consistently with all size variants > spinner-sm 1`] = `
+<div
+  aria-label="Loading"
+  class="animate-spin rounded-full border-yellow-500 border-t-transparent w-4 h-4 border-2"
+  role="status"
+/>
+`;

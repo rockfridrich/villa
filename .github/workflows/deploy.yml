@@ -107,7 +107,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -125,7 +125,7 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: pnpm --filter @villa/web exec playwright install-deps chromium
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-      - run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/2
+      - run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
         env:
           CI: true
       - uses: actions/upload-artifact@v4

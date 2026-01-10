@@ -7,10 +7,43 @@ on:
     branches: [main]
 
 jobs:
+  # Determine what tests to run based on changed files
+  determine-tests:
+    name: "🔍 Determine Tests"
+    runs-on: ubuntu-latest
+    outputs:
+      e2e: ${{ steps.filter.outputs.e2e }}
+      unit: ${{ steps.filter.outputs.unit }}
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            e2e:
+              - 'apps/web/src/**'
+              - 'apps/web/tests/**'
+              - 'packages/sdk/**'
+              - 'playwright.config.ts'
+              - 'pnpm-lock.yaml'
+            unit:
+              - 'apps/web/src/**'
+              - 'packages/**'
+              - 'vitest.config.*.ts'
+              - 'pnpm-lock.yaml'
+            docs-only:
+              - '**/*.md'
+              - 'docs/**'
+              - '.claude/**'
+              - 'specs/**'
+
   # Fast check that runs before everything else
   lockfile-check:
     name: "🔒 Lockfile Sync"
     runs-on: ubuntu-latest
+    needs: [determine-tests]
     steps:
       - uses: actions/checkout@v4
 
@@ -164,10 +197,55 @@ jobs:
       - name: Run unit tests
         run: pnpm --filter @villa/web test:unit
 
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: [unit-tests, determine-tests]
+    if: needs.determine-tests.outputs.unit == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run coverage for web
+        run: pnpm --filter @villa/web test:unit --coverage
+        continue-on-error: true
+
+      - name: Run coverage for SDK
+        run: pnpm --filter @rockfridrich/villa-sdk test:coverage
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov (web)
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./apps/web/coverage/coverage-final.json
+          flags: web
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload coverage to Codecov (sdk)
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./packages/sdk/coverage/coverage-final.json
+          flags: sdk
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, determine-tests]
+    if: needs.determine-tests.outputs.e2e == 'true'
     steps:
       - uses: actions/checkout@v4
 
