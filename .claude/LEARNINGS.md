@@ -963,3 +963,112 @@ Porto SDK's `keystoreHost` option (for custom passkey domain) only works in **re
 3. @explore, @test, @ops (haiku): Search, test, deploy
 
 **Enforcement:** Check @ agent mentions in session. Target: 80%+ delegation.
+
+### CI Failure - 2026-01-09 04:05
+- Workflow: CI Pipeline
+- Run: https://github.com/rockfridrich/villa/actions/runs/20830375530
+- Action: Check `gh run view 20830375530 --log-failed`
+
+### CI Failure - 2026-01-09 13:08
+- Workflow: .github/workflows/contracts.yml
+- Run: https://github.com/rockfridrich/villa/actions/runs/20842964233
+- Action: Check `gh run view 20842964233 --log-failed`
+
+### 63. Docker Environment Pre-Check (2026-01-09)
+
+**Token Impact:** Prevents 30-60 min of iterative debugging
+
+**The Pattern:** Before writing ANY Dockerfile or docker-compose.yml, check user's Docker environment.
+
+```bash
+# MANDATORY pre-flight checks:
+docker version                          # Engine version
+docker-compose version                  # Standalone or V2 plugin?
+docker buildx version 2>/dev/null       # BuildKit support?
+docker info | grep "Total Memory"       # Available memory
+
+# Based on results, adapt Dockerfile:
+# - Standalone compose → No BuildKit features
+# - Limited memory → Optimize build stages
+# - Old Docker version → Avoid new syntax
+```
+
+**Anti-Patterns:**
+```
+❌ Assume modern Docker Compose V2
+❌ Use BuildKit cache mounts without checking support
+❌ Guess memory limits without testing
+❌ Use "docker compose" syntax (fails on standalone)
+```
+
+**Correct Approach:**
+```
+✅ Check environment first
+✅ Use compatible syntax (COPY not --mount=type=cache)
+✅ Research memory requirements for monorepo builds
+✅ Test end-to-end flow before declaring "done"
+```
+
+**Incident (2026-01-09):**
+- Used `--mount=type=cache` → failed on standalone docker-compose
+- Set 4GB memory → OOM kills during Next.js compile
+- Used `turbo run dev` → exits after initial compile
+- **Wasted:** 90 minutes, 3 commits, high user frustration
+
+**Solution Applied:**
+1. Removed BuildKit dependencies
+2. Increased memory to 6GB for monorepo
+3. Ran `pnpm dev` directly instead of turbo wrapper
+4. Created `.claude/knowledge/docker-local-dev.md` for future sessions
+
+**Validation Checklist:**
+```bash
+# Before pushing Docker changes:
+[ ] Checked docker-compose version (standalone vs V2)
+[ ] Researched memory requirements for stack
+[ ] Tested full startup → hot reload → auth flow
+[ ] Documented user's environment in knowledge base
+[ ] NOT just: "docker-compose up worked once"
+```
+
+**Key Learning:** User-specific environment details belong in `.claude/knowledge/`, not assumed.
+
+---
+
+### 64. Turbo Behavior in Docker Containers (2026-01-09)
+
+**Token Impact:** 20 min debugging + 1 commit
+
+**The Issue:** `turbo run dev` exits after initial compilation in Docker, doesn't watch for changes.
+
+**Root Cause:**
+- Turbo optimized for CI/CD: compile once, exit
+- In local container: needs persistent watch mode
+- `pnpm dev` (which runs `next dev`) stays running
+
+**Solution:**
+```dockerfile
+# ❌ Wrong: Turbo exits after compile
+CMD ["pnpm", "turbo", "run", "dev"]
+
+# ✅ Correct: Run Next.js directly
+WORKDIR /app/apps/web
+CMD ["pnpm", "dev"]
+```
+
+**When to use Turbo:**
+- CI/CD: `turbo run build` (one-shot compilation)
+- Local: Direct package commands for watch mode
+
+**Applied to:** `Dockerfile.dev` line 35
+
+
+### CI Failure - 2026-01-09 14:47
+- Workflow: CI Pipeline
+- Run: https://github.com/rockfridrich/villa/actions/runs/20844136668
+- Action: Check `gh run view 20844136668 --log-failed`
+
+### CI Failure - 2026-01-09 15:59
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/20845710806
+- Action: Check `gh run view 20845710806 --log-failed`
