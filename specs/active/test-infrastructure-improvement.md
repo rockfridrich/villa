@@ -10,6 +10,7 @@
 ## Executive Summary
 
 This proposal addresses three critical areas of test infrastructure improvement:
+
 1. **E2E Test Speed Optimization** - Run E2E tests only when necessary and parallelize execution
 2. **Test Coverage Expansion** - Ensure all packages have unit/integration tests
 3. **Coverage Visibility** - Display test coverage badges on GitHub
@@ -22,13 +23,13 @@ Current state: 46 test files across the monorepo with significant gaps in `@vill
 
 ### Current State
 
-| Metric | Value |
-|--------|-------|
-| E2E test files | 14 active |
-| Current sharding | 2 shards |
-| CI workers | 50% CPU (~2 workers) |
-| Browser matrix | Chromium only in CI |
-| Average E2E run | ~3-5 minutes |
+| Metric           | Value                |
+| ---------------- | -------------------- |
+| E2E test files   | 14 active            |
+| Current sharding | 2 shards             |
+| CI workers       | 50% CPU (~2 workers) |
+| Browser matrix   | Chromium only in CI  |
+| Average E2E run  | ~3-5 minutes         |
 
 ### Problem Analysis
 
@@ -81,14 +82,17 @@ Create a mapping file that links source files to relevant E2E tests:
 ```typescript
 // apps/web/tests/e2e/test-mapping.ts
 export const componentTestMap: Record<string, string[]> = {
-  'src/components/auth/**': ['auth-flows.spec.ts', 'passkey-*.spec.ts'],
-  'src/components/onboarding/**': ['onboarding.spec.ts', 'returning-user.spec.ts'],
-  'src/components/sdk/**': ['sdk-*.spec.ts', 'integration.spec.ts'],
-  'src/components/funding/**': ['funding.spec.ts'],
-  'src/components/developer/**': ['developer-portal.spec.ts'],
-  'src/lib/porto.ts': ['auth-flows.spec.ts', 'passkey-*.spec.ts'],
-  'src/lib/store.ts': ['**/*.spec.ts'], // Store affects everything
-  'packages/sdk/**': ['sdk-*.spec.ts', 'integration.spec.ts'],
+  "src/components/auth/**": ["auth-flows.spec.ts", "passkey-*.spec.ts"],
+  "src/components/onboarding/**": [
+    "onboarding.spec.ts",
+    "returning-user.spec.ts",
+  ],
+  "src/components/sdk/**": ["sdk-*.spec.ts", "integration.spec.ts"],
+  "src/components/funding/**": ["funding.spec.ts"],
+  "src/components/developer/**": ["developer-portal.spec.ts"],
+  "src/lib/porto.ts": ["auth-flows.spec.ts", "passkey-*.spec.ts"],
+  "src/lib/store.ts": ["**/*.spec.ts"], // Store affects everything
+  "packages/sdk/**": ["sdk-*.spec.ts", "integration.spec.ts"],
 };
 ```
 
@@ -116,20 +120,20 @@ Group tests by execution time and dependencies:
 export default defineConfig({
   projects: [
     {
-      name: 'fast-chromium',
-      testMatch: ['**/guestbook.spec.ts', '**/nickname-edit.spec.ts'],
-      use: { ...devices['Desktop Chrome'] },
+      name: "fast-chromium",
+      testMatch: ["**/guestbook.spec.ts", "**/nickname-edit.spec.ts"],
+      use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: 'auth-chromium',
-      testMatch: ['**/auth-*.spec.ts', '**/passkey-*.spec.ts'],
-      use: { ...devices['Desktop Chrome'] },
+      name: "auth-chromium",
+      testMatch: ["**/auth-*.spec.ts", "**/passkey-*.spec.ts"],
+      use: { ...devices["Desktop Chrome"] },
       dependencies: [], // Can run independently
     },
     {
-      name: 'sdk-chromium',
-      testMatch: ['**/sdk-*.spec.ts', '**/integration.spec.ts'],
-      use: { ...devices['Desktop Chrome'] },
+      name: "sdk-chromium",
+      testMatch: ["**/sdk-*.spec.ts", "**/integration.spec.ts"],
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 });
@@ -178,13 +182,13 @@ Implement test result caching for unchanged files:
 
 ### Expected Impact
 
-| Optimization | Time Savings | Implementation Effort |
-|-------------|-------------|----------------------|
-| Path-based filtering | 60-80% (for non-code PRs) | Low |
-| Component-test mapping | 30-50% (targeted runs) | Medium |
-| 4-shard parallelization | 40-50% | Low |
-| Browser caching | 30-60s per run | Low |
-| Test result caching | Variable | Medium |
+| Optimization            | Time Savings              | Implementation Effort |
+| ----------------------- | ------------------------- | --------------------- |
+| Path-based filtering    | 60-80% (for non-code PRs) | Low                   |
+| Component-test mapping  | 30-50% (targeted runs)    | Medium                |
+| 4-shard parallelization | 40-50%                    | Low                   |
+| Browser caching         | 30-60s per run            | Low                   |
+| Test result caching     | Variable                  | Medium                |
 
 **Total potential improvement: 50-70% reduction in average E2E time**
 
@@ -194,14 +198,14 @@ Implement test result caching for unchanged files:
 
 ### Current Coverage Gaps
 
-| Package | Test Files | Coverage | Status |
-|---------|-----------|----------|--------|
-| @villa/web | 26 | Configured | Active |
-| @villa/sdk | 5 | Configured | Active |
-| @villa/api | 5 | Configured | Active |
-| @villa/ui | 0 | None | **GAP** |
-| @villa/config | 0 | None | **GAP** |
-| contracts | 6 | Codecov | Active |
+| Package       | Test Files | Coverage   | Status  |
+| ------------- | ---------- | ---------- | ------- |
+| @villa/hub    | 26         | Configured | Active  |
+| @villa/sdk    | 5          | Configured | Active  |
+| @villa/api    | 5          | Configured | Active  |
+| @villa/ui     | 0          | None       | **GAP** |
+| @villa/config | 0          | None       | **GAP** |
+| contracts     | 6          | Codecov    | Active  |
 
 ### Package-by-Package Plan
 
@@ -210,6 +214,7 @@ Implement test result caching for unchanged files:
 **Current state:** No tests, no coverage configuration
 
 **Required tests:**
+
 1. Component snapshot tests
 2. Accessibility tests (a11y)
 3. Visual regression tests
@@ -230,26 +235,27 @@ Implement test result caching for unchanged files:
 
 ```typescript
 // packages/ui/vitest.config.ts
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'lcov'],
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.stories.tsx', 'src/**/index.ts'],
+      provider: "v8",
+      reporter: ["text", "json", "lcov"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.stories.tsx", "src/**/index.ts"],
     },
   },
 });
 ```
 
 **Test files to create:**
+
 - `src/__tests__/Button.test.tsx`
 - `src/__tests__/Input.test.tsx`
 - `src/__tests__/Modal.test.tsx`
@@ -262,6 +268,7 @@ export default defineConfig({
 **Current state:** No tests
 
 **Required tests:**
+
 1. Configuration validation tests
 2. Schema validation tests
 3. Type export tests
@@ -270,37 +277,40 @@ export default defineConfig({
 
 ```typescript
 // packages/config/vitest.config.ts
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     globals: true,
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'lcov'],
-      include: ['src/**/*.ts'],
+      provider: "v8",
+      reporter: ["text", "json", "lcov"],
+      include: ["src/**/*.ts"],
     },
   },
 });
 ```
 
 **Test files to create:**
+
 - `src/__tests__/eslint.test.ts`
 - `src/__tests__/typescript.test.ts`
 
 **Coverage target:** 90%+
 
-#### @villa/web - Integration Tests (Priority: High)
+#### @villa/hub - Integration Tests (Priority: High)
 
 **Current state:** Only placeholder files
 
 **Required tests:**
+
 1. Full component integration tests
 2. Page-level integration tests
 3. State management integration tests
 4. API mocking with MSW
 
 **Test files to create:**
+
 - `tests/integration/auth-flow.test.tsx`
 - `tests/integration/onboarding-flow.test.tsx`
 - `tests/integration/sdk-integration.test.tsx`
@@ -312,14 +322,14 @@ export default defineConfig({
 
 ```typescript
 // apps/web/tests/mocks/handlers.ts
-import { rest } from 'msw';
+import { rest } from "msw";
 
 export const handlers = [
-  rest.get('/api/health', (req, res, ctx) => {
-    return res(ctx.json({ status: 'ok', timestamp: Date.now() }));
+  rest.get("/api/health", (req, res, ctx) => {
+    return res(ctx.json({ status: "ok", timestamp: Date.now() }));
   }),
-  rest.post('/api/auth/passkey/*', (req, res, ctx) => {
-    return res(ctx.json({ success: true, userId: 'test-user' }));
+  rest.post("/api/auth/passkey/*", (req, res, ctx) => {
+    return res(ctx.json({ success: true, userId: "test-user" }));
   }),
 ];
 ```
@@ -406,7 +416,7 @@ unit-tests:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: 'pnpm'
+        cache: "pnpm"
     - run: pnpm install
     - run: pnpm test:coverage
     - name: Upload coverage to Codecov
@@ -425,6 +435,7 @@ unit-tests:
 
 ```markdown
 <!-- Add to README.md -->
+
 [![codecov](https://codecov.io/gh/rockfridrich/villa/branch/main/graph/badge.svg)](https://codecov.io/gh/rockfridrich/villa)
 [![Tests](https://github.com/rockfridrich/villa/actions/workflows/ci.yml/badge.svg)](https://github.com/rockfridrich/villa/actions/workflows/ci.yml)
 ```
@@ -432,6 +443,7 @@ unit-tests:
 #### 3.4 PR Coverage Comments
 
 Codecov automatically adds coverage comments to PRs showing:
+
 - Overall coverage change
 - Files changed with coverage delta
 - Uncovered lines
@@ -439,14 +451,14 @@ Codecov automatically adds coverage comments to PRs showing:
 
 ### Coverage Targets
 
-| Package | Current | Target | Priority |
-|---------|---------|--------|----------|
-| @villa/web (unit) | ~60% | 80% | High |
-| @villa/sdk | ~70% | 90% | High |
-| @villa/ui | 0% | 80% | High |
-| @villa/api | ~50% | 80% | Medium |
-| @villa/config | 0% | 90% | Low |
-| contracts | ~80% | 95% | High |
+| Package           | Current | Target | Priority |
+| ----------------- | ------- | ------ | -------- |
+| @villa/hub (unit) | ~60%    | 80%    | High     |
+| @villa/sdk        | ~70%    | 90%    | High     |
+| @villa/ui         | 0%      | 80%    | High     |
+| @villa/api        | ~50%    | 80%    | Medium   |
+| @villa/config     | 0%      | 90%    | Low      |
+| contracts         | ~80%    | 95%    | High     |
 
 ---
 
@@ -487,24 +499,24 @@ Codecov automatically adds coverage comments to PRs showing:
 
 ## Success Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| E2E run time (average) | ~4 min | < 2 min |
-| PRs skipping E2E (eligible) | 0% | 40%+ |
-| Overall test coverage | ~40% | 75%+ |
-| Packages with tests | 4/6 | 6/6 |
-| Coverage visible on GitHub | No | Yes |
+| Metric                      | Current | Target  |
+| --------------------------- | ------- | ------- |
+| E2E run time (average)      | ~4 min  | < 2 min |
+| PRs skipping E2E (eligible) | 0%      | 40%+    |
+| Overall test coverage       | ~40%    | 75%+    |
+| Packages with tests         | 4/6     | 6/6     |
+| Coverage visible on GitHub  | No      | Yes     |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| False negatives from test skipping | High | Component mapping + smoke tests always run |
-| Coverage gaming | Medium | Require meaningful tests, review coverage diff |
-| Flaky E2E tests | High | Retry strategy + test stability monitoring |
-| CI time regression | Medium | Time budgets + alerts |
+| Risk                               | Impact | Mitigation                                     |
+| ---------------------------------- | ------ | ---------------------------------------------- |
+| False negatives from test skipping | High   | Component mapping + smoke tests always run     |
+| Coverage gaming                    | Medium | Require meaningful tests, review coverage diff |
+| Flaky E2E tests                    | High   | Retry strategy + test stability monitoring     |
+| CI time regression                 | Medium | Time budgets + alerts                          |
 
 ---
 

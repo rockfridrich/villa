@@ -135,10 +135,10 @@ echo ""
 
 # 6. Build artifacts
 echo -e "${BOLD}Build${NC}"
-if [ -d "apps/web/.next" ]; then
-    check_pass "apps/web/.next exists (web app built)"
+if [ -d "apps/hub/.next" ]; then
+    check_pass "apps/hub/.next exists (hub app built)"
 else
-    check_warn "apps/web/.next missing (run: pnpm build)"
+    check_warn "apps/hub/.next missing (run: pnpm build)"
 fi
 
 echo ""

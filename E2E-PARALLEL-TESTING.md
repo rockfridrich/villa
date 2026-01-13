@@ -11,6 +11,7 @@ Updated GitHub Actions CI/CD workflows to run E2E tests on 4 separate machines i
 **File**: `.github/actions/setup-test-env/action.yml`
 
 A reusable composite action that handles:
+
 - pnpm and Node.js setup with caching
 - Next.js build caching
 - Playwright browser caching with hash-based keys
@@ -18,6 +19,7 @@ A reusable composite action that handles:
 - Smart cache restoration (full install vs deps only)
 
 **Benefits**:
+
 - Reduces duplication across 10+ workflow jobs
 - Consistent caching strategy across all jobs
 - Easier maintenance (single source of truth)
@@ -26,6 +28,7 @@ A reusable composite action that handles:
 ### 2. Updated CI Workflow (ci.yml)
 
 **Changes**:
+
 - Replaced single `e2e` job with `e2e-matrix` job using 4 shards
 - Each shard runs on separate machine (not sharding on 1 machine)
 - Added `merge-e2e-reports` job to combine results from all shards
@@ -33,6 +36,7 @@ A reusable composite action that handles:
 - All jobs now use the reusable `setup-test-env` action
 
 **Matrix Strategy**:
+
 ```yaml
 strategy:
   fail-fast: false
@@ -41,6 +45,7 @@ strategy:
 ```
 
 **Performance Improvement**:
+
 - Before: ~8-12 minutes (1 machine running all tests sequentially)
 - After: ~3-4 minutes (4 machines running tests in parallel)
 - ~3x faster E2E testing
@@ -48,6 +53,7 @@ strategy:
 ### 3. Updated Deploy Workflow (deploy.yml)
 
 **Changes**:
+
 - Updated all jobs to use reusable `setup-test-env` action:
   - `quick-ci` (no Playwright)
   - `e2e-tests` (with Playwright, 4 shards)
@@ -64,6 +70,7 @@ strategy:
   - `test-results.json`
 
 **Artifact Strategy**:
+
 - Each shard uploads as `e2e-report-shard-N`
 - Merge job downloads all shards
 - Creates unified HTML report as `e2e-report-merged`
@@ -74,32 +81,39 @@ strategy:
 ### Caching Strategy
 
 **Playwright Browsers**:
+
 ```yaml
 cache-key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ browser }}
 ```
+
 - Keyed by OS, lockfile hash, and browser type
 - Cache hit: Only install browser dependencies (~10s)
 - Cache miss: Full install with dependencies (~60s)
 
 **Next.js Build**:
+
 ```yaml
 cache-key: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
 ```
+
 - Keyed by OS, lockfile, and source file hashes
 - Speeds up subsequent builds significantly
 
 **pnpm Dependencies**:
+
 - Handled by `actions/setup-node` built-in caching
 - Automatically keyed by `pnpm-lock.yaml` hash
 
 ### Sharding Strategy
 
 **Distribution**:
+
 - Playwright automatically distributes tests across shards
 - Each machine runs exactly 1/4 of the total test suite
 - Tests are balanced by file, not by duration (Playwright default)
 
 **Execution**:
+
 ```bash
 playwright test --project=chromium --shard=1/4  # Machine 1
 playwright test --project=chromium --shard=2/4  # Machine 2
@@ -108,6 +122,7 @@ playwright test --project=chromium --shard=4/4  # Machine 4
 ```
 
 **Isolation**:
+
 - Each shard runs on completely separate GitHub Actions runner
 - No shared state between machines
 - Failures in one shard don't affect others (fail-fast: false)
@@ -115,17 +130,20 @@ playwright test --project=chromium --shard=4/4  # Machine 4
 ### Report Merging
 
 **Process**:
+
 1. Each shard uploads its results as artifacts
 2. Merge job downloads all artifacts
 3. Playwright's `merge-reports` combines them
 4. Unified HTML report shows all test results
 
 **Command**:
+
 ```bash
 playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ```
 
 **Benefits**:
+
 - Single unified view of all test results
 - Proper test statistics (total, passed, failed)
 - Traces and screenshots available across all shards
@@ -134,6 +152,7 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ## CI/CD Flow
 
 ### Pull Request Flow
+
 ```
 1. quick-ci (typecheck + lint)
    ↓
@@ -147,6 +166,7 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ```
 
 ### Main Branch Flow (Staging)
+
 ```
 1. ci-staging (typecheck + lint + e2e full suite)
    ↓
@@ -156,6 +176,7 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ```
 
 ### Release Tag Flow (Production)
+
 ```
 1. ci-production (typecheck + lint + e2e full suite)
    ↓
@@ -167,11 +188,13 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ## Cost Optimization
 
 **Before**:
+
 - E2E tests: 1 machine × 12 minutes = 12 machine-minutes
 - Browser install: ~60s per run (no cache)
 - Total CI time per PR: ~15 minutes
 
 **After**:
+
 - E2E tests: 4 machines × 3 minutes = 12 machine-minutes (same cost)
 - Browser install: ~10s per run (with cache)
 - Total CI time per PR: ~5 minutes
@@ -181,12 +204,14 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ## Monitoring
 
 **Successful Run Indicators**:
+
 - All 4 shards complete without failure
 - `merge-e2e-reports` job succeeds
 - Merged report artifact is created
 - No "Some E2E tests failed" message
 
 **Failure Debugging**:
+
 1. Check which shard(s) failed in Actions summary
 2. Download `playwright-report-shard-N` for failed shard
 3. Or download `playwright-report-merged` for full view
@@ -195,6 +220,7 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ## Future Enhancements
 
 ### Potential Optimizations:
+
 1. **Smart sharding** by test duration (vs current file-based)
 2. **Conditional sharding** (only shard if >X tests)
 3. **Docker layer caching** for faster image builds
@@ -202,6 +228,7 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 5. **Flaky test detection** across shards
 
 ### Monitoring Improvements:
+
 1. Track shard execution times
 2. Alert on shard imbalance (one much slower)
 3. Detect cache hit rates
@@ -222,13 +249,15 @@ playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
 ## Testing the Changes
 
 **Local verification** (not needed for CI changes):
+
 ```bash
 # Test sharding locally
-pnpm --filter @villa/web exec playwright test --project=chromium --shard=1/4
-pnpm --filter @villa/web exec playwright test --project=chromium --shard=2/4
+pnpm --filter @villa/hub exec playwright test --project=chromium --shard=1/4
+pnpm --filter @villa/hub exec playwright test --project=chromium --shard=2/4
 ```
 
 **CI verification**:
+
 1. Create a PR with any change
 2. Observe "E2E Tests (Shard X/4)" jobs running in parallel
 3. Check "Merge E2E Reports" job succeeds
@@ -237,6 +266,7 @@ pnpm --filter @villa/web exec playwright test --project=chromium --shard=2/4
 ## Rollback Plan
 
 If issues arise:
+
 1. Revert commits to ci.yml and deploy.yml
 2. Keep `.github/actions/setup-test-env/` (no harm)
 3. Previous single-machine E2E job pattern restored

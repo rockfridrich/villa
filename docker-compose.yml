@@ -27,7 +27,7 @@ services:
     profiles:
       - dev
       - full
-      - ""  # Default profile (runs with no profile specified)
+      - "" # Default profile (runs with no profile specified)
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-villa}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-villa_dev_password}
@@ -41,7 +41,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-villa} -d ${POSTGRES_DB:-villa_dev}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-villa} -d ${POSTGRES_DB:-villa_dev}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -71,7 +75,11 @@ services:
       - postgres_test_data:/var/lib/postgresql/data
       - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER:-villa_test} -d ${POSTGRES_TEST_DB:-villa_test}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_TEST_USER:-villa_test} -d ${POSTGRES_TEST_DB:-villa_test}",
+        ]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -112,19 +120,90 @@ services:
       - NEXT_PUBLIC_LOG_LEVEL=${NEXT_PUBLIC_LOG_LEVEL:-debug}
     volumes:
       # Mount source for hot reload
-      - ./apps/web/src:/app/apps/web/src
+      - ./apps/hub/src:/app/apps/hub/src
       - ./packages/sdk/src:/app/packages/sdk/src
       - ./packages/ui/src:/app/packages/ui/src
       # Exclude node_modules and build artifacts
       - /app/node_modules
       - /app/.next
-      - /app/apps/web/node_modules
-      - /app/apps/web/.next
+      - /app/apps/hub/node_modules
+      - /app/apps/hub/.next
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - villa-net
+
+  # ===========================================================================
+  # Key Application - Passkey Management App
+  # ===========================================================================
+  key:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - APP_PATH=apps/key
+    container_name: villa-key
+    profiles:
+      - dev
+      - full
+    ports:
+      - "${KEY_PORT:-3002}:3002"
+    mem_limit: ${APP_MEM_LIMIT:-6g}
+    environment:
+      # Node
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
+      - PORT=3002
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-postgresql://villa:villa_dev_password@postgres:5432/villa_dev}
+      # Porto
+      - NEXT_PUBLIC_PORTO_ENV=${NEXT_PUBLIC_PORTO_ENV:-stg}
+      - NEXT_PUBLIC_PORTO_DIALOG_HOST=${NEXT_PUBLIC_PORTO_DIALOG_HOST:-https://id.porto.sh}
+      # App
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_KEY_APP_URL:-https://local-key.villa.cash}
+      - NEXT_PUBLIC_HUB_URL=${NEXT_PUBLIC_HUB_URL:-https://local.villa.cash}
+      - NEXT_PUBLIC_CHAIN_ID=${NEXT_PUBLIC_CHAIN_ID:-84532}
+      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=${NEXT_PUBLIC_ENABLE_DEV_TOOLS:-true}
+      - NEXT_PUBLIC_LOG_LEVEL=${NEXT_PUBLIC_LOG_LEVEL:-debug}
+    volumes:
+      # Mount source for hot reload
+      - ./apps/key/src:/app/apps/key/src
+      - ./packages/sdk/src:/app/packages/sdk/src
+      - ./packages/ui/src:/app/packages/ui/src
+      # Exclude node_modules and build artifacts
+      - /app/node_modules
+      - /app/.next
+      - /app/apps/key/node_modules
+      - /app/apps/key/.next
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3002/api/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -157,7 +236,16 @@ services:
       # Allow Caddy to reach host machine (for hybrid mode)
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost/caddy-health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "--no-check-certificate",
+          "https://localhost/caddy-health",
+        ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -217,7 +305,7 @@ services:
         condition: service_healthy
     networks:
       - villa-net
-    ipc: host  # Playwright requires shared memory
+    ipc: host # Playwright requires shared memory
 
   # ===========================================================================
   # API Service (Optional)
@@ -242,7 +330,15 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3

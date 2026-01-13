@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Copy package files for all workspaces
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web/package.json ./apps/web/
+COPY apps/hub/package.json ./apps/hub/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
@@ -49,10 +49,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Build Next.js for E2E tests (needed for test server)
-RUN pnpm --filter @villa/web build
+RUN pnpm --filter @villa/hub build
 
 # Fix permissions for .next directory after build (built as root, needed by testuser)
-RUN chown -R testuser:testuser /app/apps/web/.next
+RUN chown -R testuser:testuser /app/apps/hub/.next
 
 USER testuser
 

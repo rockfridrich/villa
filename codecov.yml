@@ -29,9 +29,9 @@ flag_management:
         target: 80%
 
 flags:
-  web:
+  hub:
     paths:
-      - apps/web/src/
+      - apps/hub/src/
     carryforward: true
 
   sdk:

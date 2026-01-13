@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Copy package files for all workspaces
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web/package.json ./apps/web/
+COPY apps/hub/package.json ./apps/hub/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
@@ -37,8 +37,8 @@ ARG NEXT_PUBLIC_CHAIN_ID=84532
 ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
 
 # Build with Turborepo (builds all dependencies first)
-RUN --mount=type=cache,target=/app/apps/web/.next/cache \
-    pnpm --filter @villa/web build
+RUN --mount=type=cache,target=/app/apps/hub/.next/cache \
+    pnpm --filter @villa/hub build
 
 # Stage 3: Production-optimized runner
 FROM node:20-alpine AS runner
@@ -54,18 +54,18 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Copy entire standalone directory to preserve pnpm symlink structure
-# In monorepo, standalone has: /apps/web/ with symlinks to /node_modules/.pnpm/
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+# In monorepo, standalone has: /apps/hub/ with symlinks to /node_modules/.pnpm/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
 
 # Copy static assets and public files into the correct location
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./apps/hub/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./apps/hub/public
 
 USER nextjs
 EXPOSE 3000
 
-# Server.js is inside apps/web/ in the monorepo structure
-WORKDIR /app/apps/web
+# Server.js is inside apps/hub/ in the monorepo structure
+WORKDIR /app/apps/hub
 
 # Healthcheck for container orchestration
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

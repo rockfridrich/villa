@@ -20,7 +20,7 @@
  * ```
  */
 
-import type { Identity } from '../types'
+import type { Identity } from "../types";
 import type {
   BridgeConfig,
   BridgeState,
@@ -28,36 +28,44 @@ import type {
   BridgeEventMap,
   VillaMessage,
   VillaErrorCode,
-} from './types'
-import { validateOrigin, parseVillaMessage, isDevelopment, ALLOWED_ORIGINS } from './validation'
+} from "./types";
+import {
+  validateOrigin,
+  parseVillaMessage,
+  isDevelopment,
+  ALLOWED_ORIGINS,
+} from "./validation";
 
 /** Default timeout: 5 minutes */
-const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000
+const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
 /** Default iframe detection timeout: 3 seconds */
-const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000
+const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
 
-/** Villa auth URLs by network */
 const AUTH_URLS = {
-  base: 'https://villa.cash/auth',
-  'base-sepolia': 'https://beta.villa.cash/auth',
-} as const
+  base: "https://key.villa.cash/auth",
+  "base-sepolia": "https://beta-key.villa.cash/auth",
+} as const;
 
 /**
  * Get auth URL based on network and environment
  * In development: uses current origin (local.villa.cash or localhost)
  */
-function getAuthUrl(network: 'base' | 'base-sepolia'): string {
+function getAuthUrl(network: "base" | "base-sepolia"): string {
   // In development, use the same origin as the current page
-  if (isDevelopment() && typeof window !== 'undefined') {
-    const { hostname, protocol, port } = window.location
+  if (isDevelopment() && typeof window !== "undefined") {
+    const { hostname, protocol, port } = window.location;
     // local.villa.cash, localhost, or 127.0.0.1
-    if (hostname === 'local.villa.cash' || hostname === 'localhost' || hostname === '127.0.0.1') {
-      const portSuffix = port ? `:${port}` : ''
-      return `${protocol}//${hostname}${portSuffix}/auth`
+    if (
+      hostname === "local.villa.cash" ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1"
+    ) {
+      const portSuffix = port ? `:${port}` : "";
+      return `${protocol}//${hostname}${portSuffix}/auth`;
     }
   }
-  return AUTH_URLS[network]
+  return AUTH_URLS[network];
 }
 
 /**
@@ -72,17 +80,17 @@ function getAuthUrl(network: 'base' | 'base-sepolia'): string {
  * - Debug logging (opt-in)
  */
 export class VillaBridge {
-  private config: Required<BridgeConfig> & { iframeDetectionTimeout: number }
-  private iframe: HTMLIFrameElement | null = null
-  private popup: Window | null = null
-  private container: HTMLDivElement | null = null
-  private listeners: Map<BridgeEventName, Set<Function>> = new Map()
-  private messageHandler: ((event: MessageEvent) => void) | null = null
-  private timeoutId: ReturnType<typeof setTimeout> | null = null
-  private iframeDetectionTimeoutId: ReturnType<typeof setTimeout> | null = null
-  private state: BridgeState = 'idle'
-  private readonly authUrl: string
-  private mode: 'iframe' | 'popup' = 'iframe'
+  private config: Required<BridgeConfig> & { iframeDetectionTimeout: number };
+  private iframe: HTMLIFrameElement | null = null;
+  private popup: Window | null = null;
+  private container: HTMLDivElement | null = null;
+  private listeners: Map<BridgeEventName, Set<Function>> = new Map();
+  private messageHandler: ((event: MessageEvent) => void) | null = null;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
+  private iframeDetectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private state: BridgeState = "idle";
+  private readonly authUrl: string;
+  private mode: "iframe" | "popup" = "iframe";
 
   /**
    * Create a new VillaBridge instance
@@ -92,24 +100,25 @@ export class VillaBridge {
    */
   constructor(config: BridgeConfig) {
     // Validate required fields
-    if (!config.appId || typeof config.appId !== 'string') {
-      throw new Error('[VillaBridge] appId is required')
+    if (!config.appId || typeof config.appId !== "string") {
+      throw new Error("[VillaBridge] appId is required");
     }
 
     if (config.appId.trim().length === 0) {
-      throw new Error('[VillaBridge] appId cannot be empty')
+      throw new Error("[VillaBridge] appId cannot be empty");
     }
 
     // Set defaults
     this.config = {
       appId: config.appId.trim(),
-      origin: config.origin || '',
-      network: config.network || 'base',
+      origin: config.origin || "",
+      network: config.network || "base",
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,
       debug: config.debug || false,
       preferPopup: config.preferPopup || false,
-      iframeDetectionTimeout: config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
-    }
+      iframeDetectionTimeout:
+        config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
+    };
 
     // Determine auth URL
     if (this.config.origin) {
@@ -117,33 +126,33 @@ export class VillaBridge {
       if (!this.isOriginAllowed(this.config.origin)) {
         throw new Error(
           `[VillaBridge] Origin not in allowlist: ${this.config.origin}. ` +
-            `Allowed: ${ALLOWED_ORIGINS.join(', ')}`
-        )
+            `Allowed: ${ALLOWED_ORIGINS.join(", ")}`,
+        );
       }
-      this.authUrl = `${this.config.origin}/auth`
+      this.authUrl = `${this.config.origin}/auth`;
     } else {
-      this.authUrl = getAuthUrl(this.config.network)
+      this.authUrl = getAuthUrl(this.config.network);
     }
 
-    this.log('Initialized with config:', {
+    this.log("Initialized with config:", {
       appId: this.config.appId,
       network: this.config.network,
       authUrl: this.authUrl,
-    })
+    });
   }
 
   /**
    * Get current bridge state
    */
   getState(): BridgeState {
-    return this.state
+    return this.state;
   }
 
   /**
    * Check if bridge is currently open
    */
   isOpen(): boolean {
-    return this.state === 'ready' || this.state === 'authenticating'
+    return this.state === "ready" || this.state === "authenticating";
   }
 
   /**
@@ -157,26 +166,30 @@ export class VillaBridge {
    * @returns Promise that resolves when ready
    * @throws {Error} If bridge is already open or DOM is unavailable
    */
-  async open(scopes: string[] = ['profile']): Promise<void> {
-    if (this.state !== 'idle' && this.state !== 'closed') {
-      throw new Error(`[VillaBridge] Cannot open: current state is ${this.state}`)
+  async open(scopes: string[] = ["profile"]): Promise<void> {
+    if (this.state !== "idle" && this.state !== "closed") {
+      throw new Error(
+        `[VillaBridge] Cannot open: current state is ${this.state}`,
+      );
     }
 
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      throw new Error('[VillaBridge] Cannot open: window/document not available (SSR?)')
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      throw new Error(
+        "[VillaBridge] Cannot open: window/document not available (SSR?)",
+      );
     }
 
-    this.state = 'opening'
+    this.state = "opening";
 
     // If preferPopup is set, go straight to popup mode
     if (this.config.preferPopup) {
-      this.log('Opening auth popup (preferPopup=true)...')
-      return this.openPopup(scopes)
+      this.log("Opening auth popup (preferPopup=true)...");
+      return this.openPopup(scopes);
     }
 
     // Otherwise, try iframe with fallback to popup
-    this.log('Opening auth iframe (with popup fallback)...')
-    return this.openIframeWithFallback(scopes)
+    this.log("Opening auth iframe (with popup fallback)...");
+    return this.openIframeWithFallback(scopes);
   }
 
   /**
@@ -186,43 +199,43 @@ export class VillaBridge {
     return new Promise((resolve, reject) => {
       try {
         // Create container with fullscreen styles
-        this.container = this.createContainer()
+        this.container = this.createContainer();
 
         // Create iframe
-        this.iframe = this.createIframe(scopes)
+        this.iframe = this.createIframe(scopes);
 
         // Append iframe to container, container to body
-        this.container.appendChild(this.iframe)
-        document.body.appendChild(this.container)
+        this.container.appendChild(this.iframe);
+        document.body.appendChild(this.container);
 
         // Block body scroll
-        document.body.style.overflow = 'hidden'
+        document.body.style.overflow = "hidden";
 
         // Set up message listener
-        this.setupMessageListener(resolve)
+        this.setupMessageListener(resolve);
 
         // Set up iframe detection timeout - if we don't get VILLA_READY within X seconds,
         // assume iframe is blocked and fall back to popup
         this.iframeDetectionTimeoutId = setTimeout(() => {
-          this.log('Iframe appears to be blocked, falling back to popup...')
-          this.cleanupIframe()
-          this.openPopup(scopes)
-            .then(resolve)
-            .catch(reject)
-        }, this.config.iframeDetectionTimeout)
+          this.log("Iframe appears to be blocked, falling back to popup...");
+          this.cleanupIframe();
+          this.openPopup(scopes).then(resolve).catch(reject);
+        }, this.config.iframeDetectionTimeout);
 
         // Set up overall timeout
         this.timeoutId = setTimeout(() => {
-          this.log('Timeout waiting for VILLA_READY')
-          this.emit('error', 'Connection timeout', 'TIMEOUT')
-          this.close()
-          reject(new Error('[VillaBridge] Timeout waiting for auth to be ready'))
-        }, this.config.timeout)
+          this.log("Timeout waiting for VILLA_READY");
+          this.emit("error", "Connection timeout", "TIMEOUT");
+          this.close();
+          reject(
+            new Error("[VillaBridge] Timeout waiting for auth to be ready"),
+          );
+        }, this.config.timeout);
       } catch (error) {
-        this.state = 'idle'
-        reject(error)
+        this.state = "idle";
+        reject(error);
       }
-    })
+    });
   }
 
   /**
@@ -231,64 +244,70 @@ export class VillaBridge {
   private async openPopup(scopes: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.mode = 'popup'
+        this.mode = "popup";
 
         // Build URL with params
-        const url = new URL(this.authUrl)
-        url.searchParams.set('appId', this.config.appId)
-        url.searchParams.set('scopes', scopes.join(','))
-        url.searchParams.set('origin', window.location.origin)
-        url.searchParams.set('mode', 'popup') // Signal to auth page it's in popup mode
+        const url = new URL(this.authUrl);
+        url.searchParams.set("appId", this.config.appId);
+        url.searchParams.set("scopes", scopes.join(","));
+        url.searchParams.set("origin", window.location.origin);
+        url.searchParams.set("mode", "popup"); // Signal to auth page it's in popup mode
 
         // Open popup window
-        const width = 480
-        const height = 720
-        const left = Math.max(0, (window.screen.width - width) / 2)
-        const top = Math.max(0, (window.screen.height - height) / 2)
+        const width = 480;
+        const height = 720;
+        const left = Math.max(0, (window.screen.width - width) / 2);
+        const top = Math.max(0, (window.screen.height - height) / 2);
 
         this.popup = window.open(
           url.toString(),
-          'villa-auth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`
-        )
+          "villa-auth",
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`,
+        );
 
         if (!this.popup) {
           // Popup was blocked
-          this.log('Popup blocked by browser')
-          this.emit('error', 'Popup blocked. Please allow popups for this site.', 'NETWORK_ERROR')
-          this.state = 'idle'
-          reject(new Error('[VillaBridge] Popup blocked by browser'))
-          return
+          this.log("Popup blocked by browser");
+          this.emit(
+            "error",
+            "Popup blocked. Please allow popups for this site.",
+            "NETWORK_ERROR",
+          );
+          this.state = "idle";
+          reject(new Error("[VillaBridge] Popup blocked by browser"));
+          return;
         }
 
         // Set up message listener (works for both iframe and popup)
-        this.setupMessageListener(resolve)
+        this.setupMessageListener(resolve);
 
         // Check if popup was closed by user
         const popupCheckInterval = setInterval(() => {
           if (this.popup && this.popup.closed) {
-            clearInterval(popupCheckInterval)
-            if (this.state !== 'closed') {
-              this.log('Popup was closed by user')
-              this.emit('cancel')
-              this.close()
+            clearInterval(popupCheckInterval);
+            if (this.state !== "closed") {
+              this.log("Popup was closed by user");
+              this.emit("cancel");
+              this.close();
             }
           }
-        }, 500)
+        }, 500);
 
         // Set up overall timeout
         this.timeoutId = setTimeout(() => {
-          clearInterval(popupCheckInterval)
-          this.log('Timeout waiting for VILLA_READY')
-          this.emit('error', 'Connection timeout', 'TIMEOUT')
-          this.close()
-          reject(new Error('[VillaBridge] Timeout waiting for popup to be ready'))
-        }, this.config.timeout)
+          clearInterval(popupCheckInterval);
+          this.log("Timeout waiting for VILLA_READY");
+          this.emit("error", "Connection timeout", "TIMEOUT");
+          this.close();
+          reject(
+            new Error("[VillaBridge] Timeout waiting for popup to be ready"),
+          );
+        }, this.config.timeout);
       } catch (error) {
-        this.state = 'idle'
-        reject(error)
+        this.state = "idle";
+        reject(error);
       }
-    })
+    });
   }
 
   /**
@@ -297,40 +316,40 @@ export class VillaBridge {
    * Removes iframe/popup and cleans up all listeners.
    */
   close(): void {
-    if (this.state === 'closed' || this.state === 'idle') {
-      return
+    if (this.state === "closed" || this.state === "idle") {
+      return;
     }
 
-    this.state = 'closing'
-    this.log(`Closing auth ${this.mode}...`)
+    this.state = "closing";
+    this.log(`Closing auth ${this.mode}...`);
 
     // Clear all timeouts
     if (this.timeoutId) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = null
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
     if (this.iframeDetectionTimeoutId) {
-      clearTimeout(this.iframeDetectionTimeoutId)
-      this.iframeDetectionTimeoutId = null
+      clearTimeout(this.iframeDetectionTimeoutId);
+      this.iframeDetectionTimeoutId = null;
     }
 
     // Remove message listener
     if (this.messageHandler) {
-      window.removeEventListener('message', this.messageHandler)
-      this.messageHandler = null
+      window.removeEventListener("message", this.messageHandler);
+      this.messageHandler = null;
     }
 
     // Clean up iframe
-    this.cleanupIframe()
+    this.cleanupIframe();
 
     // Clean up popup
     if (this.popup && !this.popup.closed) {
-      this.popup.close()
-      this.popup = null
+      this.popup.close();
+      this.popup = null;
     }
 
-    this.state = 'closed'
-    this.log(`Auth ${this.mode} closed`)
+    this.state = "closed";
+    this.log(`Auth ${this.mode} closed`);
   }
 
   /**
@@ -339,14 +358,14 @@ export class VillaBridge {
   private cleanupIframe(): void {
     // Remove iframe and container
     if (this.container) {
-      this.container.remove()
-      this.container = null
+      this.container.remove();
+      this.container = null;
     }
-    this.iframe = null
+    this.iframe = null;
 
     // Restore body scroll
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = ''
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
     }
   }
 
@@ -367,14 +386,17 @@ export class VillaBridge {
    * unsubscribe()
    * ```
    */
-  on<E extends BridgeEventName>(event: E, callback: BridgeEventMap[E]): () => void {
+  on<E extends BridgeEventName>(
+    event: E,
+    callback: BridgeEventMap[E],
+  ): () => void {
     if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
+      this.listeners.set(event, new Set());
     }
-    this.listeners.get(event)!.add(callback)
+    this.listeners.get(event)!.add(callback);
 
     // Return unsubscribe function
-    return () => this.off(event, callback)
+    return () => this.off(event, callback);
   }
 
   /**
@@ -384,9 +406,9 @@ export class VillaBridge {
    * @param callback - Callback to remove
    */
   off<E extends BridgeEventName>(event: E, callback: BridgeEventMap[E]): void {
-    const callbacks = this.listeners.get(event)
+    const callbacks = this.listeners.get(event);
     if (callbacks) {
-      callbacks.delete(callback)
+      callbacks.delete(callback);
     }
   }
 
@@ -397,9 +419,9 @@ export class VillaBridge {
    */
   removeAllListeners(event?: BridgeEventName): void {
     if (event) {
-      this.listeners.delete(event)
+      this.listeners.delete(event);
     } else {
-      this.listeners.clear()
+      this.listeners.clear();
     }
   }
 
@@ -409,19 +431,20 @@ export class VillaBridge {
    * @param message - Message to send
    */
   postMessage(message: object): void {
-    const target = this.mode === 'popup' ? this.popup : this.iframe?.contentWindow
+    const target =
+      this.mode === "popup" ? this.popup : this.iframe?.contentWindow;
 
     if (!target) {
-      this.log(`Cannot post message: ${this.mode} not ready`)
-      return
+      this.log(`Cannot post message: ${this.mode} not ready`);
+      return;
     }
 
     // Get target origin from auth URL
-    const url = new URL(this.authUrl)
-    const targetOrigin = url.origin
+    const url = new URL(this.authUrl);
+    const targetOrigin = url.origin;
 
-    this.log('Posting message:', message)
-    target.postMessage(message, targetOrigin)
+    this.log("Posting message:", message);
+    target.postMessage(message, targetOrigin);
   }
 
   // ============================================================
@@ -433,62 +456,62 @@ export class VillaBridge {
    * Includes instant loading UI that shows before iframe loads
    */
   private createContainer(): HTMLDivElement {
-    const container = document.createElement('div')
-    container.id = 'villa-bridge-container'
-    container.setAttribute('role', 'dialog')
-    container.setAttribute('aria-modal', 'true')
-    container.setAttribute('aria-label', 'Villa Authentication')
+    const container = document.createElement("div");
+    container.id = "villa-bridge-container";
+    container.setAttribute("role", "dialog");
+    container.setAttribute("aria-modal", "true");
+    container.setAttribute("aria-label", "Villa Authentication");
 
     // Responsive: modal on desktop (>768px), fullscreen on mobile
-    const isMobile = window.innerWidth <= 768
+    const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
       // Mobile: fullscreen
       Object.assign(container.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '100vw',
-        height: '100vh',
-        zIndex: '999999',
-        backgroundColor: '#FFFDF8', // Villa cream
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      })
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        zIndex: "999999",
+        backgroundColor: "#FFFDF8", // Villa cream
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      });
     } else {
       // Desktop: modal with backdrop
       Object.assign(container.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '100vw',
-        height: '100vh',
-        zIndex: '999999',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)', // Safari support
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      })
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        zIndex: "999999",
+        backgroundColor: "rgba(0, 0, 0, 0.4)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)", // Safari support
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      });
 
       // Click backdrop to close (cancel)
-      container.addEventListener('click', (e) => {
+      container.addEventListener("click", (e) => {
         if (e.target === container) {
-          this.log('Backdrop clicked, cancelling')
-          this.emit('cancel')
-          this.close()
+          this.log("Backdrop clicked, cancelling");
+          this.emit("cancel");
+          this.close();
         }
-      })
+      });
     }
 
     // Add instant loading UI (shows before iframe loads)
-    const loadingOverlay = this.createLoadingOverlay(isMobile)
-    container.appendChild(loadingOverlay)
+    const loadingOverlay = this.createLoadingOverlay(isMobile);
+    container.appendChild(loadingOverlay);
 
-    return container
+    return container;
   }
 
   /**
@@ -496,96 +519,97 @@ export class VillaBridge {
    * This provides seamless UX with no white flash
    */
   private createLoadingOverlay(isMobile: boolean): HTMLDivElement {
-    const overlay = document.createElement('div')
-    overlay.id = 'villa-loading-overlay'
+    const overlay = document.createElement("div");
+    overlay.id = "villa-loading-overlay";
 
     Object.assign(overlay.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#FFFDF8', // Villa cream
-      borderRadius: isMobile ? '0' : '16px',
-      zIndex: '1',
-      transition: 'opacity 0.2s ease-out',
-    })
+      position: "absolute",
+      top: "0",
+      left: "0",
+      right: "0",
+      bottom: "0",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFFDF8", // Villa cream
+      borderRadius: isMobile ? "0" : "16px",
+      zIndex: "1",
+      transition: "opacity 0.2s ease-out",
+    });
 
     // Villa logo
-    const logo = document.createElement('div')
+    const logo = document.createElement("div");
     Object.assign(logo.style, {
-      width: '64px',
-      height: '64px',
-      borderRadius: '16px',
-      background: 'linear-gradient(135deg, #FFE047 0%, #F5D547 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '24px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    })
+      width: "64px",
+      height: "64px",
+      borderRadius: "16px",
+      background: "linear-gradient(135deg, #FFE047 0%, #F5D547 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: "24px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    });
 
-    const logoText = document.createElement('span')
-    logoText.textContent = 'V'
+    const logoText = document.createElement("span");
+    logoText.textContent = "V";
     Object.assign(logoText.style, {
-      fontSize: '32px',
-      fontFamily: 'Georgia, serif',
-      color: '#5C4813',
-      fontWeight: '600',
-    })
-    logo.appendChild(logoText)
-    overlay.appendChild(logo)
+      fontSize: "32px",
+      fontFamily: "Georgia, serif",
+      color: "#5C4813",
+      fontWeight: "600",
+    });
+    logo.appendChild(logoText);
+    overlay.appendChild(logo);
 
     // Loading spinner
-    const spinner = document.createElement('div')
+    const spinner = document.createElement("div");
     Object.assign(spinner.style, {
-      width: '24px',
-      height: '24px',
-      border: '3px solid #E5E5E5',
-      borderTopColor: '#FFE047',
-      borderRadius: '50%',
-      animation: 'villa-spin 0.8s linear infinite',
-    })
-    overlay.appendChild(spinner)
+      width: "24px",
+      height: "24px",
+      border: "3px solid #E5E5E5",
+      borderTopColor: "#FFE047",
+      borderRadius: "50%",
+      animation: "villa-spin 0.8s linear infinite",
+    });
+    overlay.appendChild(spinner);
 
     // Loading text
-    const text = document.createElement('p')
-    text.textContent = 'Loading...'
+    const text = document.createElement("p");
+    text.textContent = "Loading...";
     Object.assign(text.style, {
-      marginTop: '16px',
-      fontSize: '14px',
-      color: '#666',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    })
-    overlay.appendChild(text)
+      marginTop: "16px",
+      fontSize: "14px",
+      color: "#666",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    });
+    overlay.appendChild(text);
 
     // Add keyframes animation
-    if (!document.getElementById('villa-spinner-styles')) {
-      const style = document.createElement('style')
-      style.id = 'villa-spinner-styles'
+    if (!document.getElementById("villa-spinner-styles")) {
+      const style = document.createElement("style");
+      style.id = "villa-spinner-styles";
       style.textContent = `
         @keyframes villa-spin {
           to { transform: rotate(360deg); }
         }
-      `
-      document.head.appendChild(style)
+      `;
+      document.head.appendChild(style);
     }
 
-    return overlay
+    return overlay;
   }
 
   /**
    * Hide loading overlay when iframe is ready
    */
   private hideLoadingOverlay(): void {
-    const overlay = document.getElementById('villa-loading-overlay')
+    const overlay = document.getElementById("villa-loading-overlay");
     if (overlay) {
-      overlay.style.opacity = '0'
-      setTimeout(() => overlay.remove(), 200)
+      overlay.style.opacity = "0";
+      setTimeout(() => overlay.remove(), 200);
     }
   }
 
@@ -593,62 +617,63 @@ export class VillaBridge {
    * Create iframe element - modal card on desktop, fullscreen on mobile
    */
   private createIframe(scopes: string[]): HTMLIFrameElement {
-    const iframe = document.createElement('iframe')
+    const iframe = document.createElement("iframe");
 
     // Build URL with params
-    const url = new URL(this.authUrl)
-    url.searchParams.set('appId', this.config.appId)
-    url.searchParams.set('scopes', scopes.join(','))
-    url.searchParams.set('origin', window.location.origin)
+    const url = new URL(this.authUrl);
+    url.searchParams.set("appId", this.config.appId);
+    url.searchParams.set("scopes", scopes.join(","));
+    url.searchParams.set("origin", window.location.origin);
 
-    iframe.src = url.toString()
-    iframe.id = 'villa-auth-iframe'
-    iframe.title = 'Villa Authentication'
+    iframe.src = url.toString();
+    iframe.id = "villa-auth-iframe";
+    iframe.title = "Villa Authentication";
 
     // Allow passkey credentials
-    iframe.allow = 'publickey-credentials-get *; publickey-credentials-create *'
+    iframe.allow =
+      "publickey-credentials-get *; publickey-credentials-create *";
 
     // Sandbox with necessary permissions
-    iframe.sandbox.add('allow-same-origin')
-    iframe.sandbox.add('allow-scripts')
-    iframe.sandbox.add('allow-forms')
-    iframe.sandbox.add('allow-popups')
-    iframe.sandbox.add('allow-popups-to-escape-sandbox')
+    iframe.sandbox.add("allow-same-origin");
+    iframe.sandbox.add("allow-scripts");
+    iframe.sandbox.add("allow-forms");
+    iframe.sandbox.add("allow-popups");
+    iframe.sandbox.add("allow-popups-to-escape-sandbox");
 
     // Responsive: modal card on desktop, fullscreen on mobile
-    const isMobile = window.innerWidth <= 768
+    const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
       // Mobile: fullscreen
       Object.assign(iframe.style, {
-        width: '100%',
-        height: '100%',
-        border: 'none',
-        backgroundColor: 'transparent',
-      })
+        width: "100%",
+        height: "100%",
+        border: "none",
+        backgroundColor: "transparent",
+      });
     } else {
       // Desktop: modal card
       Object.assign(iframe.style, {
-        width: '480px',
-        height: '640px',
-        maxWidth: 'calc(100vw - 32px)',
-        maxHeight: 'calc(100vh - 32px)',
-        border: 'none',
-        borderRadius: '16px',
-        backgroundColor: '#FFFDF8', // Villa cream
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        overflow: 'hidden',
-      })
+        width: "480px",
+        height: "640px",
+        maxWidth: "calc(100vw - 32px)",
+        maxHeight: "calc(100vh - 32px)",
+        border: "none",
+        borderRadius: "16px",
+        backgroundColor: "#FFFDF8", // Villa cream
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        overflow: "hidden",
+      });
     }
 
     // Handle load errors
     iframe.onerror = () => {
-      this.log('Iframe load error')
-      this.emit('error', 'Failed to load authentication page', 'NETWORK_ERROR')
-      this.close()
-    }
+      this.log("Iframe load error");
+      this.emit("error", "Failed to load authentication page", "NETWORK_ERROR");
+      this.close();
+    };
 
-    return iframe
+    return iframe;
   }
 
   /**
@@ -656,9 +681,9 @@ export class VillaBridge {
    */
   private setupMessageListener(onReady: () => void): void {
     this.messageHandler = (event: MessageEvent) => {
-      this.handleMessage(event, onReady)
-    }
-    window.addEventListener('message', this.messageHandler)
+      this.handleMessage(event, onReady);
+    };
+    window.addEventListener("message", this.messageHandler);
   }
 
   /**
@@ -667,62 +692,66 @@ export class VillaBridge {
   private handleMessage(event: MessageEvent, onReady: () => void): void {
     // CRITICAL: Validate origin first
     if (!this.isOriginAllowed(event.origin)) {
-      this.log(`Ignoring message from untrusted origin: ${event.origin}`)
-      return
+      this.log(`Ignoring message from untrusted origin: ${event.origin}`);
+      return;
     }
 
     // Validate message structure
-    const message = parseVillaMessage(event.data)
+    const message = parseVillaMessage(event.data);
     if (!message) {
-      this.log('Ignoring invalid message:', event.data)
-      return
+      this.log("Ignoring invalid message:", event.data);
+      return;
     }
 
-    this.log('Received message:', message.type)
+    this.log("Received message:", message.type);
 
     // Process message
     switch (message.type) {
-      case 'VILLA_READY':
-        this.state = 'ready'
+      case "VILLA_READY":
+        this.state = "ready";
         // Clear iframe detection timeout since we got VILLA_READY
         if (this.iframeDetectionTimeoutId) {
-          clearTimeout(this.iframeDetectionTimeoutId)
-          this.iframeDetectionTimeoutId = null
+          clearTimeout(this.iframeDetectionTimeoutId);
+          this.iframeDetectionTimeoutId = null;
         }
         if (this.timeoutId) {
-          clearTimeout(this.timeoutId)
-          this.timeoutId = null
+          clearTimeout(this.timeoutId);
+          this.timeoutId = null;
         }
         // Hide loading overlay - iframe content is now visible
-        this.hideLoadingOverlay()
-        this.emit('ready')
-        onReady()
-        break
+        this.hideLoadingOverlay();
+        this.emit("ready");
+        onReady();
+        break;
 
-      case 'VILLA_AUTH_SUCCESS':
-        this.state = 'authenticating'
-        this.emit('success', message.payload.identity)
-        this.close()
-        break
+      case "VILLA_AUTH_SUCCESS":
+        this.state = "authenticating";
+        this.emit("success", message.payload.identity);
+        this.close();
+        break;
 
-      case 'VILLA_AUTH_CANCEL':
-        this.emit('cancel')
-        this.close()
-        break
+      case "VILLA_AUTH_CANCEL":
+        this.emit("cancel");
+        this.close();
+        break;
 
-      case 'VILLA_AUTH_ERROR':
-        this.emit('error', message.payload.error, message.payload.code)
-        this.close()
-        break
+      case "VILLA_AUTH_ERROR":
+        this.emit("error", message.payload.error, message.payload.code);
+        this.close();
+        break;
 
-      case 'VILLA_CONSENT_GRANTED':
-        this.emit('consent_granted', message.payload.appId, message.payload.scopes)
-        break
+      case "VILLA_CONSENT_GRANTED":
+        this.emit(
+          "consent_granted",
+          message.payload.appId,
+          message.payload.scopes,
+        );
+        break;
 
-      case 'VILLA_CONSENT_DENIED':
-        this.emit('consent_denied', message.payload.appId)
-        this.close()
-        break
+      case "VILLA_CONSENT_DENIED":
+        this.emit("consent_denied", message.payload.appId);
+        this.close();
+        break;
     }
   }
 
@@ -730,7 +759,7 @@ export class VillaBridge {
    * Check if origin is in allowlist
    */
   private isOriginAllowed(origin: string): boolean {
-    return validateOrigin(origin)
+    return validateOrigin(origin);
   }
 
   /**
@@ -740,15 +769,15 @@ export class VillaBridge {
     event: E,
     ...args: Parameters<BridgeEventMap[E]>
   ): void {
-    const callbacks = this.listeners.get(event)
+    const callbacks = this.listeners.get(event);
     if (callbacks) {
       callbacks.forEach((callback) => {
         try {
-          ;(callback as Function)(...args)
+          (callback as Function)(...args);
         } catch (error) {
-          console.error(`[VillaBridge] Error in ${event} handler:`, error)
+          console.error(`[VillaBridge] Error in ${event} handler:`, error);
         }
-      })
+      });
     }
   }
 
@@ -757,7 +786,7 @@ export class VillaBridge {
    */
   private log(...args: unknown[]): void {
     if (this.config.debug || isDevelopment()) {
-      console.log('[VillaBridge]', ...args)
+      console.log("[VillaBridge]", ...args);
     }
   }
 }

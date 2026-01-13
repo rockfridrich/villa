@@ -131,7 +131,7 @@ start_hybrid() {
     trap 'echo ""; echo -e "${YELLOW}Stopping...${NC}"; docker-compose -f docker-compose.local.yml down 2>/dev/null; exit' INT TERM
 
     # Start Next.js
-    cd apps/web
+    cd apps/hub
     pnpm dev
 }
 
@@ -164,7 +164,7 @@ start_native() {
     echo -e "${BLUE}────────────────────────────────────────${NC}"
     echo ""
 
-    cd apps/web
+    cd apps/hub
     pnpm dev
 }
 

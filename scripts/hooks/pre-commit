@@ -14,7 +14,7 @@ fi
 
 # Type check (fast)
 echo "  → Type checking..."
-if ! pnpm typecheck --filter @villa/web 2>/dev/null; then
+if ! pnpm typecheck --filter @villa/hub 2>/dev/null; then
   echo ""
   echo "❌ Type check failed"
   echo "Run 'pnpm typecheck' to see errors"

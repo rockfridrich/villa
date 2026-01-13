@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, closed, ready_for_review]
@@ -50,13 +50,13 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'false'
+          install-playwright: "false"
 
       - name: Run linting and type checking
         run: pnpm run typecheck && pnpm run lint
 
       # Skip unit tests temporarily - jest-dom matchers issue in CI
-      # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
+      # - run: pnpm --filter @villa/hub exec vitest run --config vitest.config.unit.ts
 
       - name: Assign dev slot (1 or 2)
         id: slot
@@ -101,11 +101,11 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/4)
-        run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
+        run: pnpm --filter @villa/hub exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
         env:
           CI: true
 
@@ -135,8 +135,8 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Download all shard reports
         uses: actions/download-artifact@v4
@@ -148,7 +148,7 @@ jobs:
       - name: Merge Playwright reports
         run: |
           # Merge all shard reports into single HTML report
-          pnpm --filter @villa/web exec playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
+          pnpm --filter @villa/hub exec playwright merge-reports --reporter html ./all-reports/e2e-report-shard-*
         continue-on-error: true
 
       - name: Upload merged report
@@ -362,8 +362,8 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Wait for healthy deployment
         run: |
@@ -472,17 +472,17 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Run linting and type checking
         run: pnpm run typecheck & pnpm run lint & wait
 
       # Skip unit tests temporarily - jest-dom matchers issue in CI
-      # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
+      # - run: pnpm --filter @villa/hub exec vitest run --config vitest.config.unit.ts
 
       - name: Run E2E tests
-        run: pnpm --filter @villa/web exec playwright test --project=chromium
+        run: pnpm --filter @villa/hub exec playwright test --project=chromium
         env:
           CI: true
           # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
@@ -656,7 +656,7 @@ jobs:
   e2e-staging:
     name: "🧪 E2E (Staging)"
     needs: deploy-staging
-    if: false  # Temporarily disabled - see TODO above
+    if: false # Temporarily disabled - see TODO above
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -664,8 +664,8 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Wait for fresh build
         run: |
@@ -714,17 +714,17 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Run linting and type checking
         run: pnpm run typecheck & pnpm run lint & wait
 
       # Skip unit tests temporarily - jest-dom matchers issue in CI
-      # - run: pnpm --filter @villa/web exec vitest run --config vitest.config.unit.ts
+      # - run: pnpm --filter @villa/hub exec vitest run --config vitest.config.unit.ts
 
       - name: Run E2E tests
-        run: pnpm --filter @villa/web exec playwright test --project=chromium
+        run: pnpm --filter @villa/hub exec playwright test --project=chromium
         env:
           CI: true
           # Note: DATABASE_URL intentionally NOT set - CI can't reach VPC database
@@ -956,8 +956,8 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Wait for fresh build
         run: |

@@ -23,13 +23,13 @@ jobs:
         with:
           filters: |
             e2e:
-              - 'apps/web/src/**'
-              - 'apps/web/tests/**'
+              - 'apps/hub/src/**'
+              - 'apps/hub/tests/**'
               - 'packages/sdk/**'
               - 'playwright.config.ts'
               - 'pnpm-lock.yaml'
             unit:
-              - 'apps/web/src/**'
+              - 'apps/hub/src/**'
               - 'packages/**'
               - 'vitest.config.*.ts'
               - 'pnpm-lock.yaml'
@@ -77,8 +77,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -141,8 +141,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -166,8 +166,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -188,14 +188,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm --filter @villa/web test:unit
+        run: pnpm --filter @villa/hub test:unit
 
   coverage:
     name: Code Coverage
@@ -211,25 +211,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run coverage for web
-        run: pnpm --filter @villa/web test:unit --coverage
+      - name: Run coverage for hub
+        run: pnpm --filter @villa/hub test:unit --coverage
         continue-on-error: true
 
       - name: Run coverage for SDK
         run: pnpm --filter @rockfridrich/villa-sdk test:coverage
         continue-on-error: true
 
-      - name: Upload coverage to Codecov (web)
+      - name: Upload coverage to Codecov (hub)
         uses: codecov/codecov-action@v4
         with:
-          files: ./apps/web/coverage/coverage-final.json
-          flags: web
+          files: ./apps/hub/coverage/coverage-final.json
+          flags: hub
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
@@ -256,11 +256,11 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/4)
-        run: pnpm --filter @villa/web exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
+        run: pnpm --filter @villa/hub exec playwright test --project=chromium --shard=${{ matrix.shard }}/4
         env:
           CI: true
           # DATABASE_URL intentionally NOT set - CI runs E2E against local mock
@@ -292,8 +292,8 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'true'
-          playwright-browser: 'chromium'
+          install-playwright: "true"
+          playwright-browser: "chromium"
 
       - name: Download all shard reports
         uses: actions/download-artifact@v4
@@ -305,7 +305,7 @@ jobs:
       - name: Merge Playwright reports
         run: |
           # Merge all shard reports into single HTML report
-          pnpm --filter @villa/web exec playwright merge-reports --reporter html ./all-reports/playwright-report-shard-*
+          pnpm --filter @villa/hub exec playwright merge-reports --reporter html ./all-reports/playwright-report-shard-*
         continue-on-error: true
 
       - name: Upload merged report
@@ -327,7 +327,7 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
         with:
-          install-playwright: 'false'
+          install-playwright: "false"
 
       - name: Download all shard reports
         uses: actions/download-artifact@v4
@@ -353,7 +353,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 100  # Get enough history for metrics
+          fetch-depth: 100 # Get enough history for metrics
 
       - name: Calculate quality metrics
         id: metrics

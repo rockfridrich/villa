@@ -12,11 +12,19 @@ services:
       - DATABASE_URL=${DATABASE_URL:-}
     volumes:
       # Mount source for hot reload (but not node_modules)
-      - ./apps/web/src:/app/apps/web/src
+      - ./apps/hub/src:/app/apps/hub/src
       - ./packages/sdk/src:/app/packages/sdk/src
       - ./packages/ui/src:/app/packages/ui/src
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
