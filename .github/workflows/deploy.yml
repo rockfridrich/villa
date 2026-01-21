@@ -357,37 +357,65 @@ jobs:
 
           if [ -z "$APP_ID" ]; then
             doctl apps create --spec .do/app-staging-generated.yaml
+            echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
           else
+            # Get current active deployment ID before triggering new one
+            OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
+            echo "Current deployment: $OLD_DEPLOYMENT_ID"
+            
             doctl apps update $APP_ID --spec .do/app-staging-generated.yaml
-            doctl apps create-deployment $APP_ID --force-rebuild --wait=false
+            
+            # Create new deployment and capture its ID  
+            DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json)
+            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.id // empty')
+            echo "New deployment: $NEW_DEPLOYMENT_ID"
+            
+            echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
+            echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
+            echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           fi
-
-          echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
 
       - name: Wait for build to complete
         id: wait-build
         run: |
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
+          APP_ID="${{ steps.deploy.outputs.app-id }}"
+          OLD_DEPLOYMENT_ID="${{ steps.deploy.outputs.old-deployment-id }}"
+          NEW_DEPLOYMENT_ID="${{ steps.deploy.outputs.new-deployment-id }}"
+
+          if [ -z "$APP_ID" ]; then
+            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
+          fi
+
+          echo "Waiting for deployment $NEW_DEPLOYMENT_ID to become active..."
+          echo "Old deployment was: $OLD_DEPLOYMENT_ID"
 
           for i in {1..60}; do
             APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null)
-            IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
             
-            if [ -n "$IN_PROGRESS" ]; then
-              echo "⏳ Building: $IN_PROGRESS ($i/60)"
+            # Check in-progress deployment
+            IN_PROGRESS_PHASE=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
+            
+            if [ -n "$IN_PROGRESS_PHASE" ]; then
+              echo "⏳ Building: $IN_PROGRESS_PHASE ($i/60)"
               sleep 10
               continue
             fi
             
+            # Check if new deployment is now active
+            ACTIVE_ID=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.id // empty')
             ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
-            if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
-              echo "✅ Build complete"
-              echo "build-id=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.id')" >> $GITHUB_OUTPUT
+            
+            if [ "$ACTIVE_PHASE" = "ACTIVE" ] && [ "$ACTIVE_ID" != "$OLD_DEPLOYMENT_ID" ]; then
+              echo "✅ Staging build complete (deployment: $ACTIVE_ID)"
+              echo "build-id=$ACTIVE_ID" >> $GITHUB_OUTPUT
               exit 0
             fi
+            
+            echo "⏳ Waiting for new deployment... ($i/60)"
             sleep 10
           done
-          echo "⚠️ Build timeout"
+          echo "⚠️ Build timeout - deployment did not complete in 10 minutes"
           exit 1
 
       - name: Purge CloudFlare cache
@@ -472,35 +500,64 @@ jobs:
 
           if [ -z "$APP_ID" ]; then
             doctl apps create --spec .do/app-production-generated.yaml
+            echo "url=https://villa.cash" >> $GITHUB_OUTPUT
           else
+            # Get current active deployment ID before triggering new one
+            OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
+            echo "Current deployment: $OLD_DEPLOYMENT_ID"
+            
             doctl apps update $APP_ID --spec .do/app-production-generated.yaml
-            doctl apps create-deployment $APP_ID --force-rebuild --wait=false
+            
+            # Create new deployment and capture its ID
+            DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json)
+            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.id // empty')
+            echo "New deployment: $NEW_DEPLOYMENT_ID"
+            
+            echo "url=https://villa.cash" >> $GITHUB_OUTPUT
+            echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
+            echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           fi
-
-          echo "url=https://villa.cash" >> $GITHUB_OUTPUT
 
       - name: Wait for build to complete
         run: |
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
+          APP_ID="${{ steps.deploy.outputs.app-id }}"
+          OLD_DEPLOYMENT_ID="${{ steps.deploy.outputs.old-deployment-id }}"
+          NEW_DEPLOYMENT_ID="${{ steps.deploy.outputs.new-deployment-id }}"
+
+          if [ -z "$APP_ID" ]; then
+            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
+          fi
+
+          echo "Waiting for deployment $NEW_DEPLOYMENT_ID to become active..."
+          echo "Old deployment was: $OLD_DEPLOYMENT_ID"
 
           for i in {1..60}; do
             APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null)
-            IN_PROGRESS=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
             
-            if [ -n "$IN_PROGRESS" ]; then
-              echo "⏳ Building: $IN_PROGRESS ($i/60)"
+            # Check in-progress deployment
+            IN_PROGRESS_ID=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.id // empty')
+            IN_PROGRESS_PHASE=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
+            
+            if [ -n "$IN_PROGRESS_PHASE" ]; then
+              echo "⏳ Building: $IN_PROGRESS_PHASE ($i/60)"
               sleep 10
               continue
             fi
             
+            # Check if new deployment is now active
+            ACTIVE_ID=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.id // empty')
             ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
-            if [ "$ACTIVE_PHASE" = "ACTIVE" ]; then
-              echo "✅ Production build complete"
+            
+            if [ "$ACTIVE_PHASE" = "ACTIVE" ] && [ "$ACTIVE_ID" != "$OLD_DEPLOYMENT_ID" ]; then
+              echo "✅ Production build complete (deployment: $ACTIVE_ID)"
               exit 0
             fi
+            
+            echo "⏳ Waiting for new deployment... ($i/60)"
             sleep 10
           done
-          echo "❌ Build timeout"
+          echo "❌ Build timeout - deployment did not complete in 10 minutes"
           exit 1
 
       - name: Purge CloudFlare cache
