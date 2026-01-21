@@ -1,7 +1,8 @@
-'use client'
+"use client";
 
-import { Github } from 'lucide-react'
-import { MobileNav } from './MobileNav'
+import { Github } from "lucide-react";
+import { MobileNav } from "./MobileNav";
+import { Search } from "./Search";
 
 export function Header() {
   return (
@@ -11,30 +12,45 @@ export function Header() {
           <MobileNav />
           <span className="font-serif text-xl">Villa SDK</span>
           <div className="hidden sm:flex items-center gap-4 text-sm">
-            <a href="/" className="text-ink-muted hover:text-ink transition-colors">
+            <a
+              href="/"
+              className="text-ink-muted hover:text-ink transition-colors"
+            >
               Docs
             </a>
-            <a href="/roadmap" className="text-ink-muted hover:text-ink transition-colors">
+            <a
+              href="/roadmap"
+              className="text-ink-muted hover:text-ink transition-colors"
+            >
               Roadmap
             </a>
-            <a href="/contributors" className="text-ink-muted hover:text-ink transition-colors">
+            <a
+              href="/contributors"
+              className="text-ink-muted hover:text-ink transition-colors"
+            >
               Contributors
             </a>
-            <a href="/metrics" className="text-ink-muted hover:text-ink transition-colors">
+            <a
+              href="/metrics"
+              className="text-ink-muted hover:text-ink transition-colors"
+            >
               Metrics
             </a>
           </div>
         </div>
-        <a
-          href="https://github.com/rockfridrich/villa"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
-        >
-          <Github className="w-4 h-4" />
-          <span className="hidden sm:inline">GitHub</span>
-        </a>
+        <div className="flex items-center gap-4">
+          <Search />
+          <a
+            href="https://github.com/rockfridrich/villa"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
+          >
+            <Github className="w-4 h-4" />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
+        </div>
       </div>
     </nav>
-  )
+  );
 }

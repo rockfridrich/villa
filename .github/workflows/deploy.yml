@@ -25,6 +25,49 @@ env:
 
 jobs:
   # =============================================================================
+  # CHANGE DETECTION - Determine what needs to be built/deployed
+  # =============================================================================
+  detect-changes:
+    name: "🔍 Detect Changes"
+    runs-on: ubuntu-latest
+    outputs:
+      hub: ${{ steps.filter.outputs.hub }}
+      sdk: ${{ steps.filter.outputs.sdk }}
+      docs: ${{ steps.filter.outputs.docs }}
+      any-app: ${{ steps.any.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            hub:
+              - 'apps/hub/**'
+              - 'packages/**'
+              - 'Dockerfile'
+              - '.do/app-*.yaml'
+            sdk:
+              - 'packages/sdk/**'
+              - 'packages/sdk-react/**'
+            docs:
+              - 'apps/developers/**'
+              - '**/*.md'
+
+      - name: Check if any app changed
+        id: any
+        run: |
+          if [[ "${{ steps.filter.outputs.hub }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.sdk }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.docs }}" == "true" ]]; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          else
+            echo "result=false" >> $GITHUB_OUTPUT
+          fi
+
+  # =============================================================================
   # QUICK CI - Fast feedback for PRs (~30s)
   # =============================================================================
   quick-ci:
@@ -298,16 +341,33 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Cache dependencies
+      - name: Cache Bun dependencies
         uses: actions/cache@v4
+        id: cache-deps
         with:
           path: |
             node_modules
             ~/.bun/install/cache
-          key: deps-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
-          restore-keys: deps-${{ runner.os }}-
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/hub/.next/cache
+            apps/developers/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/*/src/**') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            nextjs-${{ runner.os }}-
 
       - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Restore dependencies from lockfile
+        if: steps.cache-deps.outputs.cache-hit == 'true'
         run: bun install --frozen-lockfile
 
       - name: Run checks in parallel
@@ -358,23 +418,28 @@ jobs:
           if [ -z "$APP_ID" ]; then
             doctl apps create --spec .do/app-staging-generated.yaml
             echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
-          else
-            # Get current active deployment ID before triggering new one
-            OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
-            echo "Current deployment: $OLD_DEPLOYMENT_ID"
-            
-            doctl apps update $APP_ID --spec .do/app-staging-generated.yaml
-            
-            # Create new deployment and capture its ID  
-            DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json)
-            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.id // empty')
-            echo "New deployment: $NEW_DEPLOYMENT_ID"
-            
-            echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
-            echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
-            echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-            echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
+          echo "Current deployment: $OLD_DEPLOYMENT_ID"
+
+          doctl apps update $APP_ID --spec .do/app-staging-generated.yaml
+
+          DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json 2>&1)
+
+          if echo "$DEPLOY_OUTPUT" | jq -e . >/dev/null 2>&1; then
+            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '(if type == "array" then .[0] else . end) | (.id // .deployment.id // empty)')
+          else
+            echo "⚠️ doctl returned non-JSON, will poll for deployment"
+            NEW_DEPLOYMENT_ID=""
+          fi
+
+          echo "New deployment: $NEW_DEPLOYMENT_ID"
+          echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
+          echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
+          echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       - name: Wait for build to complete
         id: wait-build
@@ -501,23 +566,28 @@ jobs:
           if [ -z "$APP_ID" ]; then
             doctl apps create --spec .do/app-production-generated.yaml
             echo "url=https://villa.cash" >> $GITHUB_OUTPUT
-          else
-            # Get current active deployment ID before triggering new one
-            OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
-            echo "Current deployment: $OLD_DEPLOYMENT_ID"
-            
-            doctl apps update $APP_ID --spec .do/app-production-generated.yaml
-            
-            # Create new deployment and capture its ID
-            DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json)
-            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.id // empty')
-            echo "New deployment: $NEW_DEPLOYMENT_ID"
-            
-            echo "url=https://villa.cash" >> $GITHUB_OUTPUT
-            echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
-            echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-            echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
+          echo "Current deployment: $OLD_DEPLOYMENT_ID"
+
+          doctl apps update $APP_ID --spec .do/app-production-generated.yaml
+
+          DEPLOY_OUTPUT=$(doctl apps create-deployment $APP_ID --force-rebuild --wait=false --output json 2>&1)
+
+          if echo "$DEPLOY_OUTPUT" | jq -e . >/dev/null 2>&1; then
+            NEW_DEPLOYMENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '(if type == "array" then .[0] else . end) | (.id // .deployment.id // empty)')
+          else
+            echo "⚠️ doctl returned non-JSON, will poll for deployment"
+            NEW_DEPLOYMENT_ID=""
+          fi
+
+          echo "New deployment: $NEW_DEPLOYMENT_ID"
+          echo "url=https://villa.cash" >> $GITHUB_OUTPUT
+          echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
+          echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          echo "new-deployment-id=$NEW_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       - name: Wait for build to complete
         run: |
