@@ -1,25 +1,35 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import { Header } from '../components/Header'
-import { Sidebar } from '../components/Sidebar'
+import type { Metadata } from "next";
+import Script from "next/script";
+import "./globals.css";
+import { Header } from "../components/Header";
+import { Sidebar } from "../components/Sidebar";
 
 export const metadata: Metadata = {
-  title: 'Villa SDK - Developer Documentation',
-  description: 'One-prompt authentication for pop-up villages. Passkeys. No passwords. Privacy-first.',
+  title: "Villa SDK - Developer Documentation",
+  description:
+    "One-prompt authentication for pop-up villages. Passkeys. No passwords. Privacy-first.",
   openGraph: {
-    title: 'Villa SDK',
-    description: 'One-prompt authentication for pop-up villages',
-    type: 'website',
+    title: "Villa SDK",
+    description: "One-prompt authentication for pop-up villages",
+    type: "website",
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          defer
+          data-domain="developers.villa.cash"
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
+      </head>
       <body>
         <Header />
         <div className="max-w-7xl mx-auto flex gap-8 px-6">
@@ -28,5 +38,5 @@ export default function RootLayout({
         </div>
       </body>
     </html>
-  )
+  );
 }

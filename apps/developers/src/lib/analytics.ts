@@ -1,56 +1,51 @@
-/**
- * Privacy-Preserving Analytics
- *
- * Tracks documentation usage without tracking users.
- * Only aggregate metrics are stored - no cookies, fingerprints, or user identifiers.
- *
- * Tracked: Page views (aggregate), code copies, search queries
- * NOT tracked: User identity, IP, fingerprints, referrers, location
- */
+const PLAUSIBLE_DOMAIN = "developers.villa.cash";
 
-type AnalyticsEvent =
-  | { type: "page_view"; page: string }
-  | { type: "code_copy"; example_id: string }
-  | { type: "search"; query: string; results_count: number }
-  | { type: "claude_txt_view" }
-  | { type: "section_scroll"; section: string };
+type PlausibleEvent =
+  | { name: "pageview" }
+  | { name: "Code Copy"; props: { example: string } }
+  | { name: "Search"; props: { query: string; results: number } }
+  | { name: "CLAUDE.txt View" }
+  | { name: "Section Scroll"; props: { section: string } };
 
-export async function trackEvent(event: AnalyticsEvent): Promise<void> {
-  if (process.env.NODE_ENV !== "production") {
-    console.debug("[Analytics]", event);
-    return;
-  }
+export function trackEvent(event: PlausibleEvent): void {
+  if (typeof window === "undefined") return;
 
-  try {
-    const dayBucket = new Date().toISOString().split("T")[0];
+  const plausible = (
+    window as Window & {
+      plausible?: (
+        name: string,
+        options?: { props?: Record<string, string | number> },
+      ) => void;
+    }
+  ).plausible;
 
-    await fetch("/api/analytics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...event, day: dayBucket }),
-      keepalive: true,
-    });
-  } catch {
-    /* noop */
+  if (!plausible) return;
+
+  if (event.name === "pageview") {
+    plausible("pageview");
+  } else if ("props" in event) {
+    plausible(event.name, { props: event.props });
+  } else {
+    plausible(event.name);
   }
 }
 
-export function trackPageView(page: string): void {
-  trackEvent({ type: "page_view", page });
+export function trackPageView(): void {
+  trackEvent({ name: "pageview" });
 }
 
-export function trackCodeCopy(exampleId: string): void {
-  trackEvent({ type: "code_copy", example_id: exampleId });
+export function trackCodeCopy(example: string): void {
+  trackEvent({ name: "Code Copy", props: { example } });
 }
 
-export function trackSearch(query: string, resultsCount: number): void {
-  trackEvent({ type: "search", query, results_count: resultsCount });
+export function trackSearch(query: string, results: number): void {
+  trackEvent({ name: "Search", props: { query, results } });
 }
 
 export function trackClaudeTxtView(): void {
-  trackEvent({ type: "claude_txt_view" });
+  trackEvent({ name: "CLAUDE.txt View" });
 }
 
 export function trackSectionScroll(section: string): void {
-  trackEvent({ type: "section_scroll", section });
+  trackEvent({ name: "Section Scroll", props: { section } });
 }
