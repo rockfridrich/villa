@@ -1,143 +1,177 @@
 # Contributing to Villa
 
-Privacy-first identity for AI-native apps. We value contributions from developers of all backgrounds.
+Welcome to Villa! This guide helps you get started with our AI-assisted development workflow.
 
-## Quick Start
+## Quick Start for Product/Vision Contributors
+
+If you're focused on product direction and vision (like Abu), here's your streamlined workflow:
+
+### 1. Share Ideas via GitHub Issues
 
 ```bash
-# 1. Clone and install
-git clone https://github.com/rockfridrich/villa.git
-cd villa
-bun install
+# Create a feature request
+gh issue create --title "Feature: [Your idea]" --body "## Problem\n...\n## Proposed Solution\n..."
 
-# 2. Verify setup
-./scripts/doctor.sh
-
-# 3. Start development
-bun dev              # HTTP (most features)
-bun dev:https        # HTTPS (passkeys require this)
-
-# 4. Before pushing
-bun verify           # typecheck + build + test
+# Or use the web UI
+open https://github.com/rockfridrich/villa/issues/new
 ```
 
-## Requirements
+### 2. Discuss in Issue Comments
 
-| Tool    | Version | Check                         |
-| ------- | ------- | ----------------------------- |
-| Node.js | 20+     | `node --version`              |
-| Bun     | 1.0+    | `bun --version`               |
-| Git     | Any     | `git --version`               |
-| mkcert  | Any     | `mkcert -version` (for HTTPS) |
+- Tag relevant people: `@rockfridrich`, `@AbuSantos`
+- Use reactions to vote on ideas
+- Reference related issues: `Related to #47`
 
-## Project Structure
+### 3. Review PRs
+
+When implementation PRs are created, review them for:
+
+- Does it match the product vision?
+- Is the UX intuitive?
+- Any edge cases missed?
+
+## Collaboration Workflow
+
+```
+[Issue] → [Discussion] → [Spec] → [PR] → [Review] → [Ship]
+   ↑                                         |
+   └─────────── Feedback Loop ───────────────┘
+```
+
+### Issue Types
+
+| Label         | Use For                  |
+| ------------- | ------------------------ |
+| `feature`     | New functionality        |
+| `enhancement` | Improve existing feature |
+| `bug`         | Something broken         |
+| `question`    | Need clarification       |
+| `product`     | Product/UX decisions     |
+
+### Linking Issues to Work
+
+When creating specs or PRs, always reference the issue:
+
+```markdown
+Closes #47
+Related to #45
+```
+
+## Using OpenCode (AI Assistant)
+
+OpenCode is our AI coding assistant. Here's how to use it effectively:
+
+### Starting a Session
+
+```bash
+# In terminal, from villa directory
+opencode
+
+# Or with a specific task
+opencode "Review issue #47 and propose implementation"
+```
+
+### Effective Prompts for Product People
+
+**For exploring ideas:**
+
+```
+Look at issue #47 and tell me:
+1. What's the current state?
+2. What would implementation involve?
+3. What are the tradeoffs?
+```
+
+**For creating specs:**
+
+```
+Create a product spec for [feature] based on issue #XX.
+Include: user stories, acceptance criteria, and edge cases.
+```
+
+**For reviewing code:**
+
+```
+Review PR #XX from a product perspective.
+Does it match the spec? Any UX concerns?
+```
+
+### Key Commands
+
+| Command    | What It Does                   |
+| ---------- | ------------------------------ |
+| `@explore` | Search codebase                |
+| `@oracle`  | Deep technical analysis        |
+| `@product` | Product specs and user stories |
+| `@design`  | UI/UX review                   |
+
+## Repository Structure
 
 ```
 villa/
 ├── apps/
-│   ├── hub/          # Main app (villa.cash)
-│   ├── key/          # Auth iframe (villa.cash/auth)
-│   └── developers/   # Docs (developers.villa.cash)
+│   ├── hub/          # Main Villa app (villa.cash)
+│   └── developers/   # Developer portal (developers.villa.cash)
 ├── packages/
-│   ├── sdk/          # @rockfridrich/villa-sdk
-│   ├── sdk-react/    # React bindings
-│   ├── ui/           # Shared components
-│   └── config/       # Shared Tailwind preset
-├── contracts/        # Solidity (Base network)
-└── specs/            # Feature specifications
+│   ├── sdk/          # Villa SDK (npm package)
+│   └── sdk-react/    # React bindings
+├── specs/            # Feature specifications
+│   ├── product/      # Product specs
+│   └── decisions/    # Architecture decisions (ADRs)
+├── docs/             # Documentation
+│   └── guides/       # Integration guides
+└── contracts/        # Smart contracts (Solidity)
 ```
 
-## Development Commands
+### Key Files to Know
 
-```bash
-bun dev              # Start all apps
-bun build            # Build everything
-bun verify           # Full verification (required before PR)
-bun test             # Unit tests
-bun test:e2e         # E2E tests (requires bun dev:https)
-```
+| File                    | Purpose                  |
+| ----------------------- | ------------------------ |
+| `specs/STATUS.md`       | Current spec status      |
+| `specs/product/*.md`    | Product specifications   |
+| `AGENTS.md`             | AI agent system overview |
+| `.opencode/OPENCODE.md` | OpenCode protocols       |
 
-## Workflow
+## Product Decision Process
 
-### 1. Create Branch
+### 1. Identify Need
 
-```bash
-git checkout -b feat/your-feature    # Features
-git checkout -b fix/bug-description  # Bug fixes
-```
+Create an issue describing the user problem.
 
-### 2. Make Changes
+### 2. Discuss Options
 
-- Follow existing patterns in the codebase
-- Use `@villa/ui` components when available
-- Use Tailwind preset: `@villa/config/tailwind.preset`
+Use issue comments to explore solutions.
 
-### 3. Verify
-
-```bash
-bun verify  # Must pass before pushing
-```
-
-### 4. Commit
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
+### 3. Create Spec (if approved)
 
 ```
-feat(sdk): add session TTL configuration
-fix(hub): resolve passkey error on Safari
-docs: update integration guide
+specs/product/[feature-name].product.md
 ```
 
-### 5. Create PR
+### 4. Implementation
 
-- Push your branch
-- Open PR against `main`
-- CI runs automatically
-- Preview deploys to `dev-1.villa.cash`
+Engineers create PRs linked to the spec.
 
-## Design System
+### 5. Review & Ship
 
-All apps use `@villa/config/tailwind.preset`:
+Product review → Merge → Deploy
 
-```typescript
-// tailwind.config.ts
-import preset from "@villa/config/tailwind.preset";
-export default { presets: [preset] };
-```
+## Communication Channels
 
-### Colors
-
-| Token           | Use             |
-| --------------- | --------------- |
-| `cream-*`       | Backgrounds     |
-| `ink`           | Text            |
-| `accent-yellow` | Primary actions |
-| `accent-green`  | Success         |
-
-### Components
-
-Check `packages/ui` first. Add new shared components there.
-
-## Code Standards
-
-- **TypeScript**: Strict mode, no `any`, use Zod for validation
-- **React**: Functional components, proper focus states
-- **Security**: Never log secrets, sanitize inputs
-
-## Environments
-
-| Env        | URL              | Network      |
-| ---------- | ---------------- | ------------ |
-| Production | villa.cash       | Base         |
-| Staging    | beta.villa.cash  | Base Sepolia |
-| Preview    | dev-1.villa.cash | Base Sepolia |
+| Channel       | Use For                              |
+| ------------- | ------------------------------------ |
+| GitHub Issues | Feature requests, bugs, discussions  |
+| GitHub PRs    | Code review, implementation feedback |
+| Telegram      | Quick questions, real-time chat      |
 
 ## Getting Help
 
-- [GitHub Discussions](https://github.com/rockfridrich/villa/discussions)
-- [Telegram Community](https://t.me/proofofretreat)
-- Security issues: security@villa.cash
+- **Technical questions**: Create an issue with `question` label
+- **Product decisions**: Tag `@AbuSantos` or `@rockfridrich`
+- **AI assistance**: Use OpenCode with `@oracle` for deep analysis
 
-## License
+---
 
-MIT
+## For Engineers
+
+See [AGENTS.md](./AGENTS.md) for the full AI agent system and [.opencode/OPENCODE.md](./.opencode/OPENCODE.md) for protocols.
