@@ -1,0 +1,212 @@
+name: Sandbox Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to deploy"
+        required: true
+        type: number
+      app:
+        description: "App to deploy"
+        required: true
+        default: "hub"
+        type: choice
+        options:
+          - hub
+          - developers
+          - key
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  parse-command:
+    name: "Parse Command"
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'issue_comment' && 
+       github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/deploy'))
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+      pr_number: ${{ steps.check.outputs.pr_number }}
+      app: ${{ steps.check.outputs.app }}
+    steps:
+      - name: Parse and check permissions
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const user = context.actor;
+            const coreContributors = ['rockfridrich', 'abubakar508'];
+
+            let prNumber, app = 'hub';
+
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = context.payload.inputs.pr_number;
+              app = context.payload.inputs.app || 'hub';
+            } else {
+              prNumber = context.payload.issue.number;
+              const comment = context.payload.comment.body.trim();
+              
+              // Parse: /deploy [app]
+              // Examples: /deploy, /deploy hub, /deploy docs, /deploy developers
+              const match = comment.match(/^\/deploy(?:\s+(\w+))?/);
+              if (match) {
+                const appArg = match[1]?.toLowerCase();
+                if (appArg === 'docs') app = 'developers';
+                else if (['hub', 'developers', 'key'].includes(appArg)) app = appArg;
+              }
+            }
+
+            const allowed = coreContributors.includes(user);
+
+            if (!allowed) {
+              core.warning(`User ${user} is not authorized for sandbox deployment`);
+            }
+
+            console.log(`PR: ${prNumber}, App: ${app}, User: ${user}, Allowed: ${allowed}`);
+
+            core.setOutput('allowed', allowed);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('app', app);
+
+  deploy:
+    name: "Deploy ${{ needs.parse-command.outputs.app }}"
+    needs: parse-command
+    if: needs.parse-command.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Get PR info
+        id: pr-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = ${{ needs.parse-command.outputs.pr_number }};
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo,
+              pull_number: prNumber
+            });
+
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('title', pr.title);
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-info.outputs.head_sha }}
+
+      - name: Setup Railway
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        id: deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          APP: ${{ needs.parse-command.outputs.app }}
+        run: |
+          # Map app to Railway service
+          case "$APP" in
+            hub) SERVICE="villa-staging" ;;
+            developers) SERVICE="villa-developers" ;;
+            key) SERVICE="villa-key-staging" ;;
+            *) SERVICE="villa-staging" ;;
+          esac
+
+          echo "Deploying $APP to Railway service $SERVICE..."
+
+          # Link to project and service
+          railway link --project 7c344004-cd63-4b10-8479-9991c3923115 --environment production --service "$SERVICE" || true
+
+          # Deploy
+          railway up --detach
+
+          # Get service URL
+          case "$APP" in
+            hub) URL="https://construction.villa.cash" ;;
+            developers) URL="https://docs.villa.cash" ;;
+            key) URL="https://fake-key.villa.cash" ;;
+          esac
+
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to $URL"
+
+      - name: Wait for deployment
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          echo "Waiting for deployment at $URL..."
+          sleep 30
+
+          HEALTH_ENDPOINT="$URL/api/health"
+          if [[ "$URL" == *"docs"* ]]; then
+            HEALTH_ENDPOINT="$URL"
+          fi
+
+          for i in {1..20}; do
+            if curl -sf "$HEALTH_ENDPOINT" > /dev/null; then
+              echo "Deployment healthy!"
+              exit 0
+            fi
+            echo "Waiting... ($i/20)"
+            sleep 15
+          done
+          echo "Warning: Deployment may still be in progress"
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ needs.parse-command.outputs.pr_number }};
+            const sha = '${{ steps.pr-info.outputs.head_sha }}'.substring(0, 7);
+            const app = '${{ needs.parse-command.outputs.app }}';
+            const url = '${{ steps.deploy.outputs.url }}';
+
+            const appEmoji = {
+              hub: '🏠',
+              developers: '📚',
+              key: '🔑'
+            };
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `${appEmoji[app] || '🚀'} **Deployed ${app} to staging!**\n\n` +
+                    `| | |\n|---|---|\n` +
+                    `| **URL** | ${url} |\n` +
+                    `| **Commit** | \`${sha}\` |\n` +
+                    `| **App** | ${app} |\n\n` +
+                    `_Reply with \`/deploy [app]\` to deploy a different app._`
+            });
+
+  deny:
+    name: "Deny"
+    needs: parse-command
+    if: |
+      needs.parse-command.outputs.allowed == 'false' &&
+      github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment denial
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `⚠️ **Deploy denied** - Only core contributors can deploy.\n\n` +
+                    `Ask a maintainer to run \`/deploy\` for you.`
+            });

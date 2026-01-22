@@ -85,13 +85,19 @@ export interface PipelineResponse {
   fetchedAt: string;
 }
 
-export type Environment = "local" | "staging" | "production" | "developers";
+export type Environment =
+  | "local"
+  | "construction"
+  | "production"
+  | "docs"
+  | "fake-key";
 
 export const ENVIRONMENT_URLS: Record<Environment, string> = {
   local: "http://localhost:3000/api/health",
-  staging: "https://beta.villa.cash/api/health",
+  construction: "https://construction.villa.cash/api/health",
   production: "https://villa.cash/api/health",
-  developers: "https://developers.villa.cash",
+  docs: "https://docs.villa.cash",
+  "fake-key": "https://fake-key.villa.cash/api/health",
 };
 
 export const PIPELINE_STAGES = [
@@ -99,7 +105,7 @@ export const PIPELINE_STAGES = [
     id: "local",
     name: "Local Dev",
     description: "bun dev + bun verify",
-    url: "https://local.villa.cash",
+    url: "http://localhost:3000",
     trigger: "manual",
   },
   {
@@ -110,10 +116,10 @@ export const PIPELINE_STAGES = [
     trigger: "auto",
   },
   {
-    id: "staging",
-    name: "Staging",
+    id: "construction",
+    name: "Construction",
     description: "Auto-deploy on merge to main",
-    url: "https://beta.villa.cash",
+    url: "https://construction.villa.cash",
     trigger: "auto",
   },
   {
@@ -126,7 +132,8 @@ export const PIPELINE_STAGES = [
 ] as const;
 
 export const ENVIRONMENT_HEALTH_ENDPOINTS = {
-  staging: "https://beta.villa.cash/api/health",
+  construction: "https://construction.villa.cash/api/health",
   production: "https://villa.cash/api/health",
-  developers: "https://developers.villa.cash",
+  docs: "https://docs.villa.cash",
+  "fake-key": "https://fake-key.villa.cash/api/health",
 } as const;

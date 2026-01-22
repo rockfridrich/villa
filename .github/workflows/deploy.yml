@@ -19,7 +19,7 @@ concurrency:
 
 env:
   PRODUCTION_DOMAIN: villa.cash
-  STAGING_DOMAIN: beta.villa.cash
+  STAGING_DOMAIN: construction.villa.cash
 
 jobs:
   # =============================================================================
@@ -229,7 +229,7 @@ jobs:
         run: bun run typecheck & bun run lint & wait
 
   # =============================================================================
-  # DEPLOY STAGING - To beta.villa.cash on push to main
+  # DEPLOY STAGING - To construction.villa.cash on push to main
   # =============================================================================
   deploy-staging:
     name: "🎯 Deploy Staging"
@@ -241,7 +241,7 @@ jobs:
       build-id: ${{ steps.wait-build.outputs.build-id }}
     environment:
       name: staging
-      url: https://beta.villa.cash
+      url: https://construction.villa.cash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -265,14 +265,14 @@ jobs:
           export MINTER_PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}"
           envsubst '${DATABASE_URL} ${MINTER_PRIVATE_KEY}' < .do/app-staging.yaml > .do/app-staging-generated.yaml
 
-      - name: Deploy to beta.villa.cash
+      - name: Deploy to construction.villa.cash
         id: deploy
         run: |
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
 
           if [ -z "$APP_ID" ]; then
             doctl apps create --spec .do/app-staging-generated.yaml
-            echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
+            echo "url=https://construction.villa.cash" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -283,7 +283,7 @@ jobs:
 
           doctl apps create-deployment $APP_ID --force-rebuild --wait=false || true
 
-          echo "url=https://beta.villa.cash" >> $GITHUB_OUTPUT
+          echo "url=https://construction.villa.cash" >> $GITHUB_OUTPUT
           echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
           echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
@@ -336,13 +336,13 @@ jobs:
             curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               -H "Content-Type: application/json" \
-              --data '{"hosts":["beta.villa.cash"]}' || true
+              --data '{"hosts":["construction.villa.cash"]}' || true
           fi
 
       - name: Smoke test
         run: |
           for i in {1..10}; do
-            if curl -sf "https://beta.villa.cash/api/health" > /dev/null; then
+            if curl -sf "https://construction.villa.cash/api/health" > /dev/null; then
               echo "✅ Staging healthy"
               exit 0
             fi
@@ -361,7 +361,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🎯 **Deployed to staging** • [beta.villa.cash](https://beta.villa.cash) • \`${sha}\`\n\n_${msg}_`
+              body: `🎯 **Deployed to staging** • [construction.villa.cash](https://construction.villa.cash) • \`${sha}\`\n\n_${msg}_`
             });
 
   # =============================================================================
@@ -542,5 +542,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🎉 Merged! Changes will auto-deploy to [beta.villa.cash](https://beta.villa.cash).\n\nCreate \`v*\` tag to deploy to production.`
+              body: `🎉 Merged! Changes will auto-deploy to [construction.villa.cash](https://construction.villa.cash).\n\nCreate \`v*\` tag to deploy to production.`
             });

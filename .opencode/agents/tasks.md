@@ -92,11 +92,39 @@ gh pr create --repo rockfridrich/villa
 git push origin main
 
 # Deploy to sandbox (manual, needs approval)
-gh workflow run deploy-sandbox.yml --field pr=<number>
+gh workflow run sandbox.yml --field pr_number=<number>
 
 # Deploy to production (tag release)
 git tag v1.2.3 && git push --tags
 ```
+
+### Railway Deployments (Fast Path)
+
+For immediate Railway deployments via Sisyphus:
+
+```bash
+# Deploy single service
+./scripts/railway-deploy.sh developers    # → developers.villa.cash
+./scripts/railway-deploy.sh hub           # → construction.villa.cash
+./scripts/railway-deploy.sh key           # → fake-key.villa.cash
+
+# Deploy and wait for completion
+./scripts/railway-deploy.sh developers --wait
+
+# Deploy all services
+./scripts/railway-deploy.sh all
+```
+
+**Railway Service Map:**
+
+| Service           | Domain                  | Dockerfile                   |
+| ----------------- | ----------------------- | ---------------------------- |
+| villa-staging     | construction.villa.cash | apps/hub/railway.toml        |
+| villa-developers  | developers.villa.cash   | apps/developers/railway.toml |
+| villa-key-staging | fake-key.villa.cash     | apps/key/railway.toml        |
+
+**Project ID:** `7c344004-cd63-4b10-8479-9991c3923115`
+**Dashboard:** https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115
 
 ## Issue Labels
 

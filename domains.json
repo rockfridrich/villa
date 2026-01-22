@@ -35,8 +35,8 @@
       "deployTrigger": "push-to-main",
       "description": "Fake key - test passkeys for community on Sepolia"
     },
-    "developers": {
-      "domain": "developers.villa.cash",
+    "docs": {
+      "domain": "docs.villa.cash",
       "provider": "railway",
       "railwayService": "villa-developers",
       "railwayTarget": "p7xpf8ox.up.railway.app",
@@ -73,7 +73,7 @@
       "domains": [
         "construction.villa.cash",
         "fake-key.villa.cash",
-        "developers.villa.cash"
+        "docs.villa.cash"
       ]
     },
     "sandbox": {
@@ -90,7 +90,7 @@
       "key.villa.cash",
       "construction.villa.cash",
       "fake-key.villa.cash",
-      "developers.villa.cash",
+      "docs.villa.cash",
       "sandbox.villa.cash",
       "dev-3.villa.cash"
     ]

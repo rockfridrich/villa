@@ -25,7 +25,7 @@ export default function RootLayout({
       <head>
         <Script
           defer
-          data-domain="developers.villa.cash"
+          data-domain="docs.villa.cash"
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />

@@ -730,7 +730,7 @@ const resolverAddress = getNicknameResolverAddress(84532)
                 <ExternalLink className="w-4 h-4 text-ink-muted flex-shrink-0" />
               </a>
               <a
-                href="https://beta.villa.cash/sdk-demo"
+                href="https://construction.villa.cash/sdk-demo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 bg-cream-100/50 rounded-lg hover:bg-cream-100 transition-colors"

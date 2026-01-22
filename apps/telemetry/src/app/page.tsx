@@ -84,9 +84,10 @@ interface PipelineData {
 
 const ENVIRONMENTS = [
   { name: "Local Hub", env: "local" },
-  { name: "Staging", env: "staging" },
+  { name: "Construction", env: "construction" },
   { name: "Production", env: "production" },
-  { name: "Developers", env: "developers" },
+  { name: "Docs", env: "docs" },
+  { name: "Fake Key", env: "fake-key" },
 ];
 
 function StatusBadge({ status }: { status: ServiceStatus["status"] }) {
@@ -370,11 +371,11 @@ function PipelineCard({ pipeline }: { pipeline: PipelineData | null }) {
       icon: "🔍",
     },
     {
-      id: "staging",
-      name: "Staging",
-      description: "beta.villa.cash",
+      id: "construction",
+      name: "Construction",
+      description: "construction.villa.cash",
       trigger: "auto",
-      icon: "🎯",
+      icon: "🏗️",
     },
     {
       id: "production",
@@ -481,9 +482,9 @@ function PipelineCard({ pipeline }: { pipeline: PipelineData | null }) {
             {pipeline.lastDeploy.staging && (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                <span className="text-gray-500">Staging:</span>
+                <span className="text-gray-500">Construction:</span>
                 <a
-                  href="https://beta.villa.cash"
+                  href="https://construction.villa.cash"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-mono text-blue-600 hover:underline"
@@ -998,15 +999,56 @@ export default function TelemetryDashboard() {
           </div>
 
           <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-            <h3 className="font-medium text-ink mb-3">DigitalOcean</h3>
+            <h3 className="font-medium text-ink mb-3">Quick Actions</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => executeAction("deploy-construction")}
+                disabled={actionLoading}
+                className="w-full px-3 py-2 text-sm font-medium bg-yellow-500 text-white rounded hover:bg-yellow-600 transition disabled:opacity-50 text-left"
+              >
+                🏗️ Deploy to Construction
+              </button>
+              <button
+                onClick={() => executeAction("deploy-docs")}
+                disabled={actionLoading}
+                className="w-full px-3 py-2 text-sm font-medium bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-50 text-left"
+              >
+                📚 Deploy Docs
+              </button>
+              <button
+                onClick={() => executeAction("deploy-fake-key")}
+                disabled={actionLoading}
+                className="w-full px-3 py-2 text-sm font-medium bg-purple-500 text-white rounded hover:bg-purple-600 transition disabled:opacity-50 text-left"
+              >
+                🔑 Deploy Fake Key
+              </button>
+              <button
+                onClick={() => executeAction("run-e2e")}
+                disabled={actionLoading}
+                className="w-full px-3 py-2 text-sm font-medium bg-green-500 text-white rounded hover:bg-green-600 transition disabled:opacity-50 text-left"
+              >
+                🧪 Run E2E Tests
+              </button>
+              <button
+                onClick={() => executeAction("backup-db")}
+                disabled={actionLoading}
+                className="w-full px-3 py-2 text-sm font-medium bg-orange-500 text-white rounded hover:bg-orange-600 transition disabled:opacity-50 text-left"
+              >
+                💾 Backup Database
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
+            <h3 className="font-medium text-ink mb-3">Railway</h3>
             <div className="space-y-2 text-sm">
               <a
-                href="https://cloud.digitalocean.com/apps"
+                href="https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-blue-600 hover:underline"
               >
-                Apps Dashboard
+                Railway Dashboard
               </a>
               <div className="pt-2 border-t border-neutral-100 mt-2">
                 <p className="text-xs text-gray-500 mb-2">Environments:</p>
@@ -1019,20 +1061,28 @@ export default function TelemetryDashboard() {
                   Production → villa.cash
                 </a>
                 <a
-                  href="https://beta.villa.cash"
+                  href="https://construction.villa.cash"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-blue-600 hover:underline"
                 >
-                  Staging → beta.villa.cash
+                  Construction → construction.villa.cash
                 </a>
                 <a
-                  href="https://developers.villa.cash"
+                  href="https://docs.villa.cash"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-blue-600 hover:underline"
                 >
-                  Docs → developers.villa.cash
+                  Docs → docs.villa.cash
+                </a>
+                <a
+                  href="https://fake-key.villa.cash"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 hover:underline"
+                >
+                  Fake Key → fake-key.villa.cash
                 </a>
               </div>
             </div>
@@ -1040,7 +1090,7 @@ export default function TelemetryDashboard() {
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Telemetry Dashboard v0.2.0 | Auto-refreshes every 30s</p>
+          <p>Telemetry Dashboard v0.3.0 | Auto-refreshes every 30s</p>
         </div>
       </div>
     </div>

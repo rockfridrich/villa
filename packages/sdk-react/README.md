@@ -144,7 +144,7 @@ type VillaAuthResponse =
 
 ## Links
 
-- [Documentation](https://developers.villa.cash)
+- [Documentation](https://docs.villa.cash)
 - [Core SDK](https://www.npmjs.com/package/@rockfridrich/villa-sdk)
 - [GitHub](https://github.com/rockfridrich/villa)
 

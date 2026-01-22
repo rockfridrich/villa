@@ -124,11 +124,11 @@ export default function PlaygroundPage() {
     setOutput([
       "[Playground] Running code in sandbox...",
       "",
-      "[Note] This is a demo playground. Real execution requires integration with beta.villa.cash.",
+      "[Note] This is a demo playground. Real execution requires integration with construction.villa.cash.",
       "",
       "To test live:",
       "1. Install SDK: npm install @rockfridrich/villa-sdk",
-      "2. Use beta.villa.cash for authentication",
+      "2. Use construction.villa.cash for authentication",
       "3. Follow the quickstart guide in Documentation",
     ]);
 
@@ -160,7 +160,7 @@ export default function PlaygroundPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-serif">Live Interactive Demo</h2>
             <a
-              href="https://beta.villa.cash/sdk-demo"
+              href="https://construction.villa.cash/sdk-demo"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-accent-yellow hover:underline flex items-center gap-1"
@@ -197,7 +197,7 @@ export default function PlaygroundPage() {
               </div>
             )}
             <iframe
-              src="https://beta.villa.cash/sdk-demo"
+              src="https://construction.villa.cash/sdk-demo"
               className="w-full h-[500px] sm:h-[600px] lg:h-[700px] border-0"
               title="Villa SDK Live Demo - Interactive passkey authentication"
               allow="publickey-credentials-get *; publickey-credentials-create *"
@@ -206,8 +206,8 @@ export default function PlaygroundPage() {
             />
           </div>
           <p className="text-xs text-ink-muted text-center">
-            Demo powered by beta.villa.cash • Passkeys stored securely on your
-            device
+            Demo powered by construction.villa.cash • Passkeys stored securely
+            on your device
           </p>
         </div>
       </section>
@@ -361,7 +361,7 @@ export default function PlaygroundPage() {
               </div>
               <div>
                 <a
-                  href="https://beta.villa.cash/sdk-demo"
+                  href="https://construction.villa.cash/sdk-demo"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-accent-yellow hover:underline font-medium"

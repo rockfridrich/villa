@@ -15,11 +15,11 @@ export async function GET() {
   }
 
   try {
-    const [workflowRuns, commits, stagingHealth, prodHealth] =
+    const [workflowRuns, commits, constructionHealth, prodHealth] =
       await Promise.allSettled([
         getWorkflowRuns(5),
         getRecentCommits(1),
-        fetchHealthQuick(ENVIRONMENT_URLS.staging),
+        fetchHealthQuick(ENVIRONMENT_URLS.construction),
         fetchHealthQuick(ENVIRONMENT_URLS.production),
       ]);
 
@@ -54,14 +54,14 @@ export async function GET() {
     }
 
     stages.push({
-      name: "Staging",
+      name: "Construction",
       status:
-        stagingHealth.status === "fulfilled" && stagingHealth.value
+        constructionHealth.status === "fulfilled" && constructionHealth.value
           ? "success"
           : "failed",
-      url: "https://beta.villa.cash",
+      url: "https://construction.villa.cash",
       details:
-        stagingHealth.status === "fulfilled" && stagingHealth.value
+        constructionHealth.status === "fulfilled" && constructionHealth.value
           ? "healthy"
           : "unreachable",
     });
@@ -99,8 +99,9 @@ export async function GET() {
           ? prodHealth.value.build.sha.slice(0, 7)
           : null,
       staging:
-        stagingHealth.status === "fulfilled" && stagingHealth.value?.build?.sha
-          ? stagingHealth.value.build.sha.slice(0, 7)
+        constructionHealth.status === "fulfilled" &&
+        constructionHealth.value?.build?.sha
+          ? constructionHealth.value.build.sha.slice(0, 7)
           : null,
     };
 

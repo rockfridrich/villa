@@ -293,7 +293,7 @@ Or use Tailwind classes directly:
 
 ## Documentation
 
-Full docs: https://developers.villa.cash
+Full docs: https://docs.villa.cash
 
 ## Support
 

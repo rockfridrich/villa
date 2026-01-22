@@ -1,4 +1,4 @@
-const PLAUSIBLE_DOMAIN = "developers.villa.cash";
+const PLAUSIBLE_DOMAIN = "docs.villa.cash";
 
 type PlausibleEvent =
   | { name: "pageview" }

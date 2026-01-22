@@ -12,7 +12,7 @@ Drop-in passkey authentication, persistent identities, and cross-device sync. Bu
 ## Why Villa?
 
 - **10-line integration** - Fullscreen passkey auth with persistent nicknames and avatars
-- **AI-optimized** - Ships with [CLAUDE.txt](https://developers.villa.cash/CLAUDE.txt) for instant AI assistant context
+- **AI-optimized** - Ships with [CLAUDE.txt](https://docs.villa.cash/CLAUDE.txt) for instant AI assistant context
 - **Cross-device sync** - Identity follows users across devices via biometric recovery
 - **Proof of Retreat ecosystem** - Identity for pop-up village apps (vote, share rides, split bills)
 
@@ -63,7 +63,7 @@ function App() {
 Villa ships with structured context for AI coding assistants:
 
 ```bash
-curl https://developers.villa.cash/CLAUDE.txt
+curl https://docs.villa.cash/CLAUDE.txt
 ```
 
 **Works with:** Claude Code, Cursor, Windsurf, Lovable, GitHub Copilot
@@ -74,7 +74,7 @@ curl https://developers.villa.cash/CLAUDE.txt
 Add Villa authentication to my Next.js app
 ```
 
-Your AI already knows how - [CLAUDE.txt](https://developers.villa.cash/CLAUDE.txt) includes:
+Your AI already knows how - [CLAUDE.txt](https://docs.villa.cash/CLAUDE.txt) includes:
 
 - Complete API reference with TypeScript types
 - React hooks and components
@@ -85,8 +85,8 @@ Your AI already knows how - [CLAUDE.txt](https://developers.villa.cash/CLAUDE.tx
 
 | Resource             | URL                                                                | Description        |
 | -------------------- | ------------------------------------------------------------------ | ------------------ |
-| **Developer Portal** | [developers.villa.cash](https://developers.villa.cash)             | Full documentation |
-| **AI Context**       | [CLAUDE.txt](https://developers.villa.cash/CLAUDE.txt)             | For AI assistants  |
+| **Developer Portal** | [docs.villa.cash](https://docs.villa.cash)                         | Full documentation |
+| **AI Context**       | [CLAUDE.txt](https://docs.villa.cash/CLAUDE.txt)                   | For AI assistants  |
 | **SDK Reference**    | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk)       | API docs           |
 | **React Reference**  | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk-react) | Component docs     |
 | **Source Code**      | [GitHub](https://github.com/rockfridrich/villa)                    | Implementation     |
@@ -103,11 +103,11 @@ Your AI already knows how - [CLAUDE.txt](https://developers.villa.cash/CLAUDE.tx
 
 ## Live Environments
 
-| Environment | URL                                                    | Use Case          |
-| ----------- | ------------------------------------------------------ | ----------------- |
-| Production  | [villa.cash](https://villa.cash)                       | Stable SDK        |
-| Staging     | [beta.villa.cash](https://beta.villa.cash)             | Latest features   |
-| Developers  | [developers.villa.cash](https://developers.villa.cash) | Docs + CLAUDE.txt |
+| Environment  | URL                                                        | Use Case          |
+| ------------ | ---------------------------------------------------------- | ----------------- |
+| Production   | [villa.cash](https://villa.cash)                           | Stable SDK        |
+| Construction | [construction.villa.cash](https://construction.villa.cash) | Latest features   |
+| Docs         | [docs.villa.cash](https://docs.villa.cash)                 | Docs + CLAUDE.txt |
 
 ## Development
 
@@ -147,7 +147,7 @@ returned        (passkeys)          (alice.villa.cash)
 
 ## Links
 
-- [Developer Portal](https://developers.villa.cash) - Docs + CLAUDE.txt
+- [Developer Portal](https://docs.villa.cash) - Docs + CLAUDE.txt
 - [Telegram](https://t.me/proofofretreat) - Community
 - [Porto SDK](https://porto.sh/sdk) - Passkey infrastructure
 

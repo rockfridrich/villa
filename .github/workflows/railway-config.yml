@@ -1,0 +1,160 @@
+name: Railway Config
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action"
+        required: true
+        type: choice
+        options:
+          - fix-all
+          - fix-developers
+          - fix-key
+          - list
+      deploy:
+        description: "Deploy after fix"
+        required: false
+        type: boolean
+        default: true
+
+env:
+  PROJECT_ID: "7c344004-cd63-4b10-8479-9991c3923115"
+  RAILWAY_API: "https://backboard.railway.app/graphql/v2"
+
+jobs:
+  configure:
+    name: "Configure Railway Services"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get service IDs
+        id: services
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          get_service_id() {
+            local name="$1"
+            curl -sf -X POST "$RAILWAY_API" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": \"query { project(id: \\\"$PROJECT_ID\\\") { services { edges { node { id name } } } } }\"}" \
+              | jq -r ".data.project.services.edges[] | select(.node.name == \"$name\") | .node.id"
+          }
+
+          echo "staging_id=$(get_service_id 'villa-staging')" >> $GITHUB_OUTPUT
+          echo "developers_id=$(get_service_id 'villa-developers')" >> $GITHUB_OUTPUT
+          echo "key_id=$(get_service_id 'villa-key-staging')" >> $GITHUB_OUTPUT
+
+      - name: List services
+        if: inputs.action == 'list'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "## Railway Services" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | ID | Expected Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----|--------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-staging | ${{ steps.services.outputs.staging_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-developers | ${{ steps.services.outputs.developers_id }} | apps/developers/Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-key-staging | ${{ steps.services.outputs.key_id }} | apps/key/Dockerfile |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fix villa-developers
+        if: inputs.action == 'fix-developers' || inputs.action == 'fix-all'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: ${{ steps.services.outputs.developers_id }}
+        run: |
+          echo "Configuring villa-developers..."
+
+          MUTATION=$(cat << 'EOF'
+          mutation($serviceId: String!, $input: ServiceInstanceUpdateInput!) {
+            serviceInstanceUpdate(serviceId: $serviceId, input: $input) {
+              id
+            }
+          }
+          EOF
+          )
+
+          RESULT=$(curl -sf -X POST "$RAILWAY_API" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/developers/Dockerfile\\\", healthcheckPath: \\\"/\\\" }) { id } }\"
+            }")
+
+          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then
+            echo "✅ villa-developers configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Failed to configure villa-developers" >> $GITHUB_STEP_SUMMARY
+            echo "$RESULT"
+            exit 1
+          fi
+
+      - name: Fix villa-key-staging
+        if: inputs.action == 'fix-key' || inputs.action == 'fix-all'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: ${{ steps.services.outputs.key_id }}
+        run: |
+          echo "Configuring villa-key-staging..."
+
+          RESULT=$(curl -sf -X POST "$RAILWAY_API" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/key/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\" }) { id } }\"
+            }")
+
+          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then
+            echo "✅ villa-key-staging configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Failed to configure villa-key-staging" >> $GITHUB_STEP_SUMMARY
+            echo "$RESULT"
+            exit 1
+          fi
+
+      - name: Deploy updated services
+        if: inputs.deploy && (inputs.action == 'fix-developers' || inputs.action == 'fix-key' || inputs.action == 'fix-all')
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          deploy_service() {
+            local service_id="$1"
+            local name="$2"
+            
+            echo "Deploying $name..."
+            
+            RESULT=$(curl -sf -X POST "$RAILWAY_API" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": \"mutation { serviceInstanceRedeploy(serviceId: \\\"$service_id\\\") { id } }\"}")
+            
+            if echo "$RESULT" | jq -e '.data.serviceInstanceRedeploy.id' > /dev/null 2>&1; then
+              echo "✅ $name deployment triggered" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ Failed to deploy $name" >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
+          case "${{ inputs.action }}" in
+            fix-developers)
+              deploy_service "${{ steps.services.outputs.developers_id }}" "villa-developers"
+              ;;
+            fix-key)
+              deploy_service "${{ steps.services.outputs.key_id }}" "villa-key-staging"
+              ;;
+            fix-all)
+              deploy_service "${{ steps.services.outputs.developers_id }}" "villa-developers"
+              deploy_service "${{ steps.services.outputs.key_id }}" "villa-key-staging"
+              ;;
+          esac
+
+      - name: Summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Railway Dashboard](https://railway.com/project/$PROJECT_ID)" >> $GITHUB_STEP_SUMMARY
+          echo "- [docs.villa.cash](https://docs.villa.cash)" >> $GITHUB_STEP_SUMMARY
+          echo "- [construction.villa.cash](https://construction.villa.cash)" >> $GITHUB_STEP_SUMMARY

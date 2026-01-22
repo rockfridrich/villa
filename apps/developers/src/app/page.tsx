@@ -102,7 +102,7 @@ export default function DevelopersPage() {
               <ChevronRight className="w-4 h-4" />
             </a>
             <a
-              href="https://beta.villa.cash/sdk-demo"
+              href="https://construction.villa.cash/sdk-demo"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 border border-ink/20 px-6 py-3 rounded-lg hover:bg-ink/5 transition-colors"
@@ -470,7 +470,7 @@ function LoginPage() {
 cp node_modules/@rockfridrich/villa-sdk/CLAUDE.txt .claude/villa.md
 
 # Or download directly:
-curl -o .claude/villa.md https://developers.villa.cash/CLAUDE.txt`}
+curl -o .claude/villa.md https://docs.villa.cash/CLAUDE.txt`}
               language="bash"
             />
           </div>
@@ -1473,7 +1473,7 @@ export default function App() {
 
           <div className="text-center">
             <a
-              href="https://beta.villa.cash/residents"
+              href="https://construction.villa.cash/residents"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-ink-muted hover:text-ink transition-colors"

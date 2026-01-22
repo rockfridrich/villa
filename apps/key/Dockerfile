@@ -1,41 +1,26 @@
 # syntax=docker/dockerfile:1.4
-# Production Dockerfile for @villa/key - iframe auth at key.villa.cash
-
-# Stage 1: Dependencies with pnpm
-FROM node:20-alpine AS deps
+FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat python3 make g++
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 WORKDIR /app
 
-# Copy package files for key app (no internal package dependencies)
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json bun.lock turbo.json ./
 COPY apps/key/package.json ./apps/key/
 
-# Install dependencies
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN bun install
 
-# Stage 2: Build with Turborepo
-FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM oven/bun:1-alpine AS builder
+RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
-# Copy all installed deps from deps stage
 COPY --from=deps /app/node_modules ./node_modules/
 COPY --from=deps /app/apps ./apps/
-
-# Copy source files for key app only
-COPY apps/key ./apps/key/
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build key app with pnpm filter
-RUN --mount=type=cache,target=/app/apps/key/.next/cache \
-    pnpm --filter @villa/key build
+RUN bun turbo run build --filter=@villa/key
 
-# Stage 3: Production-optimized runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -44,20 +29,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3002
 ENV HOSTNAME="0.0.0.0"
 
-# Security: non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm /node_modules/.pnpm
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun 2>/dev/null || true
 
 RUN mkdir -p ./public
 
 USER nextjs
 EXPOSE 3002
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3002/api/health || exit 1
 
 CMD ["node", "server.js"]

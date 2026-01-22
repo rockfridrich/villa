@@ -819,7 +819,7 @@ console.log(localStorage.getItem("villa:session"));
 
 ## Links
 
-- [Documentation](https://developers.villa.cash)
+- [Documentation](https://docs.villa.cash)
 - [GitHub](https://github.com/rockfridrich/villa)
 - [Security Policy](https://github.com/rockfridrich/villa/security)
 - [Base Network](https://base.org)

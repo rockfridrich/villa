@@ -53,7 +53,7 @@ const searchIndex: SearchIndexPage[] = [
     id: "claude-txt",
     title: "AI Integration (CLAUDE.txt)",
     content:
-      "CLAUDE.txt provides AI context. One-prompt integration pattern. Works with Claude, Cursor, Copilot. curl https://developers.villa.cash/CLAUDE.txt",
+      "CLAUDE.txt provides AI context. One-prompt integration pattern. Works with Claude, Cursor, Copilot. curl https://docs.villa.cash/CLAUDE.txt",
     section: "AI",
     url: "/CLAUDE.txt",
   },
