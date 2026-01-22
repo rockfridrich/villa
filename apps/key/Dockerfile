@@ -48,21 +48,15 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy entire standalone directory to preserve pnpm symlink structure
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm /node_modules/.pnpm
 
-# Copy static assets and public files into the correct location
-COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./apps/key/.next/static
-
-RUN mkdir -p ./apps/key/public
+RUN mkdir -p ./public
 
 USER nextjs
 EXPOSE 3002
 
-# Server.js is inside apps/key/ in the monorepo structure
-WORKDIR /app/apps/key
-
-# Healthcheck for container orchestration
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3002/api/health || exit 1
 

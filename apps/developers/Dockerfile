@@ -47,20 +47,15 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./apps/developers/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./apps/developers/public 2>/dev/null || true
-
-# Copy beads data for roadmap API (read-only snapshot at build time)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public 2>/dev/null || true
 COPY --from=builder --chown=nextjs:nodejs /app/.beads ./.beads
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm /node_modules/.pnpm
 
 USER nextjs
 EXPOSE 3000
 
-WORKDIR /app/apps/developers
-
-# Simple healthcheck (no /api/health endpoint needed for static docs)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 

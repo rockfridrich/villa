@@ -62,14 +62,14 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./apps/hub/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./apps/hub/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun
 
 USER nextjs
 EXPOSE 3000
 
-WORKDIR /app/apps/hub
-
+# server.js is at root of standalone output (NOT in apps/hub/)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
