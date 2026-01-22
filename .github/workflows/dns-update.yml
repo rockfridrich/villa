@@ -1,0 +1,36 @@
+name: DNS Update to Railway
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update DNS Records
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          API="https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/dns_records"
+          
+          echo "Getting current record IDs..."
+          VILLA_ID=$(curl -s "$API?name=villa.cash" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | jq -r '.result[0].id')
+          echo "villa.cash ID: $VILLA_ID"
+          
+          echo "Updating villa.cash -> villa-staging-production.up.railway.app"
+          curl -s -X PATCH "$API/$VILLA_ID" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"CNAME","name":"villa.cash","content":"villa-staging-production.up.railway.app","proxied":true}' | jq .
+          
+          echo ""
+          echo "Creating key.villa.cash -> villa-key-staging-production.up.railway.app"
+          curl -s -X POST "$API" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"CNAME","name":"key","content":"villa-key-staging-production.up.railway.app","proxied":true}' | jq .
+          
+          echo ""
+          echo "Done! Verifying..."
+          curl -s "$API" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
+            jq -r '.result[] | select(.name | test("villa.cash|key.villa.cash")) | "\(.name) -> \(.content)"'
