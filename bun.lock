@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "villa",
@@ -234,7 +233,6 @@
       "name": "@rockfridrich/villa-sdk-react",
       "version": "0.1.0-alpha.1",
       "devDependencies": {
-        "@rockfridrich/villa-sdk": "workspace:*",
         "@types/react": "^18.2.0",
         "react": "^18.2.0",
         "tsup": "^8.5.1",

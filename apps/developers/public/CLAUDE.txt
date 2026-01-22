@@ -66,7 +66,7 @@ import { VillaProvider, VillaAuth, useIdentity, useAuth } from '@rockfridrich/vi
 
 function App() {
   return (
-    <VillaProvider config={{ appId: 'your-app', network: 'base' }}>
+    <VillaProvider config={{ network: 'base' }}>
       <AuthenticatedApp />
     </VillaProvider>
   )
@@ -86,11 +86,13 @@ function AuthenticatedApp() {
 
 ## Core SDK API (Villa Class)
 
+For advanced use cases requiring custom configuration:
+
 ```typescript
 import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
-  appId: 'your-app',           // Required
+  appId: 'your-app',           // Optional - for analytics/tracking
   network: 'base',             // 'base' | 'base-sepolia'
   apiUrl: 'https://...'        // Optional override
 })

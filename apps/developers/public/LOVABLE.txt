@@ -3,6 +3,19 @@
 Villa SDK provides privacy-first passkey authentication on Base network.
 Use this guide when integrating Villa authentication in Lovable projects.
 
+## Quick Start (3 Lines)
+
+The simplest way to add Villa authentication:
+
+```typescript
+import { villa } from '@rockfridrich/villa-sdk'
+
+const user = await villa.signIn()
+console.log(user.address, user.nickname)
+```
+
+That's it! No configuration required.
+
 ## One-Click Integration for Lovable
 
 When prompted to "add Villa authentication" or "integrate passkey login", use this pattern:
@@ -22,7 +35,7 @@ import { AppRoutes } from './routes'
 
 export default function App() {
   return (
-    <VillaProvider config={{ appId: 'your-app-id' }}>
+    <VillaProvider>
       <AppRoutes />
     </VillaProvider>
   )
@@ -90,20 +103,25 @@ interface VillaAuthError {
 If you're building without React (vanilla JS, Vue, Svelte, etc.):
 
 ```typescript
-import { Villa } from '@rockfridrich/villa-sdk'
+import { villa } from '@rockfridrich/villa-sdk'
 
-const villa = new Villa({ appId: 'your-app-id' })
+// Sign in - no configuration needed
+const user = await villa.signIn()
+console.log('User:', user.nickname)
+console.log('Address:', user.address)
 
-// Sign in
-const result = await villa.signIn()
-
-if (result.success) {
-  console.log('User:', result.identity.nickname)
-  console.log('Address:', result.identity.address)
+// Check current user
+if (villa.user) {
+  console.log('Logged in as', villa.user.nickname)
 }
 
 // Sign out
-await villa.signOut()
+villa.signOut()
+
+// Listen to auth changes
+villa.onAuthChange((user) => {
+  console.log('Auth changed:', user?.nickname || 'signed out')
+})
 ```
 
 ## Avatar Rendering
@@ -286,7 +304,7 @@ Or use Tailwind classes directly:
 **Fix**: Run `npm install @rockfridrich/villa-sdk-react`
 
 **Issue**: Authentication modal doesn't appear
-**Fix**: Ensure VillaProvider wraps your app and appId is set
+**Fix**: Ensure VillaProvider wraps your app at the root level
 
 **Issue**: TypeScript errors with VillaAuthResult
 **Fix**: Import types: `import type { VillaAuthResult } from '@rockfridrich/villa-sdk-react'`

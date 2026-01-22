@@ -49,7 +49,7 @@ import {
 
 function App() {
   return (
-    <VillaProvider config={{ appId: "your-app" }}>
+    <VillaProvider>
       <AuthenticatedApp />
     </VillaProvider>
   );

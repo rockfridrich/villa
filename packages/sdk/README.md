@@ -54,12 +54,14 @@ villa.onAuthChange((user) => {
 
 ### Advanced API
 
+For apps needing custom configuration:
+
 ```typescript
 import { Villa } from "@rockfridrich/villa-sdk";
 
 const client = new Villa({
-  appId: "your-app-id",
-  network: "base", // or 'base-sepolia' for testnet
+  appId: "your-app-id", // Optional - for analytics
+  network: "base-sepolia", // Use testnet
 });
 
 const result = await client.signIn();
@@ -73,25 +75,35 @@ if (result.success) {
 
 ## API Reference
 
-### Villa Client
+### Simple API (`villa`)
 
-Main entry point for SDK usage.
+Zero-config singleton for most use cases:
+
+```typescript
+import { villa } from "@rockfridrich/villa-sdk";
+
+villa.signIn(); // Returns Promise<VillaUser>
+villa.signOut(); // Clears session
+villa.user; // Current user or null
+villa.onAuthChange(); // Subscribe to auth changes
+villa.config({}); // Override settings if needed
+```
+
+### Villa Client (Advanced)
+
+For apps needing custom configuration:
 
 #### Constructor
 
 ```typescript
-const villa = new Villa(config);
+const client = new Villa(config);
 ```
 
 **Parameters:**
 
-- `config.appId` (string, required) - Your application identifier
+- `config.appId` (string, optional) - Application identifier for analytics
 - `config.network` (string, optional) - 'base' (default) or 'base-sepolia'
 - `config.apiUrl` (string, optional) - Override API endpoint
-
-**Throws:**
-
-- `Error` if appId is missing or empty
 
 #### Methods
 
