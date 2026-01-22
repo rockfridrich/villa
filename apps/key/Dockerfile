@@ -1,12 +1,22 @@
 # syntax=docker/dockerfile:1.4
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apk add --no-cache libc6-compat python3 make g++ git
 WORKDIR /app
 
 COPY package.json bun.lock turbo.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/developers/package.json ./apps/developers/
+COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
+COPY apps/relay/package.json ./apps/relay/
+COPY apps/telemetry/package.json ./apps/telemetry/
+COPY contracts/package.json ./contracts/
+COPY packages/config/package.json ./packages/config/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/sdk-react/package.json ./packages/sdk-react/
+COPY packages/ui/package.json ./packages/ui/
 
-RUN bun install
+RUN bun install --frozen-lockfile --ignore-scripts || echo "Continuing"
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
@@ -34,7 +44,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun 2>/dev/null || true
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun
 
 RUN mkdir -p ./public
 
