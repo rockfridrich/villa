@@ -118,10 +118,10 @@ jobs:
         run: |
           # Map app to Railway service
           case "$APP" in
-            hub) SERVICE="villa-staging" ;;
+            hub) SERVICE="villa-production" ;;
             developers) SERVICE="villa-developers" ;;
-            key) SERVICE="villa-key-staging" ;;
-            *) SERVICE="villa-staging" ;;
+            key) SERVICE="villa-key" ;;
+            *) SERVICE="villa-production" ;;
           esac
 
           echo "Deploying $APP to Railway service $SERVICE..."
