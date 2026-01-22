@@ -37,13 +37,30 @@
 
 ### 3. Cost Targets
 
-| Metric          | Target         | Current | Action if Exceeded           |
-| --------------- | -------------- | ------- | ---------------------------- |
-| Opus usage      | <10% of tokens | TBD     | Review task routing          |
-| Sonnet usage    | <60% of tokens | TBD     | Move to Haiku where possible |
-| Haiku usage     | >30% of tokens | TBD     | Good                         |
-| Cost per commit | <$0.50         | TBD     | Review complexity            |
-| Fixup ratio     | <15%           | TBD     | Improve first-pass quality   |
+| Metric          | Target         | Current (Jan 2026) | Action if Exceeded           |
+| --------------- | -------------- | ------------------ | ---------------------------- |
+| Opus usage      | <10% of tokens | **92.8%** ⚠️       | Review task routing          |
+| Sonnet usage    | <60% of tokens | 5.2%               | Move to Haiku where possible |
+| Haiku usage     | >30% of tokens | 1.9%               | Good                         |
+| Cost per commit | <$0.50         | ~$127/day ⚠️       | Review complexity            |
+| Fixup ratio     | <15%           | ~20% estimated     | Improve first-pass quality   |
+
+### 4. Actual Cost Data (Jan 2-7, 2026)
+
+**Source:** `.claude/costs.json` (Anthropic console export)
+
+| Day        | Total       | Opus        | Sonnet     | Haiku      |
+| ---------- | ----------- | ----------- | ---------- | ---------- |
+| 2026-01-02 | $4.35       | $4.30       | $0.03      | $0.02      |
+| 2026-01-03 | $131.79     | $126.11     | $4.10      | $1.48      |
+| 2026-01-04 | $336.10     | $312.14     | $17.81     | $6.01      |
+| 2026-01-05 | $137.40     | $130.07     | $4.37      | $2.82      |
+| 2026-01-06 | $84.40      | $79.49      | $3.45      | $1.43      |
+| 2026-01-07 | $69.57      | $56.72      | $10.05     | $2.79      |
+| **TOTAL**  | **$763.61** | **$708.83** | **$39.81** | **$14.55** |
+
+**Daily Average:** $127.27 (target: $50)
+**Problem:** Orchestrator doing manual work instead of delegating to cheaper models
 
 ## Task Routing Decision Tree
 

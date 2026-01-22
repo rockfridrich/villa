@@ -90,8 +90,22 @@ Cost: ~$0.50
 
 | Model Mix             | Daily Cost | Monthly |
 | --------------------- | ---------- | ------- |
-| Current (94% Opus)    | $115       | $3,450  |
+| Current (94% Opus)    | $127       | $3,810  |
 | Optimized (30% Opus)  | $50        | $1,500  |
 | Aggressive (10% Opus) | $35        | $1,050  |
 
-Target: 30% Opus for 57% cost reduction.
+Target: 30% Opus for 60% cost reduction.
+
+## Actual Cost Data (Jan 2-7, 2026)
+
+**CRITICAL: Opus is 92.8% of spend.** Must enforce delegation.
+
+| Model  | Spend   | % Total | Target % |
+| ------ | ------- | ------- | -------- |
+| Opus   | $708.83 | 92.8%   | 30%      |
+| Sonnet | $39.81  | 5.2%    | 50%      |
+| Haiku  | $14.55  | 1.9%    | 20%      |
+
+**Root Cause:** Orchestrator doing manual work instead of delegating.
+
+**Fix:** Strict enforcement of agent routing in `.opencode/AGENT_COSTS.md`.
