@@ -10,7 +10,7 @@
 - **Packages**: `@rockfridrich/villa-sdk`, `@rockfridrich/villa-sdk-react`
 - **Peer deps**: `viem`, `zod`
 - **Networks**: Base (8453) for production, Base Sepolia (84532) for testing
-- **Docs**: https://docs.villa.cash
+- **Docs**: https://developers.villa.cash
 - **GitHub**: https://github.com/rockfridrich/villa
 
 ## One-Prompt Integration (React)
@@ -362,7 +362,7 @@ After successful authentication:
 | Production | villa.cash | Stable SDK |
 | Construction | construction.villa.cash | Building zone, latest features |
 | Fake Key | fake-key.villa.cash | Test passkeys for community |
-| Docs | docs.villa.cash | Docs + this file |
+| Developers | developers.villa.cash | Docs + this file |
 
 ---
 
@@ -375,6 +375,18 @@ After successful authentication:
 
 ### Functions (71)
 
+- `signIn` - /
+- `signOut` - Clears session from localStorage and memory. /
+- `isAuthenticated` - /
+- `getIdentity` - /
+- `parseWebAuthnError` - /
+- `detectBrowserCapabilities` - /
+- `isPasskeySupported` - /
+- `getPasskeyManagerName` - /
+- `getPortoHost` - /
+- `getChainConfig` - /
+- `validatePortoConfig` - /
+- `createVillaTheme` - /
 - `generateWallet` - // IMPORTANT: Immediately encrypt and backup privateKey /
 - `importWallet` - const account = importWallet('0x...') /
 - `encryptPrivateKey` - localStorage.setItem('wallet_backup', JSON.stringify(encrypted)) /
@@ -384,14 +396,27 @@ After successful authentication:
 - `isValidPrivateKey` - /
 - `secureClear` - /
 - `createLocalStorage` - - Hardware security modules /
-- `parseWebAuthnError` - /
-- `detectBrowserCapabilities` - /
-- `isPasskeySupported` - /
-- `getPasskeyManagerName` - /
-- `getPortoHost` - /
-- `getChainConfig` - /
-- `validatePortoConfig` - /
-- `createVillaTheme` - /
+- `createAuthIframe` - /
+- `destroyAuthIframe` - Removes auth iframe from DOM /
+- `postMessage` - /
+- `onMessage` - /
+- `resolveEns` - // => '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' /
+- `reverseEns` - // => 'vitalik.eth' /
+- `saveSession` - Saves a session to localStorage /
+- `loadSession` - /
+- `clearSession` - Clears the session from localStorage /
+- `isSessionValid` - /
+- `signInWithVilla`
+- `getVillaUser`
+- `signOutVilla`
+- `syncProfileToTinyCloud`
+- `loadProfileFromTinyCloud`
+- `isDevelopment` - Check if we're in development mode /
+- `getValidOrigins` - Get all valid origins based on environment /
+- `validateOrigin` - /
+- `parseVillaMessage` - /
+- `parseParentMessage` - /
+- `createVillaError` - Create a validated Villa error /
 - `getTinyCloudClient`
 - `signInToTinyCloud`
 - `getTinyCloudSession`
@@ -407,28 +432,8 @@ After successful authentication:
 - `recordNicknameMint`
 - `syncProfile`
 - `_resetTinyCloudClient`
-- `isDevelopment` - Check if we're in development mode /
-- `getValidOrigins` - Get all valid origins based on environment /
-- `validateOrigin` - /
-- `parseVillaMessage` - /
-- `parseParentMessage` - /
-- `createVillaError` - Create a validated Villa error /
-- `signInWithVilla`
-- `getVillaUser`
-- `signOutVilla`
-- `syncProfileToTinyCloud`
-- `loadProfileFromTinyCloud`
-- `getContracts` - } /
-- `getContractsForChain` - const contracts = getContractsForChain(baseSepolia) /
-- `getNicknameResolverAddress` - /
-- `getRecoverySignerAddress` - /
-- `isDeployed`
 - `getAvatarUrl` - // => 'https://api.dicebear.com/7.x/bottts/svg?seed=bob' /
 - `createAvatarConfig` - /
-- `createAuthIframe` - /
-- `destroyAuthIframe` - Removes auth iframe from DOM /
-- `postMessage` - /
-- `onMessage` - /
 - `generateNickname`
 - `generateUniqueNickname`
 - `validateNickname`
@@ -436,33 +441,28 @@ After successful authentication:
 - `isReservedNickname`
 - `getAvailableAdjectives`
 - `getAvailableNouns`
-- `saveSession` - Saves a session to localStorage /
-- `loadSession` - /
-- `clearSession` - Clears the session from localStorage /
-- `isSessionValid` - /
-- `resolveEns` - // => '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' /
-- `reverseEns` - // => 'vitalik.eth' /
-- `signIn` - /
-- `signOut` - Clears session from localStorage and memory. /
-- `isAuthenticated` - /
-- `getIdentity` - /
+- `getContracts` - } /
+- `getContractsForChain` - const contracts = getContractsForChain(baseSepolia) /
+- `getNicknameResolverAddress` - /
+- `getRecoverySignerAddress` - /
+- `isDeployed`
 
 ### Types & Interfaces (55)
 
-- `EncryptedWallet` - Encrypted wallet backup format /
-- `WalletResult` - Wallet generation result /
-- `EncryptionOptions` - Options for wallet encryption /
-- `WalletStorage` - Storage interface for wallet backups /
+- `AuthOptions`
 - `BrowserCapabilities`
 - `WebAuthnError`
 - `PortoThemeConfig`
 - `PortoConfig`
 - `PortoMode`
-- `VillaProfile`
-- `VillaPreferences`
-- `VillaOnchainStatus`
-- `TinyCloudConfig`
-- `TinyCloudSession`
+- `EncryptedWallet` - Encrypted wallet backup format /
+- `WalletResult` - Wallet generation result /
+- `EncryptionOptions` - Options for wallet encryption /
+- `WalletStorage` - Storage interface for wallet backups /
+- `IframeConfig`
+- `AuthMessage` - Message types for Villa SDK auth flow /
+- `VillaUser`
+- `SimpleSignInOptions`
 - `BridgeConfig` - Bridge configuration /
 - `BridgeEventMap` - Event callback types /
 - `VillaMessage` - Message types sent FROM Villa iframe TO parent app /
@@ -471,10 +471,26 @@ After successful authentication:
 - `VillaErrorCode` - Error codes for auth failures /
 - `BridgeEventName` - Bridge event names /
 - `BridgeState` - Bridge state /
-- `VillaUser`
-- `SimpleSignInOptions`
-- `ContractDeployment`
-- `ChainContracts`
+- `VillaProfile`
+- `VillaPreferences`
+- `VillaOnchainStatus`
+- `TinyCloudConfig`
+- `TinyCloudSession`
+- `NicknameValidationResult`
+- `NicknameValidationError`
+- `SignInOptions` - Sign-in options /
+- `Scope` - Data scopes that apps can request /
+- `SignInProgress` - Progress steps during sign-in flow /
+- `SignInErrorCode` - Detailed error codes for sign-in failures /
+- `SignInResult` - Sign-in result type /
+- `Identity`
+- `AvatarConfig`
+- `Profile`
+- `NicknameCheckResult`
+- `VillaConfig`
+- `VillaSession`
+- `AvatarStyle`
+- `Result`
 - `WebAuthnCredential`
 - `AuthChallenge`
 - `VillaSession`
@@ -486,24 +502,8 @@ After successful authentication:
 - `AuthMessage`
 - `VillaAuthConfig`
 - `AuthMessageType`
-- `Identity`
-- `AvatarConfig`
-- `Profile`
-- `NicknameCheckResult`
-- `VillaConfig`
-- `VillaSession`
-- `AvatarStyle`
-- `Result`
-- `IframeConfig`
-- `AuthMessage` - Message types for Villa SDK auth flow /
-- `NicknameValidationResult`
-- `NicknameValidationError`
-- `SignInOptions` - Sign-in options /
-- `Scope` - Data scopes that apps can request /
-- `SignInProgress` - Progress steps during sign-in flow /
-- `SignInErrorCode` - Detailed error codes for sign-in failures /
-- `SignInResult` - Sign-in result type /
-- `AuthOptions`
+- `ContractDeployment`
+- `ChainContracts`
 
 ### Enums (2)
 
@@ -512,10 +512,7 @@ After successful authentication:
 
 ### Constants (90)
 
-- `VILLA_PREFIX`
-- `TINYCLOUD_KEYS`
-- `ALLOWED_ORIGINS` - HTTPS-only in production - passkeys require secure context /
-- `DEV_ORIGINS` - Development origins (only active when NODE_ENV === 'development') /
+- `villa`
 - `VillaBridge`
 - `validateOrigin`
 - `parseVillaMessage`
@@ -524,10 +521,8 @@ After successful authentication:
 - `getValidOrigins`
 - `ALLOWED_ORIGINS`
 - `DEV_ORIGINS`
-- `villa`
-- `CONTRACTS`
-- `DEPLOYED_CHAINS`
-- `NICKNAME_RULES`
+- `ALLOWED_ORIGINS` - HTTPS-only in production - passkeys require secure context /
+- `DEV_ORIGINS` - Development origins (only active when NODE_ENV === 'development') /
 - `villa`
 - `signInWithVilla`
 - `getVillaUser`
@@ -602,6 +597,11 @@ After successful authentication:
 - `getAvailableAdjectives`
 - `getAvailableNouns`
 - `NICKNAME_RULES`
+- `VILLA_PREFIX`
+- `TINYCLOUD_KEYS`
+- `NICKNAME_RULES`
+- `CONTRACTS`
+- `DEPLOYED_CHAINS`
 
 ---
 
@@ -609,10 +609,10 @@ After successful authentication:
 
 ### Hooks (4)
 
-- `useVilla`
 - `useIdentity` - ``` /
 - `useAuth` - ``` /
 - `useVillaConfig` - Hook to access Villa SDK configuration /
+- `useVilla`
 
 ### Components (0)
 
@@ -621,7 +621,7 @@ After successful authentication:
 
 ## Links
 
-- Docs: https://docs.villa.cash
+- Docs: https://developers.villa.cash
 - GitHub: https://github.com/rockfridrich/villa
 - npm (SDK): https://www.npmjs.com/package/@rockfridrich/villa-sdk
 - npm (React): https://www.npmjs.com/package/@rockfridrich/villa-sdk-react
