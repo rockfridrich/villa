@@ -5,82 +5,66 @@
     "production": {
       "domain": "villa.cash",
       "alias": ["www.villa.cash"],
-      "provider": "digitalocean",
+      "provider": "railway",
+      "railwayService": "villa-production",
+      "railwayTarget": "villa-staging-production.up.railway.app",
       "dns": "cloudflare",
-      "deployTrigger": "release-tag",
-      "description": "Stable production releases only"
+      "deployTrigger": "push-to-main",
+      "description": "Production hub on Railway"
     },
     "key-production": {
       "domain": "key.villa.cash",
-      "provider": "digitalocean",
+      "provider": "railway",
+      "railwayService": "villa-key",
+      "railwayTarget": "villa-key-staging-production.up.railway.app",
       "dns": "cloudflare",
-      "deployTrigger": "release-tag",
-      "description": "Production passkey domain - your signature"
+      "deployTrigger": "push-to-main",
+      "description": "Production passkey domain"
     },
     "construction": {
       "domain": "construction.villa.cash",
       "provider": "railway",
-      "railwayService": "villa-staging",
-      "railwayTarget": "mvjvov9r.up.railway.app",
+      "railwayService": "villa-production",
+      "railwayTarget": "villa-staging-production.up.railway.app",
       "dns": "cloudflare",
       "deployTrigger": "push-to-main",
-      "description": "Construction zone - pre-release testing on Sepolia"
+      "description": "Staging/construction zone"
     },
     "fake-key": {
       "domain": "fake-key.villa.cash",
       "provider": "railway",
-      "railwayService": "villa-key-staging",
-      "railwayTarget": "dzqfs83y.up.railway.app",
+      "railwayService": "villa-key",
+      "railwayTarget": "villa-key-staging-production.up.railway.app",
       "dns": "cloudflare",
       "deployTrigger": "push-to-main",
-      "description": "Fake key - test passkeys for community on Sepolia"
+      "description": "Test passkeys for community"
     },
     "docs": {
       "domain": "docs.villa.cash",
       "provider": "railway",
       "railwayService": "villa-developers",
-      "railwayTarget": "p7xpf8ox.up.railway.app",
+      "railwayTarget": "villa-developers-production.up.railway.app",
       "dns": "cloudflare",
       "deployTrigger": "push-to-main",
       "description": "Developer documentation portal"
-    },
-    "sandbox": {
-      "domain": "sandbox.villa.cash",
-      "provider": "railway",
-      "dns": "cloudflare",
-      "deployTrigger": "manual-pr-deploy",
-      "description": "PR testing sandbox - core contributors deploy approved PRs"
-    },
-    "development": {
-      "domain": "dev-3.villa.cash",
-      "provider": "ngrok",
-      "dns": "cloudflare",
-      "usage": "local-tunnel",
-      "description": "Local development via ngrok custom domain"
+    }
+  },
+  "railway": {
+    "projectId": "7c344004-cd63-4b10-8479-9991c3923115",
+    "environmentId": "00c94bb8-6243-44b5-b230-a2e957b1d0fb",
+    "services": {
+      "villa-production": "1c25828b-4678-4723-8cb5-8777312584a8",
+      "villa-key": "2b3dab1c-0b03-41c4-b9f3-429579532a72",
+      "villa-developers": "afc99a53-eb94-45ff-b018-8fc29b8cc84a",
+      "postgres": "360242c6-e2d4-42e2-b377-c4f9cf283bff"
     }
   },
   "environments": {
     "production": {
-      "chain": "base-mainnet",
-      "chainId": 8453,
-      "portoEnv": "prod",
-      "domains": ["villa.cash", "key.villa.cash"]
-    },
-    "construction": {
       "chain": "base-sepolia",
       "chainId": 84532,
       "portoEnv": "stg",
-      "domains": [
-        "construction.villa.cash",
-        "fake-key.villa.cash",
-        "docs.villa.cash"
-      ]
-    },
-    "sandbox": {
-      "chain": "base-sepolia",
-      "chainId": 84532,
-      "portoEnv": "stg",
-      "domains": ["sandbox.villa.cash"]
+      "domains": ["villa.cash", "key.villa.cash", "construction.villa.cash", "fake-key.villa.cash", "docs.villa.cash"]
     }
   },
   "ithaca": {
@@ -90,15 +74,7 @@
       "key.villa.cash",
       "construction.villa.cash",
       "fake-key.villa.cash",
-      "docs.villa.cash",
-      "sandbox.villa.cash",
-      "dev-3.villa.cash"
+      "docs.villa.cash"
     ]
-  },
-  "security": {
-    "productionProtected": true,
-    "constructionProtected": false,
-    "sandboxProtected": true,
-    "note": "Production requires release tag. Sandbox requires core contributor approval."
   }
 }
