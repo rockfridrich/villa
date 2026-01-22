@@ -84,10 +84,11 @@ interface PipelineData {
 
 const ENVIRONMENTS = [
   { name: "Local Hub", env: "local" },
-  { name: "Construction", env: "construction" },
   { name: "Production", env: "production" },
+  { name: "Construction", env: "construction" },
+  { name: "Key (Production)", env: "key" },
+  { name: "Fake Key (Staging)", env: "fake-key" },
   { name: "Docs", env: "docs" },
-  { name: "Fake Key", env: "fake-key" },
 ];
 
 function StatusBadge({ status }: { status: ServiceStatus["status"] }) {

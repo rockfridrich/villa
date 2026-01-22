@@ -90,7 +90,8 @@ export type Environment =
   | "construction"
   | "production"
   | "docs"
-  | "fake-key";
+  | "fake-key"
+  | "key";
 
 export const ENVIRONMENT_URLS: Record<Environment, string> = {
   local: "http://localhost:3000/api/health",
@@ -98,6 +99,7 @@ export const ENVIRONMENT_URLS: Record<Environment, string> = {
   production: "https://villa.cash/api/health",
   docs: "https://docs.villa.cash",
   "fake-key": "https://fake-key.villa.cash/api/health",
+  key: "https://key.villa.cash/api/health",
 };
 
 export const PIPELINE_STAGES = [
@@ -136,4 +138,5 @@ export const ENVIRONMENT_HEALTH_ENDPOINTS = {
   production: "https://villa.cash/api/health",
   docs: "https://docs.villa.cash",
   "fake-key": "https://fake-key.villa.cash/api/health",
+  key: "https://key.villa.cash/api/health",
 } as const;
