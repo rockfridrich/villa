@@ -447,7 +447,7 @@ After successful authentication:
 - `getRecoverySignerAddress` - /
 - `isDeployed`
 
-### Types & Interfaces (55)
+### Types & Interfaces (56)
 
 - `AuthOptions`
 - `BrowserCapabilities`
@@ -462,6 +462,7 @@ After successful authentication:
 - `IframeConfig`
 - `AuthMessage` - Message types for Villa SDK auth flow /
 - `VillaUser`
+- `SettingsResult`
 - `SimpleSignInOptions`
 - `BridgeConfig` - Bridge configuration /
 - `BridgeEventMap` - Event callback types /
