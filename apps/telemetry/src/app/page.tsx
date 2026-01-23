@@ -127,6 +127,85 @@ interface VersionStatus {
   fetchedAt: string;
 }
 
+interface CloudflareData {
+  requests: { total: number; cached: number; uncached: number };
+  bandwidth: { total: number; cached: number };
+  threats: number;
+  countries: { code: string; requests: number }[];
+  fetchedAt: string;
+  error?: string;
+}
+
+interface DatabaseData {
+  status: "ok" | "error" | "unknown";
+  provider: string;
+  region: string;
+  backups: { latest: string | null; count: number };
+  links: { console: string; backups: string };
+  fetchedAt: string;
+  error?: string;
+}
+
+// Service configuration with proper branding
+const RAILWAY_PROJECT = "https://railway.app/project/f0c53e8b-2e16-4c8c-9a7c-5a4e0d8a0f0e";
+
+const SERVICE_CONFIG: Record<string, {
+  name: string;
+  icon: string;
+  color: string;
+  url: string;
+  railwayUrl?: string;
+  description: string;
+}> = {
+  local: {
+    name: "Local Dev",
+    icon: "💻",
+    color: "from-slate-500 to-slate-600",
+    url: "http://localhost:3000",
+    description: "Local development server",
+  },
+  production: {
+    name: "Production",
+    icon: "🚀",
+    color: "from-emerald-500 to-emerald-600",
+    url: "https://villa.cash",
+    railwayUrl: `${RAILWAY_PROJECT}/service/hub-production`,
+    description: "Live production environment",
+  },
+  construction: {
+    name: "Construction",
+    icon: "🏗️",
+    color: "from-amber-500 to-orange-600",
+    url: "https://construction.villa.cash",
+    railwayUrl: `${RAILWAY_PROJECT}/service/hub-staging`,
+    description: "Staging environment",
+  },
+  key: {
+    name: "Key",
+    icon: "🔑",
+    color: "from-purple-500 to-purple-600",
+    url: "https://key.villa.cash",
+    railwayUrl: `${RAILWAY_PROJECT}/service/key-production`,
+    description: "Auth & passkey service",
+  },
+  "fake-key": {
+    name: "Fake Key",
+    icon: "🔐",
+    color: "from-pink-500 to-pink-600",
+    url: "https://fake-key.villa.cash",
+    railwayUrl: `${RAILWAY_PROJECT}/service/key-staging`,
+    description: "Staging auth service",
+  },
+  docs: {
+    name: "Docs",
+    icon: "📚",
+    color: "from-blue-500 to-indigo-600",
+    url: "https://docs.villa.cash",
+    railwayUrl: `${RAILWAY_PROJECT}/service/developers`,
+    description: "Developer documentation",
+  },
+};
+
 const ENVIRONMENTS = [
   { name: "Local Hub", env: "local" },
   { name: "Production", env: "production" },
@@ -135,8 +214,6 @@ const ENVIRONMENTS = [
   { name: "Fake Key (Staging)", env: "fake-key" },
   { name: "Docs", env: "docs" },
 ];
-
-""
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -149,13 +226,6 @@ function formatUptime(seconds: number): string {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}m ${secs}s`;
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -172,12 +242,11 @@ function formatRelativeTime(dateStr: string): string {
   return `${diffDays}d ago`;
 }
 
-""
-
 const Icons = {
   GitCommit: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3h5m0 0v5m0-5l-6 6M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v6m0 6v6" />
     </svg>
   ),
   Check: () => (
@@ -195,20 +264,33 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
     </svg>
   ),
+  ExternalLink: () => (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  ),
   Play: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   ),
-  Server: () => (
+  Terminal: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  ),
+  GitHub: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+    </svg>
+  ),
+  Railway: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M.113 10.27A.51.51 0 000 10.595v2.807a.5.5 0 00.5.5h5.443a.5.5 0 00.5-.5v-2.807a.51.51 0 00-.113-.325L3.158 6.5a.5.5 0 00-.816 0L.113 10.27zM17.5 13.902h5.943a.5.5 0 00.444-.27l.057-.11A11.95 11.95 0 0024 10.395c0-1.186-.173-2.33-.493-3.413a.5.5 0 00-.48-.361H17.5a.5.5 0 00-.5.5v6.281a.5.5 0 00.5.5zM6.5 17.379v2.621a.5.5 0 00.5.5h10a.5.5 0 00.5-.5v-2.621a.5.5 0 00-.5-.5H7a.5.5 0 00-.5.5zM17 10.121V7.5a.5.5 0 00-.5-.5H7.5a.5.5 0 00-.5.5v2.621a.5.5 0 00.5.5h9a.5.5 0 00.5-.5z" />
     </svg>
   ),
 };
-
-""
 
 function GlassCard({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
   return (
@@ -235,7 +317,7 @@ function StatusIndicator({ status, pulse }: { status: "ok" | "error" | "warning"
   };
 
   return (
-    <div className={cn("w-2 h-2 rounded-full", colors[status], pulse && "animate-pulse")} />
+    <div className={cn("w-2.5 h-2.5 rounded-full", colors[status], pulse && "animate-pulse")} />
   );
 }
 
@@ -245,7 +327,9 @@ function PipelineNode({
   icon, 
   details, 
   isActive,
-  url 
+  url,
+  secondaryUrl,
+  secondaryLabel,
 }: { 
   title: string; 
   status: "success" | "running" | "failed" | "pending"; 
@@ -253,61 +337,79 @@ function PipelineNode({
   details?: string;
   isActive?: boolean;
   url?: string;
+  secondaryUrl?: string;
+  secondaryLabel?: string;
 }) {
   const statusColors = {
     success: "border-emerald-500/50 text-emerald-400 bg-emerald-500/10",
     running: "border-blue-500/50 text-blue-400 bg-blue-500/10",
     failed: "border-red-500/50 text-red-400 bg-red-500/10",
-    pending: "border-white/5 text-slate-500 bg-white/5",
+    pending: "border-white/10 text-slate-500 bg-white/5",
   };
 
-  const content = (
-    <div className={cn(
-      "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all w-full",
-      statusColors[status],
-      isActive && "ring-2 ring-offset-2 ring-offset-slate-950 ring-blue-500/50"
-    )}>
-      <div className="mb-2 text-2xl">{icon}</div>
-      <div className="font-bold text-sm tracking-wide uppercase">{title}</div>
-      {details && <div className="text-xs opacity-70 mt-1">{details}</div>}
-      {status === "running" && (
-        <div className="mt-2 w-full bg-blue-900/30 h-1 rounded-full overflow-hidden">
-          <div className="h-full bg-blue-500 animate-[progress_1s_ease-in-out_infinite]" style={{ width: "50%" }} />
-        </div>
+  return (
+    <div className="flex flex-col gap-2">
+      <a 
+        href={url} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className={cn(
+          "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all w-full hover:scale-105",
+          statusColors[status],
+          isActive && "ring-2 ring-offset-2 ring-offset-slate-950 ring-blue-500/50"
+        )}
+      >
+        <div className="mb-2 text-2xl">{icon}</div>
+        <div className="font-bold text-sm tracking-wide uppercase">{title}</div>
+        {details && <div className="text-xs opacity-70 mt-1">{details}</div>}
+        {status === "running" && (
+          <div className="mt-2 w-full bg-blue-900/30 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 animate-pulse" style={{ width: "60%" }} />
+          </div>
+        )}
+      </a>
+      {secondaryUrl && (
+        <a 
+          href={secondaryUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-slate-500 hover:text-slate-300 text-center flex items-center justify-center gap-1"
+        >
+          <Icons.Railway />
+          {secondaryLabel || "Railway"}
+        </a>
       )}
     </div>
   );
-
-  if (url) {
-    return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full hover:scale-105 transition-transform">
-        {content}
-      </a>
-    );
-  }
-
-  return <div className="w-full">{content}</div>;
 }
 
-function EnvironmentCard({ service, onAction }: { service: ServiceStatus; onAction: (action: string) => void }) {
+function EnvironmentCard({ service, onAction, actionLoading }: { service: ServiceStatus; onAction: (action: string) => void; actionLoading: boolean }) {
+  const config = SERVICE_CONFIG[service.env] || SERVICE_CONFIG.local;
   const build = service.data?.build;
   const runtime = service.data?.runtime;
   
   return (
-    <GlassCard className="p-5 flex flex-col h-full group">
+    <GlassCard className="p-5 flex flex-col h-full group relative overflow-hidden">
+      {/* Gradient accent */}
+      <div className={cn("absolute top-0 left-0 right-0 h-1 bg-gradient-to-r", config.color)} />
+      
       <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-            {service.name}
-          </h3>
-          <a 
-            href={service.env === "local" ? "http://localhost:3000" : `https://${service.env === "production" ? "" : service.env + "."}villa.cash`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs text-slate-500 hover:text-slate-300 font-mono mt-1 block"
-          >
-            {service.env}
-          </a>
+        <div className="flex items-center gap-3">
+          <div className={cn("w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center text-xl", config.color)}>
+            {config.icon}
+          </div>
+          <div>
+            <a 
+              href={config.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5"
+            >
+              {config.name}
+              <Icons.ExternalLink />
+            </a>
+            <p className="text-xs text-slate-500">{config.description}</p>
+          </div>
         </div>
         <StatusIndicator 
           status={service.status === "ok" ? "ok" : service.status === "error" ? "error" : "warning"} 
@@ -315,50 +417,83 @@ function EnvironmentCard({ service, onAction }: { service: ServiceStatus; onActi
         />
       </div>
 
-      <div className="flex-grow space-y-3">
+      <div className="flex-grow space-y-2 mb-4">
         {service.data ? (
           <>
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Version</span>
-              <span className="font-mono text-slate-200">{build?.version || "v0.0.0"}</span>
+              <span className="font-mono text-slate-200">{build?.version || "unknown"}</span>
             </div>
-            {build && (
+            {build && build.sha !== "local" && build.sha !== "unknown" && (
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Commit</span>
-                <span className="font-mono text-slate-200">{build.sha.slice(0, 7)}</span>
+                <a 
+                  href={`https://github.com/rockfridrich/villa/commit/${build.sha}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-blue-400 hover:text-blue-300"
+                >
+                  {build.sha.slice(0, 7)}
+                </a>
               </div>
             )}
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Latency</span>
               <span className={cn(
                 "font-mono",
-                (service.latency || 0) < 200 ? "text-emerald-400" : "text-amber-400"
+                (service.latency || 0) < 200 ? "text-emerald-400" : 
+                (service.latency || 0) < 500 ? "text-amber-400" : "text-red-400"
               )}>
                 {service.latency}ms
               </span>
             </div>
             {runtime && (
-               <div className="flex justify-between text-sm">
-               <span className="text-slate-400">Uptime</span>
-               <span className="font-mono text-slate-200">{formatUptime(runtime.uptime)}</span>
-             </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Uptime</span>
+                <span className="font-mono text-slate-200">{formatUptime(runtime.uptime)}</span>
+              </div>
             )}
           </>
         ) : (
           <div className="flex items-center justify-center h-20 text-slate-600 text-sm italic">
-            {service.status === "checking" ? "Polling..." : "Offline"}
+            {service.status === "checking" ? "Checking..." : service.error || "Offline"}
           </div>
         )}
       </div>
 
-      {service.env === "local" && service.status === "error" && (
-        <button 
-          onClick={() => onAction("launch-local")}
-          className="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition"
+      {/* Action buttons */}
+      <div className="flex gap-2 mt-auto pt-3 border-t border-white/5">
+        <a
+          href={config.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-slate-300 transition"
         >
-          Launch Dev Server
-        </button>
-      )}
+          <Icons.ExternalLink />
+          Open
+        </a>
+        {config.railwayUrl && (
+          <a
+            href={config.railwayUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-slate-300 transition"
+          >
+            <Icons.Railway />
+            Railway
+          </a>
+        )}
+        {service.env === "local" && (
+          <button
+            onClick={() => onAction("launch-local")}
+            disabled={actionLoading}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-lg text-xs text-white transition"
+          >
+            <Icons.Terminal />
+            {service.status === "ok" ? "Restart" : "Launch"}
+          </button>
+        )}
+      </div>
     </GlassCard>
   );
 }
@@ -372,6 +507,8 @@ export default function TelemetryDashboard() {
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [buildStatus, setBuildStatus] = useState<BuildStatusData | null>(null);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
+  const [cloudflare, setCloudflare] = useState<CloudflareData | null>(null);
+  const [database, setDatabase] = useState<DatabaseData | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
@@ -379,50 +516,24 @@ export default function TelemetryDashboard() {
     text: string;
   } | null>(null);
 
-  ""
   const checkServices = useCallback(async () => {
     const results = await Promise.all(
       ENVIRONMENTS.map(async (env) => {
         try {
-          const res = await fetch(`/api/health/${env.env}`, {
-            cache: "no-store",
-          });
-
+          const res = await fetch(`/api/health/${env.env}`, { cache: "no-store" });
           if (!res.ok) {
-            return {
-              ...env,
-              status: "error" as const,
-              error: `HTTP ${res.status}`,
-            };
+            return { ...env, status: "error" as const, error: `HTTP ${res.status}` };
           }
-
           const data: HealthProxyResponse = await res.json();
-
           if (data.status === "error") {
-            return {
-              ...env,
-              status: "error" as const,
-              latency: data.latency,
-              error: data.error,
-            };
+            return { ...env, status: "error" as const, latency: data.latency, error: data.error };
           }
-
-          return {
-            ...env,
-            status: "ok" as const,
-            latency: data.latency,
-            data: data.data,
-          };
+          return { ...env, status: "ok" as const, latency: data.latency, data: data.data };
         } catch (err) {
-          return {
-            ...env,
-            status: "error" as const,
-            error: err instanceof Error ? err.message : "Unknown error",
-          };
+          return { ...env, status: "error" as const, error: err instanceof Error ? err.message : "Unknown error" };
         }
       }),
     );
-
     setServices(results);
     setLastRefresh(new Date());
   }, []);
@@ -439,25 +550,13 @@ export default function TelemetryDashboard() {
         });
         const data = await res.json();
         if (data.success) {
-          setActionMessage({
-            type: "success",
-            text: `${action} started successfully`,
-          });
-          setTimeout(() => {
-            checkServices();
-            setActionMessage(null);
-          }, 3000);
+          setActionMessage({ type: "success", text: `${action} completed` });
+          setTimeout(() => { checkServices(); setActionMessage(null); }, 3000);
         } else {
-          setActionMessage({
-            type: "error",
-            text: data.error || "Action failed",
-          });
+          setActionMessage({ type: "error", text: data.error || "Action failed" });
         }
       } catch (err) {
-        setActionMessage({
-          type: "error",
-          text: err instanceof Error ? err.message : "Action failed",
-        });
+        setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Action failed" });
       } finally {
         setActionLoading(false);
       }
@@ -467,34 +566,22 @@ export default function TelemetryDashboard() {
 
   const fetchGitHubData = useCallback(async () => {
     try {
-      const [pipelineRes, actionsRes, commitsRes, buildRes, versionRes] =
-        await Promise.allSettled([
-          fetch("/api/pipeline").then((r) => r.json()),
-          fetch("/api/github/actions").then((r) => r.json()),
-          fetch("/api/github/commits").then((r) => r.json()),
-          fetch("/api/build-status").then((r) => r.json()),
-          fetch("/api/version-status").then((r) => r.json()),
-        ]);
-
-      if (pipelineRes.status === "fulfilled" && !pipelineRes.value.error) {
-        setPipeline(pipelineRes.value);
-      }
-
-      if (actionsRes.status === "fulfilled" && actionsRes.value.runs) {
-        setWorkflowRuns(actionsRes.value.runs);
-      }
-
-      if (commitsRes.status === "fulfilled" && commitsRes.value.commits) {
-        setCommits(commitsRes.value.commits);
-      }
-
-      if (buildRes.status === "fulfilled" && !buildRes.value.error) {
-        setBuildStatus(buildRes.value);
-      }
-
-      if (versionRes.status === "fulfilled" && !versionRes.value.error) {
-        setVersionStatus(versionRes.value);
-      }
+      const [pipelineRes, actionsRes, commitsRes, buildRes, versionRes, cfRes, dbRes] = await Promise.allSettled([
+        fetch("/api/pipeline").then((r) => r.json()),
+        fetch("/api/github/actions").then((r) => r.json()),
+        fetch("/api/github/commits").then((r) => r.json()),
+        fetch("/api/build-status").then((r) => r.json()),
+        fetch("/api/version-status").then((r) => r.json()),
+        fetch("/api/cloudflare").then((r) => r.json()),
+        fetch("/api/database").then((r) => r.json()),
+      ]);
+      if (pipelineRes.status === "fulfilled" && !pipelineRes.value.error) setPipeline(pipelineRes.value);
+      if (actionsRes.status === "fulfilled" && actionsRes.value.runs) setWorkflowRuns(actionsRes.value.runs);
+      if (commitsRes.status === "fulfilled" && commitsRes.value.commits) setCommits(commitsRes.value.commits);
+      if (buildRes.status === "fulfilled" && !buildRes.value.error) setBuildStatus(buildRes.value);
+      if (versionRes.status === "fulfilled" && !versionRes.value.error) setVersionStatus(versionRes.value);
+      if (cfRes.status === "fulfilled") setCloudflare(cfRes.value);
+      if (dbRes.status === "fulfilled") setDatabase(dbRes.value);
     } catch {}
   }, []);
 
@@ -503,53 +590,57 @@ export default function TelemetryDashboard() {
     fetchGitHubData();
     const serviceInterval = setInterval(checkServices, 30000);
     const githubInterval = setInterval(fetchGitHubData, 60000);
-    return () => {
-      clearInterval(serviceInterval);
-      clearInterval(githubInterval);
-    };
+    return () => { clearInterval(serviceInterval); clearInterval(githubInterval); };
   }, [checkServices, fetchGitHubData]);
-
-  ""
 
   const getStageStatus = (id: string): "success" | "running" | "failed" | "pending" => {
     if (!pipeline) return "pending";
-    if (id === "local") return "success"; ""
+    if (id === "local") return "success";
     if (id === "ci") {
-       const ci = pipeline.stages.find((s) => s.name === "CI");
-       return ci?.status || "pending";
+      const ci = pipeline.stages.find((s) => s.name === "CI");
+      return ci?.status || "pending";
     }
     const stage = pipeline.stages.find((s) => s.name.toLowerCase() === id);
     return stage?.status || "pending";
   };
 
+  const onlineCount = services.filter(s => s.status === "ok").length;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
       
-      ""
-      <header className="border-b border-white/5 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+      {/* Header */}
+      <header className="border-b border-white/5 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold shadow-lg shadow-orange-500/20">
               V
             </div>
             <div>
               <h1 className="font-bold text-white tracking-tight">Villa Telemetry</h1>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Ops Dashboard</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+                {onlineCount}/{services.length} Services Online
+              </div>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/rockfridrich/villa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition"
+            >
+              <Icons.GitHub />
+            </a>
             <div className="text-xs text-slate-500 font-mono">
-              Last update: {lastRefresh ? lastRefresh.toLocaleTimeString() : "--:--:--"}
+              {lastRefresh ? lastRefresh.toLocaleTimeString() : "--:--:--"}
             </div>
             <button
-              onClick={() => {
-                checkServices();
-                fetchGitHubData();
-              }}
+              onClick={() => { checkServices(); fetchGitHubData(); }}
               className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition"
-              title="Refresh Data"
+              title="Refresh"
             >
               <Icons.Refresh />
             </button>
@@ -559,10 +650,10 @@ export default function TelemetryDashboard() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         
-        ""
+        {/* Toast */}
         {actionMessage && (
           <div className={cn(
-            "fixed bottom-8 right-8 z-50 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-bottom-5",
+            "fixed bottom-8 right-8 z-50 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3",
             actionMessage.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"
           )}>
             {actionMessage.type === "success" ? <Icons.Check /> : <Icons.Alert />}
@@ -570,20 +661,42 @@ export default function TelemetryDashboard() {
           </div>
         )}
 
-        ""
+        {/* Deploy in Progress Banner */}
+        {versionStatus?.deployInProgress.running && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+              <span className="font-medium text-blue-400">Deploy in progress</span>
+              <span className="text-slate-400">•</span>
+              <code className="text-sm font-mono text-slate-300">{versionStatus.deployInProgress.sha}</code>
+            </div>
+            <a
+              href={versionStatus.deployInProgress.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+            >
+              View on GitHub <Icons.ExternalLink />
+            </a>
+          </div>
+        )}
+
+        {/* Pipeline */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-white">Delivery Pipeline</h2>
-            <div className="flex gap-2">
-              <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 px-2 py-1 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Operational
-              </span>
-            </div>
+            <a 
+              href="https://github.com/rockfridrich/villa/actions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1"
+            >
+              View all workflows <Icons.ExternalLink />
+            </a>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-            ""
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -z-10 -translate-y-1/2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+            <div className="hidden lg:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 -z-10 -translate-y-1/2" />
             
             <PipelineNode 
               title="Code" 
@@ -603,9 +716,11 @@ export default function TelemetryDashboard() {
             <PipelineNode 
               title="Staging" 
               status={getStageStatus("construction")} 
-              icon="🚧" 
-              details="Construction"
+              icon="🏗️" 
+              details="construction.villa.cash"
               url="https://construction.villa.cash"
+              secondaryUrl="https://railway.app/dashboard"
+              secondaryLabel="Railway Dashboard"
             />
             <PipelineNode 
               title="Production" 
@@ -613,56 +728,73 @@ export default function TelemetryDashboard() {
               icon="🚀" 
               details="villa.cash"
               url="https://villa.cash"
+              secondaryUrl="https://railway.app/dashboard"
+              secondaryLabel="Railway Dashboard"
             />
           </div>
         </section>
 
-        ""
+        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          ""
+          {/* Environments */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Environments</h2>
-              <div className="text-xs text-slate-500">
-                {services.filter(s => s.status === "ok").length}/{services.length} Online
-              </div>
-            </div>
-            
+            <h2 className="text-xl font-semibold text-white">Environments</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {services.map((service) => (
                 <EnvironmentCard 
                   key={service.name} 
                   service={service} 
-                  onAction={executeAction} 
+                  onAction={executeAction}
+                  actionLoading={actionLoading}
                 />
               ))}
             </div>
 
-            ""
+            {/* Version Status */}
             {versionStatus && (
               <GlassCard className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-white">Version Control</h3>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-400">Main:</span>
-                    <code className="bg-white/10 px-2 py-0.5 rounded text-blue-400 font-mono">{versionStatus.mainShortSha}</code>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Version Sync</h3>
+                  <a
+                    href={`https://github.com/rockfridrich/villa/commit/${versionStatus.mainSha}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span className="text-slate-400">main:</span>
+                    <code className="bg-white/10 px-2 py-0.5 rounded text-blue-400 font-mono hover:text-blue-300">
+                      {versionStatus.mainShortSha}
+                    </code>
+                  </a>
                 </div>
-
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {versionStatus.environments.map((env) => (
                     <div key={env.name} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                       <div className="flex items-center gap-3">
-                        <StatusIndicator status={env.isCurrent ? "ok" : "warning"} />
-                        <span className="text-sm font-medium text-slate-200">{env.name}</span>
+                        <StatusIndicator status={env.isCurrent ? "ok" : env.deployedSha === "static" ? "neutral" : "warning"} />
+                        <a href={env.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-200 hover:text-blue-400 flex items-center gap-1.5">
+                          {env.name}
+                          <Icons.ExternalLink />
+                        </a>
                       </div>
-                      <div className="flex items-center gap-4 text-xs">
-                         <span className="font-mono text-slate-400">{env.deployedSha === "static" ? "STATIC" : env.deployedSha.slice(0, 7)}</span>
-                         {!env.isCurrent && env.commitsBehind > 0 && (
-                           <span className="text-amber-400 font-medium">{env.commitsBehind} behind</span>
-                         )}
-                         {env.isCurrent && <span className="text-emerald-500 font-medium">Up to date</span>}
+                      <div className="flex items-center gap-3 text-xs">
+                        {env.deployedSha !== "static" && env.deployedSha !== "local" && env.deployedSha !== "error" ? (
+                          <a
+                            href={`https://github.com/rockfridrich/villa/commit/${env.deployedSha}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-slate-400 hover:text-blue-400"
+                          >
+                            {env.deployedSha.slice(0, 7)}
+                          </a>
+                        ) : (
+                          <span className="font-mono text-slate-500">{env.deployedSha}</span>
+                        )}
+                        {env.isCurrent && <span className="text-emerald-400 font-medium">✓ Current</span>}
+                        {!env.isCurrent && env.commitsBehind > 0 && (
+                          <span className="text-amber-400 font-medium">{env.commitsBehind} behind</span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -671,82 +803,228 @@ export default function TelemetryDashboard() {
             )}
           </div>
 
-          ""
+          {/* Sidebar */}
           <div className="space-y-6">
             
-            ""
+            {/* Quick Actions */}
             <GlassCard className="p-5">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Quick Actions</h3>
               <div className="space-y-2">
                 <button
                   onClick={() => executeAction("deploy-construction")}
                   disabled={actionLoading}
-                  className="w-full group relative overflow-hidden rounded-lg bg-blue-600 p-[1px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 rounded-lg text-sm font-medium text-white transition"
                 >
-                  <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white backdrop-blur-3xl transition-colors group-hover:bg-slate-900">
-                    🏗️ Deploy to Construction
-                  </span>
+                  🏗️ Deploy to Staging
                 </button>
                 
                 <button
-                   onClick={() => executeAction("run-e2e")}
-                   disabled={actionLoading}
-                   className="w-full flex items-center justify-between px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
+                  onClick={() => executeAction("run-e2e")}
+                  disabled={actionLoading}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
                 >
                   <span>🧪 Run E2E Tests</span>
                   <Icons.Play />
                 </button>
 
                 <button
-                   onClick={() => executeAction("backup-db")}
-                   disabled={actionLoading}
-                   className="w-full flex items-center justify-between px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
+                  onClick={() => executeAction("launch-docker")}
+                  disabled={actionLoading}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
                 >
-                  <span>💾 Backup Database</span>
-                  <Icons.Server />
+                  <span>🐳 Launch Docker</span>
+                  <Icons.Terminal />
+                </button>
+
+                <button
+                  onClick={() => executeAction("verify-deployments")}
+                  disabled={actionLoading}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
+                >
+                  <span>✅ Verify All</span>
+                  <Icons.Check />
                 </button>
               </div>
             </GlassCard>
 
-            ""
+            {/* Live Activity */}
             <GlassCard className="p-0 overflow-hidden">
-              <div className="p-4 border-b border-white/5">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Live Activity</h3>
+              <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Recent Activity</h3>
+                <a
+                  href="https://github.com/rockfridrich/villa/commits/main"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-slate-500 hover:text-slate-300"
+                >
+                  View all
+                </a>
               </div>
-              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-                ""
+              <div className="max-h-[400px] overflow-y-auto">
                 {buildStatus?.run && (
-                  <div className="p-4 border-b border-white/5 bg-blue-500/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-blue-400 uppercase">Current Build</span>
-                      <StatusIndicator status={buildStatus.run.status === "in_progress" ? "running" : "neutral"} pulse />
+                  <a
+                    href={buildStatus.run.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-4 border-b border-white/5 bg-blue-500/5 hover:bg-blue-500/10 transition"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-blue-400 uppercase">Build</span>
+                      <StatusIndicator status={buildStatus.run.status === "in_progress" ? "running" : buildStatus.run.conclusion === "success" ? "ok" : "error"} pulse={buildStatus.run.status === "in_progress"} />
                     </div>
-                    <div className="text-sm font-medium text-slate-200 mb-1">{buildStatus.run.name}</div>
-                    <div className="text-xs text-slate-500">{formatRelativeTime(buildStatus.run.createdAt)}</div>
-                  </div>
+                    <div className="text-sm font-medium text-slate-200">{buildStatus.run.name}</div>
+                    <div className="text-xs text-slate-500 mt-1">{formatRelativeTime(buildStatus.run.createdAt)}</div>
+                  </a>
                 )}
 
-                ""
-                {commits.slice(0, 5).map((commit) => (
-                  <div key={commit.sha} className="p-4 border-b border-white/5 hover:bg-white/5 transition">
+                {commits.slice(0, 8).map((commit) => (
+                  <a
+                    key={commit.sha}
+                    href={commit.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-4 border-b border-white/5 hover:bg-white/5 transition"
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="mt-1 text-slate-500"><Icons.GitCommit /></div>
-                      <div>
-                        <a href={commit.url} target="_blank" className="text-sm font-medium text-slate-200 hover:text-blue-400 transition block">
-                          {commit.message}
-                        </a>
+                      <div className="mt-0.5 text-slate-500"><Icons.GitCommit /></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-slate-200 truncate">{commit.message}</div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                          <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-slate-400">{commit.shortSha}</span>
+                          <code className="bg-white/5 px-1.5 py-0.5 rounded text-slate-400">{commit.shortSha}</code>
                           <span>•</span>
-                          <span>{commit.author}</span>
+                          <span className="truncate">{commit.author}</span>
                           <span>•</span>
                           <span>{formatRelativeTime(commit.date)}</span>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 ))}
+              </div>
+            </GlassCard>
+
+            {/* Cloudflare Traffic */}
+            <GlassCard className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Traffic (24h)</h3>
+                <a
+                  href="https://dash.cloudflare.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                >
+                  Cloudflare <Icons.ExternalLink />
+                </a>
+              </div>
+              {cloudflare ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Requests</span>
+                    <span className="font-mono text-white">{cloudflare.requests.total.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Cache Hit</span>
+                    <span className="font-mono text-emerald-400">
+                      {cloudflare.requests.total > 0 
+                        ? Math.round((cloudflare.requests.cached / cloudflare.requests.total) * 100) 
+                        : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Bandwidth</span>
+                    <span className="font-mono text-white">
+                      {(cloudflare.bandwidth.total / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  </div>
+                  {cloudflare.threats > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-sm">Threats Blocked</span>
+                      <span className="font-mono text-red-400">{cloudflare.threats}</span>
+                    </div>
+                  )}
+                  {cloudflare.error && (
+                    <div className="text-xs text-amber-400">{cloudflare.error}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500 italic">Loading...</div>
+              )}
+            </GlassCard>
+
+            {/* Database */}
+            <GlassCard className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Database</h3>
+                {database?.links.console && (
+                  <a
+                    href={database.links.console}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  >
+                    {database.provider} <Icons.ExternalLink />
+                  </a>
+                )}
+              </div>
+              {database ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Status</span>
+                    <span className={cn("font-medium", database.status === "ok" ? "text-emerald-400" : "text-amber-400")}>
+                      {database.status === "ok" ? "Connected" : database.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Provider</span>
+                    <span className="text-white">{database.provider}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Region</span>
+                    <span className="text-slate-300">{database.region}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Backups</span>
+                    <span className="text-slate-300">
+                      {database.backups.count > 0 
+                        ? `${database.backups.count} (latest: ${database.backups.latest})`
+                        : "None found"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => executeAction("backup-db")}
+                    disabled={actionLoading}
+                    className="w-full mt-2 flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-slate-200 transition"
+                  >
+                    💾 Create Backup
+                  </button>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500 italic">Loading...</div>
+              )}
+            </GlassCard>
+
+            {/* Links */}
+            <GlassCard className="p-4">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Links</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <a href="https://github.com/rockfridrich/villa" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  <Icons.GitHub /> Repository
+                </a>
+                <a href="https://github.com/rockfridrich/villa/pulls" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  <Icons.GitCommit /> Pull Requests
+                </a>
+                <a href={RAILWAY_PROJECT} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  <Icons.Railway /> Railway
+                </a>
+                <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  ☁️ Cloudflare
+                </a>
+                <a href="https://cloud.digitalocean.com/databases" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  🗄️ Database
+                </a>
+                <a href="https://github.com/rockfridrich/villa/issues" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                  <Icons.Alert /> Issues
+                </a>
               </div>
             </GlassCard>
 
