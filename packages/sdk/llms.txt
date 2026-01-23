@@ -51,4 +51,4 @@ type VillaAuthResult =
 ```
 
 ## Docs
-https://developers.villa.cash
+https://docs.villa.cash

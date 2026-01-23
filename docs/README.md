@@ -20,5 +20,5 @@
 | Resource                                               | Description            |
 | ------------------------------------------------------ | ---------------------- |
 | [CONTRIBUTING.md](../CONTRIBUTING.md)                  | How to contribute      |
-| [developers.villa.cash](https://developers.villa.cash) | Public documentation   |
+| [docs.villa.cash](https://docs.villa.cash) | Public documentation   |
 | [specs/](../specs/)                                    | Feature specifications |

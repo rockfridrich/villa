@@ -376,6 +376,6 @@ const user: Identity | null = identity;
 
 ## Need Help?
 
-- [Villa Documentation](https://developers.villa.cash)
+- [Villa Documentation](https://docs.villa.cash)
 - [GitHub Issues](https://github.com/rockfridrich/villa/issues)
 - [Telegram Community](https://t.me/proofofretreat)

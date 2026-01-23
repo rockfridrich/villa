@@ -26,6 +26,7 @@ const VILLA_ORIGINS = [
   'https://beta.villa.cash',
   'https://dev-1.villa.cash',
   'https://dev-2.villa.cash',
+  'https://docs.villa.cash',
   'https://developers.villa.cash',
   'https://key.villa.cash',
   'https://beta-key.villa.cash',
@@ -43,7 +44,7 @@ const DEV_ORIGINS = [
 ] as const
 
 // Registered external app origins (allowlist for third-party integrations)
-// Apps must register via developers.villa.cash to be added here
+// Apps must register via docs.villa.cash to be added here
 const REGISTERED_APP_ORIGINS = [
   // Lovable.dev (registered partner)
   'https://lovable.dev',

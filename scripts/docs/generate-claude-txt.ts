@@ -223,7 +223,7 @@ function generateClaudeTxt(): string {
     `- **Packages**: \`@rockfridrich/villa-sdk\`, \`@rockfridrich/villa-sdk-react\``,
     `- **Peer deps**: \`viem\`, \`zod\``,
     `- **Networks**: Base (8453) for production, Base Sepolia (84532) for testing`,
-    `- **Docs**: https://developers.villa.cash`,
+    `- **Docs**: https://docs.villa.cash`,
     `- **GitHub**: https://github.com/rockfridrich/villa`,
     ``,
     `## One-Prompt Integration (React)`,

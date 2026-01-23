@@ -7,7 +7,7 @@ get_service_info() {
   local app=$1
   case "$app" in
     hub) echo "villa-staging:construction.villa.cash" ;;
-    developers) echo "villa-developers:developers.villa.cash" ;;
+    developers) echo "villa-developers:docs.villa.cash" ;;
     key) echo "villa-key-staging:fake-key.villa.cash" ;;
     *) echo "" ;;
   esac
@@ -18,7 +18,7 @@ usage() {
   echo ""
   echo "Services:"
   echo "  hub         - Deploy to construction.villa.cash"
-  echo "  developers  - Deploy to developers.villa.cash"
+  echo "  developers  - Deploy to docs.villa.cash"
   echo "  key         - Deploy to fake-key.villa.cash"
   echo "  all         - Deploy all services"
   echo ""

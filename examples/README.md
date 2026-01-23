@@ -36,4 +36,4 @@ All examples require:
 
 ## Documentation
 
-For full SDK documentation, visit [developers.villa.cash](https://developers.villa.cash)
+For full SDK documentation, visit [docs.villa.cash](https://docs.villa.cash)

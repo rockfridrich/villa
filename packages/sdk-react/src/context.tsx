@@ -53,7 +53,8 @@ const TRUSTED_ORIGINS = new Set([
   'https://beta.villa.cash',
   'https://dev-1.villa.cash',
   'https://dev-2.villa.cash',
-  'https://developers.villa.cash',
+  'https://docs.villa.cash',
+  'https://developers.villa.cash', // Legacy, redirect to docs.villa.cash
   'https://localhost:3000',
   'https://localhost:3001',
 ])

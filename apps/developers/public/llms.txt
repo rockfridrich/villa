@@ -13,7 +13,7 @@ import { VillaAuth } from '@rockfridrich/villa-sdk-react'
 ```
 
 ## Full Context
-- CLAUDE.txt: https://developers.villa.cash/CLAUDE.txt
+- CLAUDE.txt: https://docs.villa.cash/CLAUDE.txt
 - GitHub: https://raw.githubusercontent.com/rockfridrich/villa/main/apps/developers/public/CLAUDE.txt
 
 ## What It Does

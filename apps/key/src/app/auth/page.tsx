@@ -95,6 +95,7 @@ const VILLA_ORIGINS = [
   "https://beta.villa.cash",
   "https://dev-1.villa.cash",
   "https://dev-2.villa.cash",
+  "https://docs.villa.cash",
   "https://developers.villa.cash",
   "https://key.villa.cash",
   "https://beta-key.villa.cash",

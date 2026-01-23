@@ -34,7 +34,7 @@
     "url": "https://github.com/rockfridrich/villa.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://developers.villa.cash",
+  "homepage": "https://docs.villa.cash",
   "license": "MIT",
   "scripts": {
     "build": "tsup",

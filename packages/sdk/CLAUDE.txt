@@ -10,7 +10,7 @@
 - **Packages**: `@rockfridrich/villa-sdk`, `@rockfridrich/villa-sdk-react`
 - **Peer deps**: `viem`, `zod`
 - **Networks**: Base (8453) for production, Base Sepolia (84532) for testing
-- **Docs**: https://developers.villa.cash
+- **Docs**: https://docs.villa.cash
 - **GitHub**: https://github.com/rockfridrich/villa
 
 ## One-Prompt Integration (React)
@@ -362,7 +362,7 @@ After successful authentication:
 | Production | villa.cash | Stable SDK |
 | Construction | construction.villa.cash | Building zone, latest features |
 | Fake Key | fake-key.villa.cash | Test passkeys for community |
-| Developers | developers.villa.cash | Docs + this file |
+| Docs | docs.villa.cash | Docs + this file |
 
 ---
 
@@ -621,7 +621,7 @@ After successful authentication:
 
 ## Links
 
-- Docs: https://developers.villa.cash
+- Docs: https://docs.villa.cash
 - GitHub: https://github.com/rockfridrich/villa
 - npm (SDK): https://www.npmjs.com/package/@rockfridrich/villa-sdk
 - npm (React): https://www.npmjs.com/package/@rockfridrich/villa-sdk-react
