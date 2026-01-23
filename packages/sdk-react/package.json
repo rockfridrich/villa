@@ -1,6 +1,6 @@
 {
   "name": "@rockfridrich/villa-sdk-react",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-beta.1",
   "description": "React bindings for Villa SDK - Privacy-first passkey authentication",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
