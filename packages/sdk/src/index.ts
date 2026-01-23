@@ -16,7 +16,7 @@ export {
   syncProfileToTinyCloud,
   loadProfileFromTinyCloud,
 } from "./simple";
-export type { VillaUser, SimpleSignInOptions } from "./simple";
+export type { VillaUser, SimpleSignInOptions, SettingsResult } from "./simple";
 
 // Main SDK client (advanced)
 export { Villa } from "./client";

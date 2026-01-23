@@ -49,10 +49,17 @@ export interface SimpleSignInOptions {
   timeout?: number;
 }
 
+export interface SettingsResult {
+  avatar?: { style: string; seed: string };
+  nickname?: string;
+  loggedOut?: boolean;
+}
+
 interface VillaInstance {
   user: VillaUser | null;
   signIn: (options?: SimpleSignInOptions) => Promise<VillaUser>;
   signOut: () => void;
+  settings: () => Promise<SettingsResult>;
   onAuthChange: (callback: (user: VillaUser | null) => void) => () => void;
   config: (options: Partial<VillaConfig>) => void;
 }
@@ -149,6 +156,54 @@ function signOut() {
   notifyListeners();
 }
 
+async function openSettings(): Promise<SettingsResult> {
+  init();
+
+  if (!_user) {
+    throw new Error("Must be signed in to open settings");
+  }
+
+  return new Promise((resolve, reject) => {
+    const bridge = new VillaBridge({
+      appId: _config.appId,
+      network: _config.network,
+      timeout: 10 * 60 * 1000,
+    });
+
+    bridge.on("success", (identity) => {
+      const user = identityToUser(identity);
+      _user = user;
+
+      saveSession({
+        identity,
+        expiresAt: Date.now() + SESSION_DURATION_MS,
+        isValid: true,
+      });
+
+      notifyListeners();
+      resolve({
+        avatar: identity.avatar,
+        nickname: identity.nickname,
+      });
+    });
+
+    bridge.on("cancel", () => {
+      resolve({});
+    });
+
+    bridge.on("error", (error, code) => {
+      if (code === "LOGOUT") {
+        signOut();
+        resolve({ loggedOut: true });
+      } else {
+        reject(new Error(error));
+      }
+    });
+
+    bridge.open(["settings"]).catch(reject);
+  });
+}
+
 function onAuthChange(callback: (user: VillaUser | null) => void): () => void {
   init();
   _listeners.add(callback);
@@ -167,6 +222,7 @@ export const villa: VillaInstance = {
   },
   signIn,
   signOut,
+  settings: openSettings,
   onAuthChange,
   config: configure,
 };
