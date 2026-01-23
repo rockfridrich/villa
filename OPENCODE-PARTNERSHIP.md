@@ -1,20 +1,37 @@
-# OpenCode + Claude Code Partnership
+# Sisyphus (OpenCode) + Claude Code Partnership
 
-**Status:** ✅ Active Partnership (not a migration)
+**Status:** ✅ Sisyphus PRIMARY, Claude Code BACKUP
 **Updated:** 2026-01-23
 
 ---
 
 ## Partnership Model
 
-**Claude Code** and **OpenCode** work together:
+**Sisyphus (OpenCode)** is the primary agent. **Claude Code** is the backup.
 
 | Tool | Role | When to Use |
 |------|------|-------------|
-| **Claude Code** | Initialization & Repair | Session start, broken environments, agent debugging, protocol updates |
-| **OpenCode** | Implementation & Operations | Once environment healthy: @build, @design, @test, @ops agents |
+| **Sisyphus (OpenCode)** | Primary - All Work | **Default for everything**: implementation, exploration, UI, architecture |
+| **Claude Code** | Backup - Repair Only | Only when Sisyphus is stuck after 2+ attempts, or environment/tooling broken |
 
-**Not a migration** — both tools complement each other. Claude Code bootstraps and repairs; OpenCode implements.
+### Why Sisyphus First?
+- **Smarter**: Better reasoning with explicit tool access and parallel agent orchestration
+- **Cheaper**: Optimized routing ($0.25-$3/1M vs higher for Claude Code)
+- **Specialized**: Delegates to explore, librarian, frontend-ui-ux-engineer, oracle subagents
+- **Efficient**: Fires background agents in parallel, handles complex workflows autonomously
+
+### Handoff Pattern
+```
+User Request → Sisyphus (handles 95% of work)
+                  ↓
+        Stuck? → Claude Code (repair) → Resume Sisyphus
+```
+
+**DO NOT use Claude Code for:**
+- Normal implementation (use Sisyphus directly)
+- Code exploration (use Sisyphus + explore agent)
+- Library questions (use Sisyphus + librarian agent)
+- UI work (use Sisyphus + frontend-ui-ux-engineer agent)
 
 ---
 
@@ -155,27 +172,31 @@ bd sync --flush-only  # Export to JSONL
 
 ---
 
-## Agent Delegation
+## Agent Delegation (Sisyphus Orchestrates)
 
 ### Tool Selection
 | Task | Tool | Why |
 |------|------|-----|
-| Session start | Claude Code | Bootstrap, verify environment |
-| Environment broken | Claude Code | Diagnose and repair |
-| File search | OpenCode @explore | Cost-optimized (haiku) |
-| Implementation | OpenCode @build | Specialized agent (sonnet) |
-| Test runs | OpenCode @test | Cost-optimized (haiku) |
-| Design review | OpenCode @design | UI expertise (sonnet) |
-| Architecture | OpenCode @architect | Deep reasoning (opus) |
-| Agent debugging | Claude Code | Full context, repair capability |
-| Protocol updates | Claude Code | Edit .opencode/ directly |
+| **Everything by default** | Sisyphus | Primary agent, handles 95% of work |
+| File search | Sisyphus → explore agent | Cost-optimized (haiku) |
+| Implementation | Sisyphus (direct or delegation) | Direct edits or @build agent |
+| Test runs | Sisyphus → test agent | Cost-optimized (haiku) |
+| UI/UX work | Sisyphus → frontend-ui-ux-engineer | Visual design expertise |
+| Documentation | Sisyphus → document-writer | Technical writing |
+| Library questions | Sisyphus → librarian | External docs, OSS examples |
+| Architecture decisions | Sisyphus → oracle | Deep reasoning (GPT-5.2) |
+| **Sisyphus stuck 2+ times** | Claude Code | Repair and debug |
+| **Environment broken** | Claude Code | Fix tooling, not code |
 
 ### Handoff Pattern
 ```
-Claude Code: "./scripts/doctor.sh" → passes → "Environment ready, switching to OpenCode"
-OpenCode: "@build implement feature X" → completes → continue with OpenCode
-OpenCode: Agent fails → "Returning to Claude Code for repair"
-Claude Code: Debug → fix → "Ready, switching back to OpenCode"
+User Request → Sisyphus (primary)
+  ↓
+Sisyphus delegates to subagents: explore, librarian, frontend-ui-ux-engineer, oracle
+  ↓
+Task complete → Sisyphus reports back
+  ↓
+If stuck 2+ attempts → Claude Code (repair) → Resume Sisyphus
 ```
 
 ---

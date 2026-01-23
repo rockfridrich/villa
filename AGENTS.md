@@ -2,33 +2,41 @@
 
 Cost-optimized agent routing with quality guarantees.
 
-> **Primary:** [.opencode/OPENCODE.md](.opencode/OPENCODE.md) - OpenCode agent protocols (enforced)
-> **Bootstrap:** [.claude/CLAUDE.md](.claude/CLAUDE.md) - Claude Code (initialization & repair partner)
+## Sisyphus (OpenCode) ↔ Claude Code Partnership
 
-## Claude Code ↔ OpenCode Partnership
+**Sisyphus** (OpenCode) is the **primary** agent. Claude Code is the **backup**.
 
-**Claude Code** serves as the initialization and repair partner for OpenCode:
+| Role | Sisyphus (OpenCode) | Claude Code |
+|------|---------------------|-------------|
+| **Primary Use** | All implementation, orchestration, delegation | Backup & repair only |
+| **Cost** | Cheaper (optimized routing) | More expensive |
+| **Capabilities** | Full tool access, subagent orchestration | Deep debugging when Sisyphus fails |
+| **When to use** | **Default for everything** | Only when Sisyphus is stuck or env broken |
 
-| Role | Claude Code | OpenCode |
-|------|-------------|----------|
-| **Session start** | Bootstrap environment, run doctor.sh | Take over for implementation |
-| **Environment issues** | Diagnose and fix setup problems | Expects healthy environment |
-| **Agent failures** | Debug and repair OpenCode agents | Run specialized agents |
-| **Complex debugging** | Deep investigation, multi-file analysis | Delegate to appropriate tier |
-| **Documentation** | Update protocols and agent definitions | Follow protocols |
+### Why Sisyphus First?
+- **Smarter**: Better reasoning with explicit tool access
+- **Cheaper**: Optimized model routing ($0.25-$3/1M vs higher)
+- **Orchestration**: Can delegate to specialized subagents (explore, librarian, frontend-ui-ux-engineer, oracle)
+- **Parallel execution**: Fires multiple background agents simultaneously
 
-**Workflow:**
+### Workflow
 ```
-Claude Code (init) → doctor.sh passes → OpenCode (implement)
+User request → Sisyphus (handles 95% of work)
                   ↓
-        Issue detected → Claude Code (repair) → Resume OpenCode
+        Stuck after 2+ attempts → Claude Code (repair) → Resume Sisyphus
 ```
 
-**When to use Claude Code:**
-- First session in a while (environment might be stale)
-- OpenCode agents failing unexpectedly
-- Complex cross-cutting issues spanning multiple agents
-- Updating agent definitions or protocols themselves
+### When to Fall Back to Claude Code
+- Sisyphus explicitly says it's stuck
+- Environment/tooling broken (not code issues)
+- Agent infrastructure itself needs debugging
+- OpenCode config needs updates
+
+**DO NOT use Claude Code for:**
+- Normal implementation tasks
+- Code exploration (use Sisyphus + explore agent)
+- Library questions (use Sisyphus + librarian agent)
+- UI work (use Sisyphus + frontend-ui-ux-engineer agent)
 
 ## Quick Reference
 
