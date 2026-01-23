@@ -7,6 +7,31 @@
 
 ---
 
+## CLAUDE CODE PARTNERSHIP
+
+**Claude Code** is the initialization and repair partner for OpenCode agents.
+
+| Scenario | Use Claude Code | Use OpenCode |
+|----------|-----------------|--------------|
+| Session start | ✅ Bootstrap, run doctor.sh | After environment healthy |
+| Environment broken | ✅ Diagnose and fix | Expects working env |
+| Agent not working | ✅ Debug the agent | Normal agent operation |
+| Protocol updates | ✅ Edit .opencode/ files | Follow protocols |
+| Implementation | Hand off to OpenCode | ✅ Use @build, @design |
+| File search | Hand off to OpenCode | ✅ Use @explore |
+| Test runs | Hand off to OpenCode | ✅ Use @test |
+
+**Typical session flow:**
+```
+1. Open Claude Code
+2. Run ./scripts/doctor.sh
+3. If issues → Claude Code fixes them
+4. If healthy → Switch to OpenCode for implementation
+5. If OpenCode agent fails → Return to Claude Code for repair
+```
+
+---
+
 ## ENFORCED PROTOCOLS (NON-NEGOTIABLE)
 
 ### Protocol 1: Environment Check (BLOCKING)
@@ -407,7 +432,7 @@ contracts/         # Solidity contracts
 scripts/           # PROTOCOLIZED OPERATIONS (USE THESE)
 specs/             # Feature specifications
 .opencode/         # OpenCode agent context (this file)
-.claude/           # Claude Code context (legacy)
+.claude/           # Claude Code (initialization & repair partner)
 ```
 
 ---
