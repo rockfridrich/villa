@@ -1,8 +1,20 @@
-# OpenCode Migration Plan
+# OpenCode + Claude Code Partnership
 
-**Date:** 2026-01-12
-**From:** Claude Code CLI
-**To:** OpenCode
+**Status:** ✅ Active Partnership (not a migration)
+**Updated:** 2026-01-23
+
+---
+
+## Partnership Model
+
+**Claude Code** and **OpenCode** work together:
+
+| Tool | Role | When to Use |
+|------|------|-------------|
+| **Claude Code** | Initialization & Repair | Session start, broken environments, agent debugging, protocol updates |
+| **OpenCode** | Implementation & Operations | Once environment healthy: @build, @design, @test, @ops agents |
+
+**Not a migration** — both tools complement each other. Claude Code bootstraps and repairs; OpenCode implements.
 
 ---
 
@@ -143,28 +155,32 @@ bd sync --flush-only  # Export to JSONL
 
 ---
 
-## Agent Delegation (CRITICAL)
+## Agent Delegation
 
-**Reflection finding:** Should delegate 80%+ of implementation to agents.
+### Tool Selection
+| Task | Tool | Why |
+|------|------|-----|
+| Session start | Claude Code | Bootstrap, verify environment |
+| Environment broken | Claude Code | Diagnose and repair |
+| File search | OpenCode @explore | Cost-optimized (haiku) |
+| Implementation | OpenCode @build | Specialized agent (sonnet) |
+| Test runs | OpenCode @test | Cost-optimized (haiku) |
+| Design review | OpenCode @design | UI expertise (sonnet) |
+| Architecture | OpenCode @architect | Deep reasoning (opus) |
+| Agent debugging | Claude Code | Full context, repair capability |
+| Protocol updates | Claude Code | Edit .opencode/ directly |
 
-### Agent Routing
-| Task | Agent | Model |
-|------|-------|-------|
-| File search | @explore | haiku |
-| Implementation | @build | sonnet |
-| Test runs | @test | haiku |
-| Design review | @design | sonnet |
-| Architecture | @architect | opus |
-
-### Anti-Pattern to Avoid
+### Handoff Pattern
 ```
-❌ Orchestrator reads/edits implementation files directly
-✅ Orchestrator delegates: "@build implement X in file Y"
+Claude Code: "./scripts/doctor.sh" → passes → "Environment ready, switching to OpenCode"
+OpenCode: "@build implement feature X" → completes → continue with OpenCode
+OpenCode: Agent fails → "Returning to Claude Code for repair"
+Claude Code: Debug → fix → "Ready, switching back to OpenCode"
 ```
 
 ---
 
-## Next Steps (Post-Migration)
+## Pending Work
 
 1. **Test beta deployment** - verify auth flow works
 2. **Add E2E tests** - welcome → auth → nickname flow
@@ -214,4 +230,4 @@ User clicks "Get Started"
 
 ---
 
-*Last updated: 2026-01-12 by Claude Code session*
+*Partnership model established 2026-01-23. Claude Code = init/repair, OpenCode = implement.*

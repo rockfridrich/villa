@@ -3,7 +3,32 @@
 Cost-optimized agent routing with quality guarantees.
 
 > **Primary:** [.opencode/OPENCODE.md](.opencode/OPENCODE.md) - OpenCode agent protocols (enforced)
-> **Legacy:** [.claude/CLAUDE.md](.claude/CLAUDE.md) - Claude Code context
+> **Bootstrap:** [.claude/CLAUDE.md](.claude/CLAUDE.md) - Claude Code (initialization & repair partner)
+
+## Claude Code ↔ OpenCode Partnership
+
+**Claude Code** serves as the initialization and repair partner for OpenCode:
+
+| Role | Claude Code | OpenCode |
+|------|-------------|----------|
+| **Session start** | Bootstrap environment, run doctor.sh | Take over for implementation |
+| **Environment issues** | Diagnose and fix setup problems | Expects healthy environment |
+| **Agent failures** | Debug and repair OpenCode agents | Run specialized agents |
+| **Complex debugging** | Deep investigation, multi-file analysis | Delegate to appropriate tier |
+| **Documentation** | Update protocols and agent definitions | Follow protocols |
+
+**Workflow:**
+```
+Claude Code (init) → doctor.sh passes → OpenCode (implement)
+                  ↓
+        Issue detected → Claude Code (repair) → Resume OpenCode
+```
+
+**When to use Claude Code:**
+- First session in a while (environment might be stale)
+- OpenCode agents failing unexpectedly
+- Complex cross-cutting issues spanning multiple agents
+- Updating agent definitions or protocols themselves
 
 ## Quick Reference
 
