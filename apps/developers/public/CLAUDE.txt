@@ -522,7 +522,7 @@ After successful authentication:
 - `getValidOrigins`
 - `ALLOWED_ORIGINS`
 - `DEV_ORIGINS`
-- `ALLOWED_ORIGINS` - HTTPS-only in production - passkeys require secure context /
+- `ALLOWED_ORIGINS` - The SDK can be used on ANY domain, but it only accepts auth responses from Villa. /
 - `DEV_ORIGINS` - Development origins (only active when NODE_ENV === 'development') /
 - `villa`
 - `signInWithVilla`
