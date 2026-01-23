@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface HealthData {
   status: string;
@@ -82,6 +83,50 @@ interface PipelineData {
   fetchedAt: string;
 }
 
+interface BuildJob {
+  name: string;
+  status: string;
+  conclusion: string | null;
+  currentStep: string | null;
+  totalSteps: number;
+  completedSteps: number;
+}
+
+interface BuildStatusData {
+  run: {
+    id: number;
+    name: string;
+    status: string;
+    conclusion: string | null;
+    url: string;
+    sha: string;
+    createdAt: string;
+  } | null;
+  jobs: BuildJob[];
+  fetchedAt: string;
+  error?: string;
+}
+
+interface VersionStatus {
+  mainSha: string;
+  mainShortSha: string;
+  environments: {
+    name: string;
+    url: string;
+    deployedSha: string;
+    deployedVersion: string;
+    isCurrent: boolean;
+    commitsBehind: number;
+  }[];
+  deployInProgress: {
+    running: boolean;
+    sha?: string;
+    url?: string;
+    startedAt?: string;
+  };
+  fetchedAt: string;
+}
+
 const ENVIRONMENTS = [
   { name: "Local Hub", env: "local" },
   { name: "Production", env: "production" },
@@ -91,35 +136,10 @@ const ENVIRONMENTS = [
   { name: "Docs", env: "docs" },
 ];
 
-function StatusBadge({ status }: { status: ServiceStatus["status"] }) {
-  return (
-    <span
-      className={clsx(
-        "px-2 py-1 rounded-full text-xs font-medium",
-        status === "checking" && "bg-yellow-100 text-yellow-800",
-        status === "ok" && "bg-green-100 text-green-800",
-        status === "error" && "bg-red-100 text-red-800",
-      )}
-    >
-      {status === "checking" ? "..." : status.toUpperCase()}
-    </span>
-  );
-}
+""
 
-function PipelineStatusBadge({ status }: { status: PipelineStage["status"] }) {
-  return (
-    <span
-      className={clsx(
-        "px-2 py-1 rounded-full text-xs font-medium",
-        status === "pending" && "bg-gray-100 text-gray-800",
-        status === "running" && "bg-blue-100 text-blue-800",
-        status === "success" && "bg-green-100 text-green-800",
-        status === "failed" && "bg-red-100 text-red-800",
-      )}
-    >
-      {status.toUpperCase()}
-    </span>
-  );
+function cn(...inputs: (string | undefined | null | false)[]) {
+  return twMerge(clsx(inputs));
 }
 
 function formatUptime(seconds: number): string {
@@ -152,745 +172,194 @@ function formatRelativeTime(dateStr: string): string {
   return `${diffDays}d ago`;
 }
 
-function LaunchButtons({
-  onAction,
-  loading,
-}: {
-  onAction: (action: string) => void;
-  loading: boolean;
-}) {
+""
+
+const Icons = {
+  GitCommit: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3h5m0 0v5m0-5l-6 6M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+    </svg>
+  ),
+  Check: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  Alert: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  ),
+  Refresh: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+  Play: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  Server: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+    </svg>
+  ),
+};
+
+""
+
+function GlassCard({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
   return (
-    <div className="flex gap-2 mt-3 pt-3 border-t border-neutral-100">
-      <button
-        onClick={() => onAction("launch-local")}
-        disabled={loading}
-        className="flex-1 px-3 py-1.5 text-xs font-medium bg-ink text-cream rounded hover:bg-ink/90 transition disabled:opacity-50"
-      >
-        {loading ? "Starting..." : "Launch Dev"}
-      </button>
-      <button
-        onClick={() => onAction("launch-docker")}
-        disabled={loading}
-        className="flex-1 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
-      >
-        {loading ? "Starting..." : "Launch Docker"}
-      </button>
-    </div>
-  );
-}
-
-function ServiceCard({
-  service,
-  onAction,
-  actionLoading,
-}: {
-  service: ServiceStatus;
-  onAction?: (action: string) => void;
-  actionLoading?: boolean;
-}) {
-  const build = service.data?.build;
-  const runtime = service.data?.runtime;
-  const version = build?.version || service.data?.version || "unknown";
-  const isLocal = service.env === "local";
-
-  return (
-    <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-ink">{service.name}</h3>
-        <StatusBadge status={service.status} />
-      </div>
-
-      {service.status === "ok" && service.data && (
-        <div className="space-y-2 text-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-gray-500">Version:</span>
-              <span className="ml-2 font-mono">{version}</span>
-            </div>
-            {build && (
-              <div>
-                <span className="text-gray-500">Hash:</span>
-                <span className="ml-2 font-mono text-xs">{build.hash}</span>
-              </div>
-            )}
-          </div>
-
-          {build && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-500">SHA:</span>
-                <span className="ml-2 font-mono text-xs">
-                  {build.sha.slice(0, 7)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Env:</span>
-                <span className="ml-2">{service.data?.env || "unknown"}</span>
-              </div>
-            </div>
-          )}
-
-          {runtime && (
-            <div className="pt-2 border-t border-neutral-100">
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <span className="text-gray-500">Uptime:</span>
-                  <span className="ml-1">{formatUptime(runtime.uptime)}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Memory:</span>
-                  <span className="ml-1">{runtime.memory.heapUsed}MB</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Latency:</span>
-                  <span className="ml-1">{service.latency}ms</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {build?.time && (
-            <div className="text-xs text-gray-500 pt-1">
-              Built: {build.time}
-            </div>
-          )}
-        </div>
-      )}
-
-      {service.status === "error" && (
-        <div className="space-y-2">
-          <div className="text-sm text-red-600">{service.error}</div>
-          {isLocal && onAction && (
-            <LaunchButtons
-              onAction={onAction}
-              loading={actionLoading || false}
-            />
-          )}
-        </div>
-      )}
-
-      {service.status === "checking" && (
-        <div className="text-sm text-gray-500">Checking...</div>
-      )}
-    </div>
-  );
-}
-
-interface VersionStatus {
-  mainSha: string;
-  mainShortSha: string;
-  environments: {
-    name: string;
-    url: string;
-    deployedSha: string;
-    deployedVersion: string;
-    isCurrent: boolean;
-    commitsBehind: number;
-  }[];
-  deployInProgress: {
-    running: boolean;
-    sha?: string;
-    url?: string;
-    startedAt?: string;
-  };
-  fetchedAt: string;
-}
-
-function VersionStatusCard({ versionStatus }: { versionStatus: VersionStatus | null }) {
-  if (!versionStatus) {
-    return (
-      <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-        <h3 className="font-medium text-ink mb-3">Version Status</h3>
-        <div className="text-sm text-gray-500">Loading version info...</div>
-      </div>
-    );
-  }
-
-  const { mainShortSha, environments, deployInProgress } = versionStatus;
-  const allCurrent = environments.every((e) => e.isCurrent || e.deployedSha === "static");
-  const totalBehind = environments.reduce((sum, e) => sum + Math.max(0, e.commitsBehind), 0);
-
-  return (
-    <div className={clsx(
-      "bg-white rounded-lg border-2 p-4 shadow-sm",
-      deployInProgress.running && "border-blue-400",
-      !deployInProgress.running && allCurrent && "border-green-400",
-      !deployInProgress.running && !allCurrent && "border-yellow-400",
-    )}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-ink">Version Status</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">main:</span>
-          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{mainShortSha}</code>
-        </div>
-      </div>
-
-      {deployInProgress.running && (
-        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-sm font-medium text-blue-800">Deploy in progress</span>
-          </div>
-          <div className="mt-1 text-xs text-blue-600">
-            <span>Deploying </span>
-            <code className="font-mono">{deployInProgress.sha}</code>
-            {deployInProgress.url && (
-              <a
-                href={deployInProgress.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 underline"
-              >
-                View →
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {!deployInProgress.running && !allCurrent && (
-        <div className="mb-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-600">⚠️</span>
-            <span className="text-sm font-medium text-yellow-800">
-              {totalBehind > 0 ? `${totalBehind} commits behind` : "Version mismatch"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {!deployInProgress.running && allCurrent && (
-        <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
-          <div className="flex items-center gap-2">
-            <span className="text-green-600">✓</span>
-            <span className="text-sm font-medium text-green-800">All environments up to date</span>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {environments.map((env) => (
-          <div
-            key={env.name}
-            className="flex items-center justify-between text-sm"
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={clsx(
-                  "w-2 h-2 rounded-full",
-                  env.isCurrent && "bg-green-500",
-                  !env.isCurrent && env.commitsBehind > 0 && "bg-yellow-500",
-                  !env.isCurrent && env.commitsBehind === 0 && env.deployedSha !== "static" && "bg-gray-400",
-                  env.deployedSha === "static" && "bg-gray-300",
-                  env.deployedSha === "error" && "bg-red-500",
-                )}
-              />
-              <a
-                href={env.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                {env.name}
-              </a>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <code className="font-mono text-gray-600">
-                {env.deployedSha === "static" ? "static" : env.deployedSha.slice(0, 7)}
-              </code>
-              {!env.isCurrent && env.commitsBehind > 0 && (
-                <span className="text-yellow-600 font-medium">
-                  {env.commitsBehind} behind
-                </span>
-              )}
-              {env.isCurrent && (
-                <span className="text-green-600">✓</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-neutral-100 text-xs text-gray-400">
-        Updated {new Date(versionStatus.fetchedAt).toLocaleTimeString()}
-      </div>
-    </div>
-  );
-}
-
-function BuildComparison({ services }: { services: ServiceStatus[] }) {
-  const builds = services
-    .filter((s) => s.status === "ok" && s.data)
-    .map((s) => ({
-      name: s.name,
-      hash: s.data?.build?.hash || "n/a",
-      sha: s.data?.build?.sha || "n/a",
-      version: s.data?.build?.version || s.data?.version || "unknown",
-    }));
-
-  if (builds.length < 2) return null;
-
-  const allSameHash = builds.every(
-    (b) => b.hash === builds[0].hash || b.hash === "n/a",
-  );
-  const allSameSha = builds.every(
-    (b) => b.sha === builds[0].sha || b.sha === "n/a",
-  );
-
-  return (
-    <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-      <h3 className="font-medium text-ink mb-3">Build Comparison</h3>
-
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={clsx(
-              "w-3 h-3 rounded-full",
-              allSameHash ? "bg-green-500" : "bg-yellow-500",
-            )}
-          />
-          <span className="text-sm">
-            {allSameHash
-              ? "All builds have same content hash"
-              : "Content hash mismatch detected"}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span
-            className={clsx(
-              "w-3 h-3 rounded-full",
-              allSameSha ? "bg-green-500" : "bg-yellow-500",
-            )}
-          />
-          <span className="text-sm">
-            {allSameSha
-              ? "All builds from same commit"
-              : "Different commits deployed"}
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-neutral-100">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-gray-500">
-              <th className="text-left py-1">Environment</th>
-              <th className="text-left py-1">Version</th>
-              <th className="text-left py-1">Hash</th>
-              <th className="text-left py-1">SHA</th>
-            </tr>
-          </thead>
-          <tbody className="font-mono">
-            {builds.map((b) => (
-              <tr key={b.name}>
-                <td className="py-1">{b.name}</td>
-                <td className="py-1">{b.version}</td>
-                <td className="py-1">{b.hash}</td>
-                <td className="py-1">{b.sha.slice(0, 7)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function PipelineCard({ pipeline }: { pipeline: PipelineData | null }) {
-  const workflowStages = [
-    {
-      id: "local",
-      name: "Local",
-      description: "bun dev + verify",
-      trigger: "manual",
-      icon: "💻",
-    },
-    {
-      id: "pr",
-      name: "PR",
-      description: "CI checks",
-      trigger: "auto",
-      icon: "🔍",
-    },
-    {
-      id: "construction",
-      name: "Construction",
-      description: "construction.villa.cash",
-      trigger: "auto",
-      icon: "🏗️",
-    },
-    {
-      id: "production",
-      name: "Production",
-      description: "villa.cash",
-      trigger: "manual",
-      icon: "🚀",
-    },
-  ];
-
-  const getStageStatus = (
-    stageId: string,
-  ): "success" | "running" | "failed" | "pending" => {
-    if (!pipeline) return "pending";
-    const stage = pipeline.stages.find(
-      (s) => s.name.toLowerCase() === stageId || s.name === stageId,
-    );
-    if (stage) return stage.status;
-    if (stageId === "local") return "pending";
-    if (stageId === "pr") {
-      const ci = pipeline.stages.find((s) => s.name === "CI");
-      return ci?.status || "pending";
-    }
-    return "pending";
-  };
-
-  return (
-    <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium text-ink">Deployment Pipeline</h3>
-        <span className="text-xs text-gray-400">
-          Local → PR → Staging → Production
-        </span>
-      </div>
-
-      <div className="flex items-stretch gap-1 mb-4">
-        {workflowStages.map((stage, idx) => {
-          const status = getStageStatus(stage.id);
-          const isActive = status === "running";
-          const isSuccess = status === "success";
-          const isFailed = status === "failed";
-
-          return (
-            <div key={stage.id} className="flex items-center flex-1">
-              <div
-                className={clsx(
-                  "flex-1 p-3 rounded-lg border-2 transition-all",
-                  isActive && "border-blue-400 bg-blue-50 animate-pulse",
-                  isSuccess && "border-green-400 bg-green-50",
-                  isFailed && "border-red-400 bg-red-50",
-                  !isActive &&
-                    !isSuccess &&
-                    !isFailed &&
-                    "border-gray-200 bg-gray-50",
-                )}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{stage.icon}</span>
-                  <span className="font-medium text-sm">{stage.name}</span>
-                  {stage.trigger === "manual" && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
-                      manual
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">{stage.description}</p>
-                <div className="mt-2">
-                  <PipelineStatusBadge status={status} />
-                </div>
-              </div>
-              {idx < workflowStages.length - 1 && (
-                <div className="px-1 text-gray-300 text-lg">→</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {pipeline?.lastCommit && (
-        <div className="text-xs border-t border-neutral-100 pt-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-gray-500">Latest:</span>
-            <a
-              href={pipeline.lastCommit.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-blue-600 hover:underline"
-            >
-              {pipeline.lastCommit.shortSha}
-            </a>
-            <span className="text-gray-700 truncate max-w-[300px]">
-              {pipeline.lastCommit.message}
-            </span>
-            <span className="text-gray-400">
-              {formatRelativeTime(pipeline.lastCommit.date)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {pipeline &&
-        (pipeline.lastDeploy.production || pipeline.lastDeploy.staging) && (
-          <div className="text-xs mt-2 flex gap-4 flex-wrap">
-            {pipeline.lastDeploy.staging && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                <span className="text-gray-500">Construction:</span>
-                <a
-                  href="https://construction.villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-blue-600 hover:underline"
-                >
-                  {pipeline.lastDeploy.staging}
-                </a>
-              </span>
-            )}
-            {pipeline.lastDeploy.production && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400" />
-                <span className="text-gray-500">Production:</span>
-                <a
-                  href="https://villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-blue-600 hover:underline"
-                >
-                  {pipeline.lastDeploy.production}
-                </a>
-              </span>
-            )}
-          </div>
-        )}
-    </div>
-  );
-}
-
-function WorkflowCard({ runs }: { runs: WorkflowRun[] }) {
-  if (runs.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-        <h3 className="font-medium text-ink mb-3">GitHub Actions</h3>
-        <div className="text-sm text-gray-500">Loading workflow runs...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-      <h3 className="font-medium text-ink mb-3">GitHub Actions</h3>
-      <div className="space-y-2">
-        {runs.slice(0, 5).map((run) => (
-          <div
-            key={run.id}
-            className="flex items-center justify-between text-sm"
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={clsx(
-                  "w-2 h-2 rounded-full",
-                  run.conclusion === "success" && "bg-green-500",
-                  run.conclusion === "failure" && "bg-red-500",
-                  run.conclusion === null &&
-                    run.status === "in_progress" &&
-                    "bg-blue-500 animate-pulse",
-                  run.conclusion === null &&
-                    run.status !== "in_progress" &&
-                    "bg-gray-400",
-                )}
-              />
-              <a
-                href={run.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                {run.name}
-              </a>
-              <span className="text-gray-400 text-xs">({run.branch})</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              {run.duration && <span>{formatDuration(run.duration)}</span>}
-              <span>{formatRelativeTime(run.createdAt)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CommitsCard({ commits }: { commits: CommitInfo[] }) {
-  if (commits.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-        <h3 className="font-medium text-ink mb-3">Recent Commits</h3>
-        <div className="text-sm text-gray-500">Loading commits...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-      <h3 className="font-medium text-ink mb-3">Recent Commits</h3>
-      <div className="space-y-2">
-        {commits.slice(0, 5).map((commit) => (
-          <div key={commit.sha} className="flex items-start gap-2 text-sm">
-            <a
-              href={commit.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-blue-600 hover:underline shrink-0"
-            >
-              {commit.shortSha}
-            </a>
-            <span className="text-gray-700 truncate">{commit.message}</span>
-            <span className="text-xs text-gray-400 shrink-0">
-              {formatRelativeTime(commit.date)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-interface BuildJob {
-  name: string;
-  status: string;
-  conclusion: string | null;
-  currentStep: string | null;
-  totalSteps: number;
-  completedSteps: number;
-}
-
-interface BuildStatusData {
-  run: {
-    id: number;
-    name: string;
-    status: string;
-    conclusion: string | null;
-    url: string;
-    sha: string;
-    createdAt: string;
-  } | null;
-  jobs: BuildJob[];
-  fetchedAt: string;
-  error?: string;
-}
-
-function BuildStatusCard({
-  buildStatus,
-}: {
-  buildStatus: BuildStatusData | null;
-}) {
-  if (!buildStatus || !buildStatus.run) {
-    return (
-      <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-        <h3 className="font-medium text-ink mb-3">Current Build</h3>
-        <div className="text-sm text-gray-500">Loading build status...</div>
-      </div>
-    );
-  }
-
-  const { run, jobs } = buildStatus;
-  const isRunning = run.status === "in_progress" || run.status === "queued";
-  const isSuccess = run.conclusion === "success";
-  const isFailed = run.conclusion === "failure";
-
-  const activeJobs = jobs.filter(
-    (j) => j.status === "in_progress" || j.status === "queued",
-  );
-
-  return (
-    <div
-      className={clsx(
-        "bg-white rounded-lg border-2 p-4 shadow-sm",
-        isRunning && "border-blue-400",
-        isSuccess && "border-green-400",
-        isFailed && "border-red-400",
-        !isRunning && !isSuccess && !isFailed && "border-neutral-200",
+    <div 
+      onClick={onClick}
+      className={cn(
+        "bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl transition-all duration-300",
+        onClick && "cursor-pointer hover:bg-white/10 hover:border-white/20 hover:scale-[1.01] active:scale-[0.99]",
+        className
       )}
     >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-ink">Current Build</h3>
-        <a
-          href={run.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={clsx(
-            "px-2 py-1 rounded-full text-xs font-medium",
-            isRunning && "bg-blue-100 text-blue-800 animate-pulse",
-            isSuccess && "bg-green-100 text-green-800",
-            isFailed && "bg-red-100 text-red-800",
-            !isRunning &&
-              !isSuccess &&
-              !isFailed &&
-              "bg-gray-100 text-gray-800",
-          )}
-        >
-          {isRunning
-            ? "BUILDING"
-            : run.conclusion?.toUpperCase() || run.status.toUpperCase()}
-        </a>
-      </div>
+      {children}
+    </div>
+  );
+}
 
-      <div className="text-xs text-gray-500 mb-3">
-        <span className="font-mono">{run.sha.slice(0, 7)}</span>
-        <span className="mx-2">•</span>
-        <span>{formatRelativeTime(run.createdAt)}</span>
-      </div>
+function StatusIndicator({ status, pulse }: { status: "ok" | "error" | "warning" | "neutral" | "running"; pulse?: boolean }) {
+  const colors = {
+    ok: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+    error: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]",
+    warning: "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]",
+    neutral: "bg-slate-500",
+    running: "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]",
+  };
 
-      {isRunning && activeJobs.length > 0 && (
-        <div className="mb-3 p-2 bg-blue-50 rounded-lg">
-          <div className="text-xs font-medium text-blue-800 mb-1">
-            Currently running:
-          </div>
-          {activeJobs.map((job) => (
-            <div key={job.name} className="text-xs text-blue-700">
-              <span className="font-medium">{job.name}</span>
-              {job.currentStep && (
-                <span className="text-blue-600 ml-1">→ {job.currentStep}</span>
-              )}
-              <span className="text-blue-500 ml-2">
-                ({job.completedSteps}/{job.totalSteps} steps)
-              </span>
-            </div>
-          ))}
+  return (
+    <div className={cn("w-2 h-2 rounded-full", colors[status], pulse && "animate-pulse")} />
+  );
+}
+
+function PipelineNode({ 
+  title, 
+  status, 
+  icon, 
+  details, 
+  isActive,
+  url 
+}: { 
+  title: string; 
+  status: "success" | "running" | "failed" | "pending"; 
+  icon: React.ReactNode; 
+  details?: string;
+  isActive?: boolean;
+  url?: string;
+}) {
+  const statusColors = {
+    success: "border-emerald-500/50 text-emerald-400 bg-emerald-500/10",
+    running: "border-blue-500/50 text-blue-400 bg-blue-500/10",
+    failed: "border-red-500/50 text-red-400 bg-red-500/10",
+    pending: "border-white/5 text-slate-500 bg-white/5",
+  };
+
+  const content = (
+    <div className={cn(
+      "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all w-full",
+      statusColors[status],
+      isActive && "ring-2 ring-offset-2 ring-offset-slate-950 ring-blue-500/50"
+    )}>
+      <div className="mb-2 text-2xl">{icon}</div>
+      <div className="font-bold text-sm tracking-wide uppercase">{title}</div>
+      {details && <div className="text-xs opacity-70 mt-1">{details}</div>}
+      {status === "running" && (
+        <div className="mt-2 w-full bg-blue-900/30 h-1 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-500 animate-[progress_1s_ease-in-out_infinite]" style={{ width: "50%" }} />
         </div>
       )}
-
-      <div className="space-y-1">
-        {jobs
-          .filter((j) => j.status !== "skipped" || j.name.includes("Deploy"))
-          .slice(0, 6)
-          .map((job) => (
-            <div
-              key={job.name}
-              className="flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={clsx(
-                    "w-2 h-2 rounded-full",
-                    job.conclusion === "success" && "bg-green-500",
-                    job.conclusion === "failure" && "bg-red-500",
-                    job.conclusion === "skipped" && "bg-gray-300",
-                    job.status === "in_progress" && "bg-blue-500 animate-pulse",
-                    job.status === "queued" && "bg-yellow-400",
-                    !job.conclusion &&
-                      job.status !== "in_progress" &&
-                      job.status !== "queued" &&
-                      "bg-gray-400",
-                  )}
-                />
-                <span
-                  className={clsx(
-                    job.conclusion === "skipped" && "text-gray-400",
-                  )}
-                >
-                  {job.name}
-                </span>
-              </div>
-              {job.status === "in_progress" && (
-                <span className="text-blue-600">
-                  {job.completedSteps}/{job.totalSteps}
-                </span>
-              )}
-            </div>
-          ))}
-      </div>
     </div>
+  );
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full hover:scale-105 transition-transform">
+        {content}
+      </a>
+    );
+  }
+
+  return <div className="w-full">{content}</div>;
+}
+
+function EnvironmentCard({ service, onAction }: { service: ServiceStatus; onAction: (action: string) => void }) {
+  const build = service.data?.build;
+  const runtime = service.data?.runtime;
+  
+  return (
+    <GlassCard className="p-5 flex flex-col h-full group">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
+            {service.name}
+          </h3>
+          <a 
+            href={service.env === "local" ? "http://localhost:3000" : `https://${service.env === "production" ? "" : service.env + "."}villa.cash`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs text-slate-500 hover:text-slate-300 font-mono mt-1 block"
+          >
+            {service.env}
+          </a>
+        </div>
+        <StatusIndicator 
+          status={service.status === "ok" ? "ok" : service.status === "error" ? "error" : "warning"} 
+          pulse={service.status === "checking"} 
+        />
+      </div>
+
+      <div className="flex-grow space-y-3">
+        {service.data ? (
+          <>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Version</span>
+              <span className="font-mono text-slate-200">{build?.version || "v0.0.0"}</span>
+            </div>
+            {build && (
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Commit</span>
+                <span className="font-mono text-slate-200">{build.sha.slice(0, 7)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Latency</span>
+              <span className={cn(
+                "font-mono",
+                (service.latency || 0) < 200 ? "text-emerald-400" : "text-amber-400"
+              )}>
+                {service.latency}ms
+              </span>
+            </div>
+            {runtime && (
+               <div className="flex justify-between text-sm">
+               <span className="text-slate-400">Uptime</span>
+               <span className="font-mono text-slate-200">{formatUptime(runtime.uptime)}</span>
+             </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-20 text-slate-600 text-sm italic">
+            {service.status === "checking" ? "Polling..." : "Offline"}
+          </div>
+        )}
+      </div>
+
+      {service.env === "local" && service.status === "error" && (
+        <button 
+          onClick={() => onAction("launch-local")}
+          className="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition"
+        >
+          Launch Dev Server
+        </button>
+      )}
+    </GlassCard>
   );
 }
 
@@ -910,6 +379,7 @@ export default function TelemetryDashboard() {
     text: string;
   } | null>(null);
 
+  ""
   const checkServices = useCallback(async () => {
     const results = await Promise.all(
       ENVIRONMENTS.map(async (env) => {
@@ -1039,210 +509,250 @@ export default function TelemetryDashboard() {
     };
   }, [checkServices, fetchGitHubData]);
 
+  ""
+
+  const getStageStatus = (id: string): "success" | "running" | "failed" | "pending" => {
+    if (!pipeline) return "pending";
+    if (id === "local") return "success"; ""
+    if (id === "ci") {
+       const ci = pipeline.stages.find((s) => s.name === "CI");
+       return ci?.status || "pending";
+    }
+    const stage = pipeline.stages.find((s) => s.name.toLowerCase() === id);
+    return stage?.status || "pending";
+  };
+
   return (
-    <div className="min-h-screen bg-cream p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">Villa Telemetry</h1>
-            <p className="text-gray-500 text-sm">
-              Infrastructure monitoring dashboard
-            </p>
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
+      
+      ""
+      <header className="border-b border-white/5 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+              V
+            </div>
+            <div>
+              <h1 className="font-bold text-white tracking-tight">Villa Telemetry</h1>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Ops Dashboard</div>
+            </div>
           </div>
-          <div className="text-right">
+          
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-slate-500 font-mono">
+              Last update: {lastRefresh ? lastRefresh.toLocaleTimeString() : "--:--:--"}
+            </div>
             <button
               onClick={() => {
                 checkServices();
                 fetchGitHubData();
               }}
-              className="px-4 py-2 bg-ink text-cream rounded-lg hover:bg-ink/90 transition"
+              className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition"
+              title="Refresh Data"
             >
-              Refresh
+              <Icons.Refresh />
             </button>
-            <p className="text-xs text-gray-500 mt-1">
-              Last: {lastRefresh ? lastRefresh.toLocaleTimeString() : "—"}
-            </p>
           </div>
         </div>
+      </header>
 
-        <div className="mb-6">
-          <PipelineCard pipeline={pipeline} />
-        </div>
-
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        
+        ""
         {actionMessage && (
-          <div
-            className={clsx(
-              "mb-4 px-4 py-2 rounded-lg text-sm",
-              actionMessage.type === "success" && "bg-green-100 text-green-800",
-              actionMessage.type === "error" && "bg-red-100 text-red-800",
-            )}
-          >
-            {actionMessage.text}
+          <div className={cn(
+            "fixed bottom-8 right-8 z-50 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-bottom-5",
+            actionMessage.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"
+          )}>
+            {actionMessage.type === "success" ? <Icons.Check /> : <Icons.Alert />}
+            <span className="font-medium">{actionMessage.text}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {services.map((service) => (
-            <ServiceCard
-              key={service.name}
-              service={service}
-              onAction={executeAction}
-              actionLoading={actionLoading}
+        ""
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-white">Delivery Pipeline</h2>
+            <div className="flex gap-2">
+              <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 px-2 py-1 rounded-full">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Operational
+              </span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+            ""
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -z-10 -translate-y-1/2" />
+            
+            <PipelineNode 
+              title="Code" 
+              status="success" 
+              icon="💻" 
+              details="Local Dev"
+              url="https://github.com/rockfridrich/villa"
             />
-          ))}
-        </div>
-
-        <BuildComparison services={services} />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <VersionStatusCard versionStatus={versionStatus} />
-          <BuildStatusCard buildStatus={buildStatus} />
-          <WorkflowCard runs={workflowRuns} />
-          <CommitsCard commits={commits} />
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-            <h3 className="font-medium text-ink mb-3">GitHub</h3>
-            <div className="space-y-2 text-sm">
-              <a
-                href="https://github.com/rockfridrich/villa/actions"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Actions (CI/CD)
-              </a>
-              <a
-                href="https://github.com/rockfridrich/villa/releases"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Releases & Tags
-              </a>
-              <a
-                href="https://github.com/rockfridrich/villa/pulls"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Pull Requests
-              </a>
-              <a
-                href="https://github.com/rockfridrich/villa/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Issues
-              </a>
-              <a
-                href="https://github.com/rockfridrich/villa/compare"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Compare Branches
-              </a>
-            </div>
+            <PipelineNode 
+              title="CI/CD" 
+              status={getStageStatus("ci")} 
+              icon="⚙️" 
+              details="GitHub Actions" 
+              isActive={getStageStatus("ci") === "running"}
+              url="https://github.com/rockfridrich/villa/actions"
+            />
+            <PipelineNode 
+              title="Staging" 
+              status={getStageStatus("construction")} 
+              icon="🚧" 
+              details="Construction"
+              url="https://construction.villa.cash"
+            />
+            <PipelineNode 
+              title="Production" 
+              status={getStageStatus("production")} 
+              icon="🚀" 
+              details="villa.cash"
+              url="https://villa.cash"
+            />
           </div>
+        </section>
 
-          <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-            <h3 className="font-medium text-ink mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => executeAction("deploy-construction")}
-                disabled={actionLoading}
-                className="w-full px-3 py-2 text-sm font-medium bg-yellow-500 text-white rounded hover:bg-yellow-600 transition disabled:opacity-50 text-left"
-              >
-                🏗️ Deploy to Construction
-              </button>
-              <button
-                onClick={() => executeAction("deploy-docs")}
-                disabled={actionLoading}
-                className="w-full px-3 py-2 text-sm font-medium bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-50 text-left"
-              >
-                📚 Deploy Docs
-              </button>
-              <button
-                onClick={() => executeAction("deploy-fake-key")}
-                disabled={actionLoading}
-                className="w-full px-3 py-2 text-sm font-medium bg-purple-500 text-white rounded hover:bg-purple-600 transition disabled:opacity-50 text-left"
-              >
-                🔑 Deploy Fake Key
-              </button>
-              <button
-                onClick={() => executeAction("run-e2e")}
-                disabled={actionLoading}
-                className="w-full px-3 py-2 text-sm font-medium bg-green-500 text-white rounded hover:bg-green-600 transition disabled:opacity-50 text-left"
-              >
-                🧪 Run E2E Tests
-              </button>
-              <button
-                onClick={() => executeAction("backup-db")}
-                disabled={actionLoading}
-                className="w-full px-3 py-2 text-sm font-medium bg-orange-500 text-white rounded hover:bg-orange-600 transition disabled:opacity-50 text-left"
-              >
-                💾 Backup Database
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
-            <h3 className="font-medium text-ink mb-3">Railway</h3>
-            <div className="space-y-2 text-sm">
-              <a
-                href="https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 hover:underline"
-              >
-                Railway Dashboard
-              </a>
-              <div className="pt-2 border-t border-neutral-100 mt-2">
-                <p className="text-xs text-gray-500 mb-2">Environments:</p>
-                <a
-                  href="https://villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:underline"
-                >
-                  Production → villa.cash
-                </a>
-                <a
-                  href="https://construction.villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:underline"
-                >
-                  Construction → construction.villa.cash
-                </a>
-                <a
-                  href="https://docs.villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:underline"
-                >
-                  Docs → docs.villa.cash
-                </a>
-                <a
-                  href="https://fake-key.villa.cash"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:underline"
-                >
-                  Fake Key → fake-key.villa.cash
-                </a>
+        ""
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          ""
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">Environments</h2>
+              <div className="text-xs text-slate-500">
+                {services.filter(s => s.status === "ok").length}/{services.length} Online
               </div>
             </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {services.map((service) => (
+                <EnvironmentCard 
+                  key={service.name} 
+                  service={service} 
+                  onAction={executeAction} 
+                />
+              ))}
+            </div>
+
+            ""
+            {versionStatus && (
+              <GlassCard className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-semibold text-white">Version Control</h3>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-400">Main:</span>
+                    <code className="bg-white/10 px-2 py-0.5 rounded text-blue-400 font-mono">{versionStatus.mainShortSha}</code>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {versionStatus.environments.map((env) => (
+                    <div key={env.name} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <StatusIndicator status={env.isCurrent ? "ok" : "warning"} />
+                        <span className="text-sm font-medium text-slate-200">{env.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                         <span className="font-mono text-slate-400">{env.deployedSha === "static" ? "STATIC" : env.deployedSha.slice(0, 7)}</span>
+                         {!env.isCurrent && env.commitsBehind > 0 && (
+                           <span className="text-amber-400 font-medium">{env.commitsBehind} behind</span>
+                         )}
+                         {env.isCurrent && <span className="text-emerald-500 font-medium">Up to date</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
+            )}
+          </div>
+
+          ""
+          <div className="space-y-6">
+            
+            ""
+            <GlassCard className="p-5">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => executeAction("deploy-construction")}
+                  disabled={actionLoading}
+                  className="w-full group relative overflow-hidden rounded-lg bg-blue-600 p-[1px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                >
+                  <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white backdrop-blur-3xl transition-colors group-hover:bg-slate-900">
+                    🏗️ Deploy to Construction
+                  </span>
+                </button>
+                
+                <button
+                   onClick={() => executeAction("run-e2e")}
+                   disabled={actionLoading}
+                   className="w-full flex items-center justify-between px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
+                >
+                  <span>🧪 Run E2E Tests</span>
+                  <Icons.Play />
+                </button>
+
+                <button
+                   onClick={() => executeAction("backup-db")}
+                   disabled={actionLoading}
+                   className="w-full flex items-center justify-between px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-slate-200 transition"
+                >
+                  <span>💾 Backup Database</span>
+                  <Icons.Server />
+                </button>
+              </div>
+            </GlassCard>
+
+            ""
+            <GlassCard className="p-0 overflow-hidden">
+              <div className="p-4 border-b border-white/5">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Live Activity</h3>
+              </div>
+              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                ""
+                {buildStatus?.run && (
+                  <div className="p-4 border-b border-white/5 bg-blue-500/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-blue-400 uppercase">Current Build</span>
+                      <StatusIndicator status={buildStatus.run.status === "in_progress" ? "running" : "neutral"} pulse />
+                    </div>
+                    <div className="text-sm font-medium text-slate-200 mb-1">{buildStatus.run.name}</div>
+                    <div className="text-xs text-slate-500">{formatRelativeTime(buildStatus.run.createdAt)}</div>
+                  </div>
+                )}
+
+                ""
+                {commits.slice(0, 5).map((commit) => (
+                  <div key={commit.sha} className="p-4 border-b border-white/5 hover:bg-white/5 transition">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 text-slate-500"><Icons.GitCommit /></div>
+                      <div>
+                        <a href={commit.url} target="_blank" className="text-sm font-medium text-slate-200 hover:text-blue-400 transition block">
+                          {commit.message}
+                        </a>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                          <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-slate-400">{commit.shortSha}</span>
+                          <span>•</span>
+                          <span>{commit.author}</span>
+                          <span>•</span>
+                          <span>{formatRelativeTime(commit.date)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+
           </div>
         </div>
-
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Telemetry Dashboard v0.3.0 | Auto-refreshes every 30s</p>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
