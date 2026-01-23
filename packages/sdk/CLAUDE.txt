@@ -3,7 +3,7 @@
 > Privacy-first passkey authentication for Base network.
 > Use this context when helping developers integrate Villa authentication.
 
-**Auto-generated:** 2026-01-22 | **Version:** 0.1.0-alpha.1
+**Auto-generated:** 2026-01-23 | **Version:** 0.1.0-alpha.1
 
 ## Quick Reference
 
@@ -362,7 +362,7 @@ After successful authentication:
 | Production | villa.cash | Stable SDK |
 | Construction | construction.villa.cash | Building zone, latest features |
 | Fake Key | fake-key.villa.cash | Test passkeys for community |
-| Docs | docs.villa.cash | Docs + this file |
+| Developers | developers.villa.cash | Docs + this file |
 
 ---
 
@@ -621,7 +621,7 @@ After successful authentication:
 
 ## Links
 
-- Docs: https://docs.villa.cash
+- Docs: https://developers.villa.cash
 - GitHub: https://github.com/rockfridrich/villa
 - npm (SDK): https://www.npmjs.com/package/@rockfridrich/villa-sdk
 - npm (React): https://www.npmjs.com/package/@rockfridrich/villa-sdk-react
