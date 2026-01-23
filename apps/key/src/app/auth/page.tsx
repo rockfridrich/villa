@@ -26,8 +26,7 @@ interface ProfileData {
   nickname: string;
   avatar?: {
     style: string;
-    selection: string;
-    variant: number;
+    seed: string;
   };
 }
 
@@ -46,7 +45,7 @@ async function persistProfile(
         body: JSON.stringify({
           address,
           nickname: currentNickname,
-          avatar: { style: "lorelei", selection: address, variant: 0 },
+          avatar: { style: "web3", seed: address },
         }),
       });
 
@@ -253,7 +252,7 @@ function AuthPageContent() {
           generatedNickname,
         );
         nickname = persistedNickname;
-        avatar = { style: "lorelei", selection: address, variant: 0 };
+        avatar = { style: "web3", seed: address };
       } else {
         const profile = await fetchProfile(address);
         nickname = profile?.nickname || "";
@@ -265,7 +264,7 @@ function AuthPageContent() {
       const identity = {
         address,
         nickname,
-        avatar: avatar || { style: "lorelei", seed: address },
+        avatar: avatar || { style: "web3", seed: address },
       };
       postToParent({ type: "AUTH_SUCCESS", identity });
       postToParent({ type: "VILLA_AUTH_SUCCESS", payload: { identity } });

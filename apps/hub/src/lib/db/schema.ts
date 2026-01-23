@@ -138,8 +138,7 @@ export interface Profile {
   nickname: string | null;
   avatar: {
     style: string;
-    selection: string;
-    variant: number;
+    seed: string;
   } | null;
   nicknameChangeCount: number;
   lastNicknameChange: string | null;
@@ -191,14 +190,12 @@ export function rowToProfile(row: ProfileRow): Profile {
   return {
     address: row.address,
     nickname: row.nickname,
-    avatar:
-      row.avatar_style && row.avatar_selection && row.avatar_variant !== null
-        ? {
-            style: row.avatar_style,
-            selection: row.avatar_selection,
-            variant: row.avatar_variant,
-          }
-        : null,
+    avatar: row.avatar_style
+      ? {
+          style: row.avatar_style,
+          seed: row.avatar_selection || row.address,
+        }
+      : null,
     nicknameChangeCount: row.nickname_change_count ?? 0,
     lastNicknameChange: row.last_nickname_change?.toISOString() ?? null,
     canChangeNickname: canChangeNickname(row),

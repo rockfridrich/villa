@@ -15,11 +15,17 @@ const createProfileSchema = z.object({
     .min(3, 'Nickname must be at least 3 characters')
     .max(30, 'Nickname must be 30 characters or less')
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Nickname must start with a letter and contain only letters, numbers, and underscores'),
-  avatar: z.object({
-    style: z.string(),
-    selection: z.string(),
-    variant: z.number().int().min(0),
-  }).optional(),
+  avatar: z.union([
+    z.object({
+      style: z.string(),
+      seed: z.string(),
+    }),
+    z.object({
+      style: z.string(),
+      selection: z.string(),
+      variant: z.number().int().min(0),
+    }),
+  ]).optional(),
 })
 
 /**
@@ -54,6 +60,14 @@ export async function POST(request: Request) {
     const normalizedAddress = address.toLowerCase()
     const normalizedNickname = nickname.toLowerCase().replace(/[^a-z0-9_]/g, '')
 
+    // Handle both old and new avatar formats
+    const avatarStyle = avatar?.style ?? null
+    const avatarSeed = 'seed' in (avatar || {}) 
+      ? (avatar as { seed: string }).seed 
+      : 'selection' in (avatar || {}) 
+        ? (avatar as { selection: string }).selection 
+        : null
+
     const sql = getDb()
 
     // Check if nickname is already taken by another address
@@ -71,7 +85,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Upsert profile
+    // Upsert profile (store seed in avatar_selection column)
     const rows = await sql<ProfileRow[]>`
       INSERT INTO profiles (
         address,
@@ -84,9 +98,9 @@ export async function POST(request: Request) {
         ${normalizedAddress},
         ${nickname},
         ${normalizedNickname},
-        ${avatar?.style ?? null},
-        ${avatar?.selection ?? null},
-        ${avatar?.variant ?? null}
+        ${avatarStyle},
+        ${avatarSeed},
+        ${0}
       )
       ON CONFLICT (address) DO UPDATE SET
         nickname = EXCLUDED.nickname,
