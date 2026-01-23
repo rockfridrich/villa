@@ -187,6 +187,35 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
 
 type AuthState = "idle" | "passkey-prompt" | "processing" | "success" | "error";
 
+
+function GlassLayout({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className="min-h-screen w-full relative flex items-center justify-center p-4 bg-[#FFFDF8] overflow-hidden font-sans">
+      {/* Ambient Background Gradients */}
+      <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFE047]/15 blur-[120px] pointer-events-none mix-blend-multiply" />
+      <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#E3DACE]/20 blur-[100px] pointer-events-none mix-blend-multiply" />
+      
+      {/* Glass Card */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className={`relative z-10 w-full max-w-[420px] bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_20px_40px_-10px_rgba(13,13,23,0.04)] rounded-[32px] p-8 md:p-10 flex flex-col items-center text-center ${className}`}
+      >
+        {children}
+      </motion.div>
+
+      {/* Footer Credit - Outside card for depth */}
+      <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-2 opacity-60">
+        <ShieldCheck className="w-4 h-4 text-accent-green" />
+        <span className="text-xs text-ink-muted font-medium tracking-wide">
+          Secured by passkeys on Base
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function AuthPageContent() {
   const searchParams = useSearchParams();
   const hasNotifiedReady = useRef(false);
@@ -318,213 +347,187 @@ function AuthPageContent() {
 
   if (!isPortoSupported()) {
     return (
-      <div className="min-h-screen bg-cream-50 flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <h1 className="text-xl font-serif text-ink mb-2">
-            Passkeys Not Supported
-          </h1>
-          <p className="text-sm text-ink-muted">
-            Your browser doesn&apos;t support passkeys. Please use a modern
-            browser like Chrome, Safari, or Firefox.
-          </p>
+      <GlassLayout>
+        <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-6">
+           <span className="text-2xl">⚠️</span>
         </div>
-      </div>
+        <h1 className="text-xl font-serif text-ink mb-2">
+          Passkeys Not Supported
+        </h1>
+        <p className="text-sm text-ink-muted">
+          Your browser doesn&apos;t support passkeys. Please use a modern
+          browser like Chrome, Safari, or Firefox.
+        </p>
+      </GlassLayout>
     );
   }
 
   if (authState === "passkey-prompt") {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-cream-50 flex flex-col items-center justify-center p-6"
-      >
-        <div className="text-center space-y-6 max-w-sm">
-          <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-20 h-20 mx-auto bg-accent-yellow rounded-2xl flex items-center justify-center"
-          >
-            <Fingerprint className="w-10 h-10 text-accent-brown" />
-          </motion.div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-serif text-ink">
-              {isCreating ? "Create your passkey" : "Use your passkey"}
-            </h2>
-            <p className="text-sm text-ink-muted">
-              {isCreating
-                ? "Follow the prompt to create a new passkey for Villa"
-                : "Use Face ID, Touch ID, or your security key"}
-            </p>
-          </div>
-          <div className="pt-4">
-            <button
-              onClick={handleCancel}
-              className="text-sm text-ink-muted hover:text-ink transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+      <GlassLayout>
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="w-20 h-20 mx-auto bg-accent-yellow/20 rounded-2xl flex items-center justify-center mb-6"
+        >
+          <Fingerprint className="w-10 h-10 text-accent-brown" />
+        </motion.div>
+        
+        <div className="space-y-2 mb-8">
+          <h2 className="text-2xl font-serif text-ink">
+            {isCreating ? "Create your passkey" : "Use your passkey"}
+          </h2>
+          <p className="text-sm text-ink-muted">
+            {isCreating
+              ? "Follow the prompt to create a new passkey for Villa"
+              : "Use Face ID, Touch ID, or your security key"}
+          </p>
         </div>
-      </motion.div>
+
+        <button
+          onClick={handleCancel}
+          className="text-sm text-ink-muted hover:text-ink transition-colors px-4 py-2 rounded-lg hover:bg-black/5"
+        >
+          Cancel
+        </button>
+      </GlassLayout>
     );
   }
 
   if (authState === "processing" || authState === "success") {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-cream-50 flex flex-col items-center justify-center p-6"
-      >
-        <div className="text-center space-y-6 max-w-sm">
-          {authState === "success" ? (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-20 h-20 mx-auto bg-accent-green/20 rounded-2xl flex items-center justify-center"
-            >
-              <ShieldCheck className="w-10 h-10 text-accent-green" />
-            </motion.div>
-          ) : (
-            <div className="w-20 h-20 mx-auto bg-cream-100 rounded-2xl flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-accent-brown animate-spin" />
-            </div>
-          )}
-          <div className="space-y-2">
-            <h2 className="text-2xl font-serif text-ink">
-              {authState === "success" ? "Welcome!" : "Setting up..."}
-            </h2>
-            <p className="text-sm text-ink-muted">
-              {authState === "success"
-                ? "You're signed in"
-                : "Getting your profile ready"}
-            </p>
+      <GlassLayout>
+        {authState === "success" ? (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="w-20 h-20 mx-auto bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6"
+          >
+            <ShieldCheck className="w-10 h-10 text-accent-green" />
+          </motion.div>
+        ) : (
+          <div className="w-20 h-20 mx-auto bg-white/50 rounded-2xl flex items-center justify-center mb-6">
+            <Loader2 className="w-10 h-10 text-accent-brown animate-spin" />
           </div>
+        )}
+        
+        <div className="space-y-2">
+          <h2 className="text-2xl font-serif text-ink">
+            {authState === "success" ? "Welcome!" : "Setting up..."}
+          </h2>
+          <p className="text-sm text-ink-muted">
+            {authState === "success"
+              ? "You're signed in"
+              : "Getting your profile ready"}
+          </p>
         </div>
-      </motion.div>
+      </GlassLayout>
     );
   }
 
   if (authState === "error") {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-cream-50 flex flex-col items-center justify-center p-6"
-      >
-        <div className="text-center space-y-6 max-w-sm">
-          <div className="w-20 h-20 mx-auto bg-red-100 rounded-2xl flex items-center justify-center">
-            <span className="text-3xl">😕</span>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-serif text-ink">
-              Something went wrong
-            </h2>
-            <p className="text-sm text-ink-muted">
-              {error || "Please try again"}
-            </p>
-          </div>
-          <div className="space-y-3">
-            <button
-              onClick={handleRetry}
-              className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-villa-600
-                         text-accent-brown font-medium rounded-xl
-                         transition-all active:scale-[0.98]"
-            >
-              Try Again
-            </button>
-            <button
-              onClick={handleCancel}
-              className="w-full py-3 text-sm text-ink-muted hover:text-ink transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+      <GlassLayout>
+        <div className="w-20 h-20 mx-auto bg-red-100/50 rounded-2xl flex items-center justify-center mb-6">
+          <span className="text-3xl">😕</span>
         </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-cream-50 flex flex-col justify-between p-6"
-    >
-      <div className="pt-12 text-center">
-        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-accent-yellow to-villa-500 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-          <span className="text-2xl font-serif text-accent-brown">V</span>
-        </div>
-        <h1 className="text-2xl font-serif text-ink">Villa</h1>
-      </div>
-
-      <div className="w-full max-w-sm mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-serif text-ink">Sign in with passkey</h2>
-          <p className="text-sm text-ink-muted">
-            Use your fingerprint, face, or security key
+        
+        <div className="space-y-2 mb-8">
+          <h2 className="text-2xl font-serif text-ink">
+            Something went wrong
+          </h2>
+          <p className="text-sm text-ink-muted max-w-[260px] mx-auto">
+            {error || "Please try again"}
           </p>
         </div>
 
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="p-3 bg-error-bg border border-error-border rounded-lg text-sm text-error-text"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="space-y-3">
+        <div className="w-full space-y-3">
           <button
-            onClick={handleSignIn}
-            disabled={authState !== "idle"}
-            className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-villa-600
-                       text-accent-brown font-medium rounded-xl
-                       focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-cream-50
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            onClick={handleRetry}
+            className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-[#FDD835]
+                       text-accent-brown font-medium rounded-2xl
+                       shadow-[0_4px_12px_rgba(255,224,71,0.3)]
+                       transition-all active:scale-[0.98]"
           >
-            <Fingerprint className="w-5 h-5" />
-            Sign In
+            Try Again
           </button>
-
-          <button
-            onClick={handleCreateAccount}
-            disabled={authState !== "idle"}
-            className="w-full min-h-14 py-4 px-6 bg-cream-100 border border-neutral-200
-                       text-ink font-medium rounded-xl hover:bg-cream-200
-                       focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-cream-50
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <UserPlus className="w-5 h-5" />
-            Create Villa ID
-          </button>
-
           <button
             onClick={handleCancel}
-            className="w-full min-h-11 py-3 text-sm text-ink-muted hover:text-ink
-                       focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:ring-offset-2 focus:ring-offset-cream-50
-                       rounded-lg transition-colors"
+            className="w-full py-3 text-sm text-ink-muted hover:text-ink transition-colors"
           >
             Cancel
           </button>
         </div>
+      </GlassLayout>
+    );
+  }
+
+  return (
+    <GlassLayout>
+      <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent-yellow to-villa-500 rounded-3xl flex items-center justify-center shadow-lg shadow-accent-yellow/20 mb-6 rotate-3">
+        <span className="text-3xl font-serif text-accent-brown">V</span>
+      </div>
+      
+      <div className="space-y-2 mb-8">
+        <h1 className="text-3xl font-serif text-ink">Villa</h1>
+        <p className="text-sm text-ink-muted">
+          Passkey authentication
+        </p>
       </div>
 
-      <div className="pb-8 flex items-center justify-center gap-2">
-        <ShieldCheck className="w-4 h-4 text-accent-green" />
-        <span className="text-xs text-ink-muted">
-          Secured by passkeys on Base
-        </span>
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            className="w-full"
+          >
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-error-text">
+              {error}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full space-y-3">
+        <button
+          onClick={handleSignIn}
+          disabled={authState !== "idle"}
+          className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-[#FDD835]
+                     text-accent-brown font-medium rounded-2xl
+                     shadow-[0_4px_12px_rgba(255,224,71,0.3)] hover:shadow-[0_6px_16px_rgba(255,224,71,0.4)]
+                     focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <Fingerprint className="w-5 h-5" />
+          Sign In
+        </button>
+
+        <button
+          onClick={handleCreateAccount}
+          disabled={authState !== "idle"}
+          className="w-full min-h-14 py-4 px-6 bg-white/50 border border-white/60
+                     text-ink font-medium rounded-2xl hover:bg-white/80
+                     focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <UserPlus className="w-5 h-5" />
+          Create Villa ID
+        </button>
+
+        <button
+          onClick={handleCancel}
+          className="w-full min-h-11 py-3 text-sm text-ink-muted hover:text-ink
+                     focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
+                     rounded-lg transition-colors mt-2"
+        >
+          Cancel
+        </button>
       </div>
-    </motion.div>
+    </GlassLayout>
   );
 }
 
