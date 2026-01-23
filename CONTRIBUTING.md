@@ -37,7 +37,7 @@ villa/
 ├── apps/
 │   ├── hub/          # Main app (villa.cash)
 │   ├── key/          # Auth iframe (villa.cash/auth)
-│   └── developers/   # Docs (developers.villa.cash)
+│   └── developers/   # Docs (docs.villa.cash)
 ├── packages/
 │   ├── sdk/          # @rockfridrich/villa-sdk
 │   ├── sdk-react/    # React bindings
@@ -130,7 +130,7 @@ Check `packages/ui` first. Add new shared components there.
 | ---------- | --------------------- | ------------ | --------------- |
 | Production | villa.cash            | Base         | Manual `v*` tag |
 | Staging    | beta.villa.cash       | Base Sepolia | Push to `main`  |
-| Developers | developers.villa.cash | -            | Push to `main`  |
+| Docs       | docs.villa.cash       | -            | Push to `main`  |
 
 ## Getting Help
 

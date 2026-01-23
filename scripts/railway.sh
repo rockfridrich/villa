@@ -315,7 +315,7 @@ cmd_migrate() {
   echo ""
   echo "2. Add custom domains:"
   echo "   railway domain add beta.villa.cash --service villa-staging"
-  echo "   railway domain add developers.villa.cash --service villa-developers"
+  echo "   railway domain add docs.villa.cash --service villa-developers"
   echo "   railway domain add beta-key.villa.cash --service villa-key-staging"
   echo ""
   echo "3. Update CloudFlare DNS to point to Railway"

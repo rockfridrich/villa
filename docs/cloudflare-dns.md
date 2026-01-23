@@ -43,7 +43,7 @@ Zone Resources: Include → Specific zone → `villa.cash`
 | ----------------------- | ----------- | ---------------- | ------------ |
 | `villa.cash`            | Production  | Release tag `v*` | DigitalOcean |
 | `beta.villa.cash`       | Staging     | Push to `main`   | DigitalOcean |
-| `developers.villa.cash` | Docs Portal | Push to `main`   | DigitalOcean |
+| `docs.villa.cash`       | Docs Portal | Push to `main`   | DigitalOcean |
 | `dev-3.villa.cash`      | Local dev   | ngrok tunnel     | ngrok        |
 
 > **Note:** Preview environments (dev-1, dev-2) were removed in Jan 2026. All PRs now use staging after merge.
@@ -78,7 +78,7 @@ Add these records in CloudFlare DNS settings:
 | CNAME | `@`          | `villa-production-xxxxx.ondigitalocean.app` | Proxied (orange) | Auto |
 | CNAME | `www`        | `villa.cash`                                | Proxied (orange) | Auto |
 | CNAME | `beta`       | `villa-staging-xxxxx.ondigitalocean.app`    | Proxied (orange) | Auto |
-| CNAME | `developers` | `villa-developers-xxxxx.ondigitalocean.app` | Proxied (orange) | Auto |
+| CNAME | `docs`       | `villa-developers-xxxxx.ondigitalocean.app` | Proxied (orange) | Auto |
 | CNAME | `dev-3`      | `[your-ngrok-tunnel].ngrok.io`              | DNS only (grey)  | Auto |
 
 **Important:** Set proxy status to **Proxied (orange cloud)** for CDN, caching, and SSL.

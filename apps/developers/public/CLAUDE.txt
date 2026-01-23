@@ -167,4 +167,4 @@ After authentication:
 
 - npm: npmjs.com/package/@rockfridrich/villa-sdk-react
 - GitHub: github.com/rockfridrich/villa
-- Docs: developers.villa.cash
+- Docs: docs.villa.cash

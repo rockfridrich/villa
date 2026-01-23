@@ -56,7 +56,7 @@ Edit `app/layout.tsx` to customize the Villa SDK config:
 
 For development, you can use any identifier (e.g., `'my-app-dev'`). For production:
 
-1. Visit [developers.villa.cash](https://developers.villa.cash)
+1. Visit [docs.villa.cash](https://docs.villa.cash)
 2. Register your app
 3. Use the assigned App ID
 
@@ -283,7 +283,7 @@ function CustomAuthButton() {
 
 ## Learn More
 
-- [Villa SDK Documentation](https://developers.villa.cash)
+- [Villa SDK Documentation](https://docs.villa.cash)
 - [Villa GitHub](https://github.com/rockfridrich/villa)
 - [Next.js Documentation](https://nextjs.org/docs)
 

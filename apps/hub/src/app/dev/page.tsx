@@ -36,7 +36,7 @@ const SERVICES = [
   { name: "Local Hub", url: "http://localhost:3000/api/health" },
   { name: "Staging", url: "https://beta.villa.cash/api/health" },
   { name: "Production", url: "https://villa.cash/api/health" },
-  { name: "Developers", url: "https://developers.villa.cash" },
+  { name: "Docs", url: "https://docs.villa.cash" },
 ];
 
 function StatusBadge({ status }: { status: ServiceStatus["status"] }) {

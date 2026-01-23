@@ -10,7 +10,7 @@
 | Domain | Status | Notes |
 |--------|--------|-------|
 | **beta.villa.cash** | Live | Main staging |
-| **developers.villa.cash** | Live | Dev portal |
+| **docs.villa.cash** | Live | Dev portal |
 | **Database** | villa-db (1vCPU/1GB) ~$15/mo | Smallest tier, sufficient |
 | **SDK** | @rockfridrich/villa-sdk@0.1.0 | Published to npm |
 | **Contracts** | Base Sepolia deployed | VillaNicknameResolverV2, BiometricRecoverySignerV2 |
@@ -175,7 +175,7 @@ After biometric testing completes on beta:
 
 Use this to onboard to a new session:
 
-1. **What's deployed?** → beta.villa.cash (staging), developers.villa.cash (docs)
+1. **What's deployed?** → beta.villa.cash (staging), docs.villa.cash (docs)
 2. **Current sprint?** → Sprint 4: SDK screens (P0 done), dev portal nav (P1 in progress)
 3. **Blocked on anything?** → No blockers
 4. **Key decisions made?** → ADR-001: Stay with Porto (multi-chain via wallet linking later)
