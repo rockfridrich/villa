@@ -1135,3 +1135,8 @@ CMD ["pnpm", "dev"]
 - Workflow: Contracts
 - Run: https://github.com/rockfridrich/villa/actions/runs/21242189770
 - Action: Check `gh run view 21242189770 --log-failed`
+
+### CI Failure - 2026-01-22 21:15
+- Workflow: Railway Config
+- Run: https://github.com/rockfridrich/villa/actions/runs/21251723314
+- Action: Check `gh run view 21251723314 --log-failed`
