@@ -18,25 +18,33 @@
 When a developer says "add Villa authentication", generate this:
 
 ```tsx
-// 1. Install
-// npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
+// 1. Install: npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react
 
-// 2. Simple API (no provider needed)
-import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+// 2. Just add VillaButton - it handles EVERYTHING
+import { VillaButton } from '@rockfridrich/villa-sdk-react'
 
 function App() {
-  const { user, signOut } = useVilla()
-
-  if (!user) {
-    return <VillaButton onSignIn={(u) => console.log('Welcome', u.nickname)} />
-  }
-
   return (
-    <div>
-      <p>@{user.nickname}</p>
-      <button onClick={signOut}>Sign Out</button>
-    </div>
+    <header>
+      <VillaButton />
+    </header>
   )
+}
+```
+
+**VillaButton does everything:**
+- Shows "Sign in with Villa" when logged out
+- Shows profile dropdown when logged in (avatar, @nickname)
+- Dropdown includes: copy wallet, settings, sign out
+
+**To access user data elsewhere:**
+```tsx
+import { useVilla } from '@rockfridrich/villa-sdk-react'
+
+function Profile() {
+  const { user } = useVilla()
+  if (!user) return null
+  return <p>@{user.nickname} ({user.address})</p>
 }
 ```
 
@@ -140,28 +148,38 @@ const config = useVillaConfig()
 ## React Components Reference
 
 ```tsx
-// Simple button (handles full flow)
+// VillaButton - All-in-one (RECOMMENDED)
+// Shows sign-in button OR profile dropdown based on auth state
+<VillaButton />
+
+// With callbacks
 <VillaButton 
-  onSignIn={(user) => {}} 
-  onSignOut={() => {}} 
+  onSignIn={(user) => console.log('Welcome', user.nickname)} 
+  onSignOut={() => console.log('Goodbye')}
+  showProfileDropdown={true}  // default: true
 />
 
-// Full auth component
-<VillaAuth 
-  onComplete={(result) => {}}
-  buttonText="Sign In"
-/>
+// VillaProfile - Profile dropdown only (for custom layouts)
+import { useVilla, VillaProfile } from '@rockfridrich/villa-sdk-react'
+import { villa } from '@rockfridrich/villa-sdk'
 
-// Avatar display
+const { user, signOut } = useVilla()
+{user && (
+  <VillaProfile 
+    user={user}
+    onSettings={() => villa.settings()}
+    onSignOut={signOut}
+  />
+)}
+
+// Settings popup - let users edit their profile
+const result = await villa.settings()
+if (result.loggedOut) { /* user signed out */ }
+if (result.nickname) { /* profile updated */ }
+
+// Legacy components (still work)
+<VillaAuth onComplete={(result) => {}} />
 <Avatar identity={user} size={48} />
-
-// Avatar preview
-<AvatarPreview
-  walletAddress="0x..."
-  selection="female"
-  variant={2}
-  size={64}
-/>
 ```
 
 ## TypeScript Types
