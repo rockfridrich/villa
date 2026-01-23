@@ -22,17 +22,17 @@ const SAFE_ACTIONS: Record<
     timeout: 5000,
   },
   "launch-docker": {
-    command: `cd ${VILLA_ROOT} && docker compose --profile dev up -d`,
+    command: `cd ${VILLA_ROOT} && docker-compose --profile dev up -d`,
     description: "Start Docker dev environment",
     timeout: 30000,
   },
   "stop-docker": {
-    command: `cd ${VILLA_ROOT} && docker compose down`,
+    command: `cd ${VILLA_ROOT} && docker-compose down`,
     description: "Stop Docker containers",
     timeout: 15000,
   },
   "docker-status": {
-    command: "docker compose ps --format json 2>/dev/null || echo '[]'",
+    command: "docker-compose ps --format json 2>/dev/null || echo '[]'",
     description: "Get Docker container status",
     timeout: 5000,
   },

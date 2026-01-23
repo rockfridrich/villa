@@ -276,6 +276,148 @@ function ServiceCard({
   );
 }
 
+interface VersionStatus {
+  mainSha: string;
+  mainShortSha: string;
+  environments: {
+    name: string;
+    url: string;
+    deployedSha: string;
+    deployedVersion: string;
+    isCurrent: boolean;
+    commitsBehind: number;
+  }[];
+  deployInProgress: {
+    running: boolean;
+    sha?: string;
+    url?: string;
+    startedAt?: string;
+  };
+  fetchedAt: string;
+}
+
+function VersionStatusCard({ versionStatus }: { versionStatus: VersionStatus | null }) {
+  if (!versionStatus) {
+    return (
+      <div className="bg-white rounded-lg border border-neutral-200 p-4 shadow-sm">
+        <h3 className="font-medium text-ink mb-3">Version Status</h3>
+        <div className="text-sm text-gray-500">Loading version info...</div>
+      </div>
+    );
+  }
+
+  const { mainShortSha, environments, deployInProgress } = versionStatus;
+  const allCurrent = environments.every((e) => e.isCurrent || e.deployedSha === "static");
+  const totalBehind = environments.reduce((sum, e) => sum + Math.max(0, e.commitsBehind), 0);
+
+  return (
+    <div className={clsx(
+      "bg-white rounded-lg border-2 p-4 shadow-sm",
+      deployInProgress.running && "border-blue-400",
+      !deployInProgress.running && allCurrent && "border-green-400",
+      !deployInProgress.running && !allCurrent && "border-yellow-400",
+    )}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-ink">Version Status</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">main:</span>
+          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{mainShortSha}</code>
+        </div>
+      </div>
+
+      {deployInProgress.running && (
+        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-sm font-medium text-blue-800">Deploy in progress</span>
+          </div>
+          <div className="mt-1 text-xs text-blue-600">
+            <span>Deploying </span>
+            <code className="font-mono">{deployInProgress.sha}</code>
+            {deployInProgress.url && (
+              <a
+                href={deployInProgress.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 underline"
+              >
+                View →
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!deployInProgress.running && !allCurrent && (
+        <div className="mb-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="flex items-center gap-2">
+            <span className="text-yellow-600">⚠️</span>
+            <span className="text-sm font-medium text-yellow-800">
+              {totalBehind > 0 ? `${totalBehind} commits behind` : "Version mismatch"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {!deployInProgress.running && allCurrent && (
+        <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
+          <div className="flex items-center gap-2">
+            <span className="text-green-600">✓</span>
+            <span className="text-sm font-medium text-green-800">All environments up to date</span>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {environments.map((env) => (
+          <div
+            key={env.name}
+            className="flex items-center justify-between text-sm"
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={clsx(
+                  "w-2 h-2 rounded-full",
+                  env.isCurrent && "bg-green-500",
+                  !env.isCurrent && env.commitsBehind > 0 && "bg-yellow-500",
+                  !env.isCurrent && env.commitsBehind === 0 && env.deployedSha !== "static" && "bg-gray-400",
+                  env.deployedSha === "static" && "bg-gray-300",
+                  env.deployedSha === "error" && "bg-red-500",
+                )}
+              />
+              <a
+                href={env.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                {env.name}
+              </a>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <code className="font-mono text-gray-600">
+                {env.deployedSha === "static" ? "static" : env.deployedSha.slice(0, 7)}
+              </code>
+              {!env.isCurrent && env.commitsBehind > 0 && (
+                <span className="text-yellow-600 font-medium">
+                  {env.commitsBehind} behind
+                </span>
+              )}
+              {env.isCurrent && (
+                <span className="text-green-600">✓</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-neutral-100 text-xs text-gray-400">
+        Updated {new Date(versionStatus.fetchedAt).toLocaleTimeString()}
+      </div>
+    </div>
+  );
+}
+
 function BuildComparison({ services }: { services: ServiceStatus[] }) {
   const builds = services
     .filter((s) => s.status === "ok" && s.data)
@@ -760,6 +902,7 @@ export default function TelemetryDashboard() {
   const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([]);
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [buildStatus, setBuildStatus] = useState<BuildStatusData | null>(null);
+  const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
@@ -854,12 +997,13 @@ export default function TelemetryDashboard() {
 
   const fetchGitHubData = useCallback(async () => {
     try {
-      const [pipelineRes, actionsRes, commitsRes, buildRes] =
+      const [pipelineRes, actionsRes, commitsRes, buildRes, versionRes] =
         await Promise.allSettled([
           fetch("/api/pipeline").then((r) => r.json()),
           fetch("/api/github/actions").then((r) => r.json()),
           fetch("/api/github/commits").then((r) => r.json()),
           fetch("/api/build-status").then((r) => r.json()),
+          fetch("/api/version-status").then((r) => r.json()),
         ]);
 
       if (pipelineRes.status === "fulfilled" && !pipelineRes.value.error) {
@@ -876,6 +1020,10 @@ export default function TelemetryDashboard() {
 
       if (buildRes.status === "fulfilled" && !buildRes.value.error) {
         setBuildStatus(buildRes.value);
+      }
+
+      if (versionRes.status === "fulfilled" && !versionRes.value.error) {
+        setVersionStatus(versionRes.value);
       }
     } catch {}
   }, []);
@@ -946,7 +1094,8 @@ export default function TelemetryDashboard() {
 
         <BuildComparison services={services} />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <VersionStatusCard versionStatus={versionStatus} />
           <BuildStatusCard buildStatus={buildStatus} />
           <WorkflowCard runs={workflowRuns} />
           <CommitsCard commits={commits} />
