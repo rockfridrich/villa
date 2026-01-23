@@ -1,122 +1,95 @@
-# Villa Agent System
+# Villa AI Agents
 
-Cost-optimized agent routing with quality guarantees.
+> **TL;DR**: Use **Sisyphus** (OpenCode) for everything. Fall back to Claude Code only if stuck.
 
-> **Primary:** [.opencode/OPENCODE.md](.opencode/OPENCODE.md) - OpenCode agent protocols (enforced)
-> **Bootstrap:** [.claude/CLAUDE.md](.claude/CLAUDE.md) - Claude Code (initialization & repair partner)
-
-## Claude Code ↔ OpenCode Partnership
-
-**Claude Code** serves as the initialization and repair partner for OpenCode:
-
-| Role | Claude Code | OpenCode |
-|------|-------------|----------|
-| **Session start** | Bootstrap environment, run doctor.sh | Take over for implementation |
-| **Environment issues** | Diagnose and fix setup problems | Expects healthy environment |
-| **Agent failures** | Debug and repair OpenCode agents | Run specialized agents |
-| **Complex debugging** | Deep investigation, multi-file analysis | Delegate to appropriate tier |
-| **Documentation** | Update protocols and agent definitions | Follow protocols |
-
-**Workflow:**
-```
-Claude Code (init) → doctor.sh passes → OpenCode (implement)
-                  ↓
-        Issue detected → Claude Code (repair) → Resume OpenCode
-```
-
-**When to use Claude Code:**
-- First session in a while (environment might be stale)
-- OpenCode agents failing unexpectedly
-- Complex cross-cutting issues spanning multiple agents
-- Updating agent definitions or protocols themselves
-
-## Quick Reference
-
-| Agent         | Model  | Cost     | Use For                    |
-| ------------- | ------ | -------- | -------------------------- |
-| @router       | haiku  | $0.25/1M | Task classification (auto) |
-| @explore      | haiku  | $0.25/1M | Search, read files         |
-| @test         | haiku  | $0.25/1M | Run tests                  |
-| @ops          | haiku  | $0.25/1M | Git, deploy                |
-| @build        | sonnet | $3/1M    | Implementation             |
-| @design       | sonnet | $3/1M    | UI/UX                      |
-| @review       | sonnet | $3/1M    | Code review                |
-| @quality-gate | sonnet | $3/1M    | Validation (auto)          |
-| @spec         | opus   | $15/1M   | Architecture               |
-| @architect    | opus   | $15/1M   | System design              |
-
-## Routing Rules
+## Quick Start
 
 ```
-User request → @router (haiku) → Appropriate agent → @quality-gate (sonnet) → Commit
+You: "Add dark mode to the settings page"
+Sisyphus: *creates todo* → *delegates to frontend agent* → *verifies* → Done ✅
 ```
 
-### Complexity Levels
+That's it. Sisyphus handles orchestration automatically.
 
-| Level | Model         | Trigger Keywords                                    |
-| ----- | ------------- | --------------------------------------------------- |
-| 1-2   | Haiku         | "find", "search", "test", "deploy", "status"        |
-| 3     | Sonnet        | "implement", "fix", "build", "add", "update"        |
-| 4     | Sonnet+Review | "refactor", "redesign", "migrate"                   |
-| 5     | Opus          | "spec", "architecture", "security", "design system" |
+---
 
-### Auto-Escalation
+## Which Agent to Use?
 
-Sonnet/Haiku agents escalate to Opus when:
+| Situation | Use |
+|-----------|-----|
+| **Any task** | Sisyphus (default) |
+| **Sisyphus stuck 2+ times** | Claude Code |
+| **Environment broken** | Claude Code |
 
-- Confidence < 80%
-- Security implications detected
-- Breaking changes required
-- Novel architecture decisions needed
+### Sisyphus Capabilities
 
-## Quality Gates
+Sisyphus can delegate to specialized subagents:
 
-Every commit passes through:
+| Task Type | Subagent | What It Does |
+|-----------|----------|--------------|
+| Find code | `explore` | Search codebase, find patterns |
+| Library docs | `librarian` | External docs, OSS examples |
+| UI/UX work | `frontend-ui-ux-engineer` | Visual design, styling |
+| Architecture | `oracle` | Deep reasoning, design decisions |
+| Documentation | `document-writer` | READMEs, API docs |
 
-1. **@quality-gate** (Sonnet) - Validates against spec
-2. **CI Pipeline** - typecheck, lint, build, test
-3. **Metrics tracking** - fixup ratio, cost per commit
-
-### Quality Thresholds
-
-| Metric        | Target | Action if Failed       |
-| ------------- | ------ | ---------------------- |
-| Fixup ratio   | < 15%  | Review agent selection |
-| CI pass rate  | > 95%  | Block deploy           |
-| Quality score | >= 85  | Human review required  |
-
-## Usage Examples
-
-### Simple task (Haiku)
-
+**Example workflow:**
 ```
-"Find all files that import Porto SDK"
-→ @router → @explore (haiku) → Results
+User: "How does the auth flow work?"
+Sisyphus: *fires explore agent in background*
+Sisyphus: *reads results* → *explains to user*
+```
+
+---
+
+## Cost Tiers
+
+| Tier | Agents | Cost | Use For |
+|------|--------|------|---------|
+| **Cheap** | explore, librarian, test, ops | $0.25/1M | Search, deploy, tests |
+| **Standard** | build, design, review | $3/1M | Implementation |
+| **Premium** | oracle, architect | $15/1M | Architecture decisions |
+
+Sisyphus automatically routes to the cheapest capable agent.
+
+---
+
+## Examples
+
+### Find something
+```
+"Where is the login component?"
+→ Sisyphus fires explore agent → Returns file path
 Cost: ~$0.01
 ```
 
-### Implementation (Sonnet)
-
+### Build something
 ```
-"Add a logout button to the header"
-→ @router → @build (sonnet) → @quality-gate → Commit
+"Add a logout button"
+→ Sisyphus implements directly (or delegates to frontend agent for UI)
 Cost: ~$0.10
 ```
 
-### Architecture (Opus)
-
+### Design something
 ```
-"Design the permission system for SDK apps"
-→ @router → @spec (opus) → Spec document
+"Design the permission system"
+→ Sisyphus consults oracle for architecture
 Cost: ~$0.50
 ```
 
-## Cost Projections
+---
 
-| Model Mix             | Daily Cost | Monthly |
-| --------------------- | ---------- | ------- |
-| Current (94% Opus)    | $115       | $3,450  |
-| Optimized (30% Opus)  | $50        | $1,500  |
-| Aggressive (10% Opus) | $35        | $1,050  |
+## When Things Go Wrong
 
-Target: 30% Opus for 57% cost reduction.
+| Problem | Solution |
+|---------|----------|
+| Sisyphus says "I'm stuck" | Switch to Claude Code |
+| Build/tests failing repeatedly | Let Sisyphus try 2x, then Claude Code |
+| "Command not found" errors | Claude Code (environment issue) |
+| Need to update agent configs | Claude Code |
+
+---
+
+## For Contributors
+
+See [OPENCODE-PARTNERSHIP.md](./OPENCODE-PARTNERSHIP.md) for detailed agent protocols.

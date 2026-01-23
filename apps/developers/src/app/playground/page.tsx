@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Play, ChevronDown, Copy, Check } from "lucide-react";
+import { Play, ChevronDown } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { CopyButton } from "../../components/code";
 
 // Pre-built examples
 const EXAMPLES = {
@@ -79,30 +80,6 @@ if (nickname) {
 };
 
 type ExampleKey = keyof typeof EXAMPLES;
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors duration-150 bg-ink/80 backdrop-blur-sm"
-      aria-label="Copy code to clipboard"
-    >
-      {copied ? (
-        <Check className="w-4 h-4 text-accent-green" />
-      ) : (
-        <Copy className="w-4 h-4 text-cream-100/60 hover:text-cream-100 transition-colors" />
-      )}
-    </button>
-  );
-}
 
 export default function PlaygroundPage() {
   const [selectedExample, setSelectedExample] = useState<ExampleKey>("sign-in");
