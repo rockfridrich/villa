@@ -20,51 +20,9 @@ concurrency:
 env:
   PRODUCTION_DOMAIN: villa.cash
   STAGING_DOMAIN: construction.villa.cash
+  RAILWAY_PROJECT_ID: 7c344004-cd63-4b10-8479-9991c3923115
 
 jobs:
-  # =============================================================================
-  # CHANGE DETECTION - Determine what needs to be built/deployed
-  # =============================================================================
-  detect-changes:
-    name: "🔍 Detect Changes"
-    runs-on: ubuntu-latest
-    outputs:
-      hub: ${{ steps.filter.outputs.hub }}
-      sdk: ${{ steps.filter.outputs.sdk }}
-      docs: ${{ steps.filter.outputs.docs }}
-      any-app: ${{ steps.any.outputs.result }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            hub:
-              - 'apps/hub/**'
-              - 'packages/**'
-              - 'Dockerfile'
-              - '.do/app-*.yaml'
-            sdk:
-              - 'packages/sdk/**'
-              - 'packages/sdk-react/**'
-            docs:
-              - 'apps/developers/**'
-              - '**/*.md'
-
-      - name: Check if any app changed
-        id: any
-        run: |
-          if [[ "${{ steps.filter.outputs.hub }}" == "true" ]] || \
-             [[ "${{ steps.filter.outputs.sdk }}" == "true" ]] || \
-             [[ "${{ steps.filter.outputs.docs }}" == "true" ]]; then
-            echo "result=true" >> $GITHUB_OUTPUT
-          else
-            echo "result=false" >> $GITHUB_OUTPUT
-          fi
-
   # =============================================================================
   # QUICK CI - Fast feedback for PRs (~30s)
   # =============================================================================
@@ -141,43 +99,7 @@ jobs:
           retention-days: 7
 
   # =============================================================================
-  # MERGE E2E REPORTS
-  # =============================================================================
-  merge-e2e-reports:
-    name: "📊 Merge E2E Reports"
-    needs: e2e-tests
-    if: always() && needs.e2e-tests.result != 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup test environment
-        uses: ./.github/actions/setup-test-env
-        with:
-          install-playwright: "true"
-          playwright-browser: "chromium"
-
-      - name: Download all shard reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: e2e-report-shard-*
-          path: all-reports/
-          merge-multiple: false
-
-      - name: Merge Playwright reports
-        run: cd apps/hub && npx playwright merge-reports --reporter html ../../all-reports/e2e-report-shard-*
-        continue-on-error: true
-
-      - name: Upload merged report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: e2e-report-merged
-          path: playwright-report/
-          retention-days: 30
-
-  # =============================================================================
-  # CI - Runs on push to main and tags (shared job)
+  # CI - Runs on push to main and tags
   # =============================================================================
   ci:
     name: "🔒 CI"
@@ -196,7 +118,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Cache Bun dependencies
+      - name: Cache dependencies
         uses: actions/cache@v4
         id: cache-deps
         with:
@@ -206,126 +128,52 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
 
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: |
-            apps/hub/.next/cache
-            apps/developers/.next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/*/src/**') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
-            nextjs-${{ runner.os }}-
-
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
-      - name: Restore dependencies from lockfile
-        if: steps.cache-deps.outputs.cache-hit == 'true'
-        run: bun install --frozen-lockfile
-
-      - name: Run checks in parallel
-        run: bun run typecheck & bun run lint & wait
+      - name: Run checks
+        run: bun run typecheck && bun run lint
 
   # =============================================================================
-  # DEPLOY STAGING - To construction.villa.cash on push to main
+  # DEPLOY - Railway handles deployment automatically on push
+  # This job just waits for Railway and runs smoke tests
   # =============================================================================
   deploy-staging:
     name: "🎯 Deploy Staging"
     needs: ci
     if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
-      build-id: ${{ steps.wait-build.outputs.build-id }}
     environment:
       name: staging
       url: https://construction.villa.cash
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Get staging info
-        id: staging-info
+      - name: Get commit info
+        id: info
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "msg=$(git log -1 --pretty=%s | head -c 50)" >> $GITHUB_OUTPUT
 
-      - name: Generate staging spec
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Wait for Railway deployment
         run: |
-          export DATABASE_URL
-          export MINTER_PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}"
-          envsubst '${DATABASE_URL} ${MINTER_PRIVATE_KEY}' < .do/app-staging.yaml > .do/app-staging-generated.yaml
+          echo "⏳ Railway deploys automatically on push to main"
+          echo "   Project: https://railway.com/project/${{ env.RAILWAY_PROJECT_ID }}"
+          sleep 60
 
-      - name: Deploy to construction.villa.cash
-        id: deploy
+      - name: Smoke test staging
         run: |
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
-
-          if [ -z "$APP_ID" ]; then
-            doctl apps create --spec .do/app-staging-generated.yaml
-            echo "url=https://construction.villa.cash" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
-          echo "Current deployment: $OLD_DEPLOYMENT_ID"
-
-          doctl apps update $APP_ID --spec .do/app-staging-generated.yaml
-
-          doctl apps create-deployment $APP_ID --force-rebuild --wait=false || true
-
-          echo "url=https://construction.villa.cash" >> $GITHUB_OUTPUT
-          echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
-          echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-
-      - name: Wait for build to complete
-        timeout-minutes: 15
-        continue-on-error: true
-        id: wait-build
-        run: |
-          APP_ID="${{ steps.deploy.outputs.app-id }}"
-          OLD_DEPLOYMENT_ID="${{ steps.deploy.outputs.old-deployment-id }}"
-
-          if [ -z "$APP_ID" ]; then
-            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-staging$" | awk '{print $1}')
-          fi
-
-          echo "Old deployment was: $OLD_DEPLOYMENT_ID"
-
-          for i in {1..90}; do
-            APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null)
-            
-            IN_PROGRESS_PHASE=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
-            
-            if [ -n "$IN_PROGRESS_PHASE" ]; then
-              echo "⏳ Building: $IN_PROGRESS_PHASE ($i/90)"
-              sleep 10
-              continue
-            fi
-            
-            ACTIVE_ID=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.id // empty')
-            ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
-            
-            if [ "$ACTIVE_PHASE" = "ACTIVE" ] && [ "$ACTIVE_ID" != "$OLD_DEPLOYMENT_ID" ]; then
-              echo "✅ Staging build complete (deployment: $ACTIVE_ID)"
-              echo "build-id=$ACTIVE_ID" >> $GITHUB_OUTPUT
+          for i in {1..20}; do
+            HEALTH=$(curl -sf "https://construction.villa.cash/api/health" 2>/dev/null || echo "")
+            if [ -n "$HEALTH" ]; then
+              echo "✅ Staging healthy"
+              echo "$HEALTH" | jq .
               exit 0
             fi
-            
-            echo "⏳ Waiting for new deployment... ($i/90)"
-            sleep 10
+            echo "⏳ Waiting for staging... ($i/20)"
+            sleep 15
           done
-          echo "⚠️ Build timeout - continuing with smoke test"
-          exit 0
+          echo "⚠️ Staging not responding yet - Railway may still be deploying"
 
       - name: Purge CloudFlare cache
         env:
@@ -339,24 +187,12 @@ jobs:
               --data '{"hosts":["construction.villa.cash"]}' || true
           fi
 
-      - name: Smoke test
-        run: |
-          for i in {1..10}; do
-            if curl -sf "https://construction.villa.cash/api/health" > /dev/null; then
-              echo "✅ Staging healthy"
-              exit 0
-            fi
-            sleep 5
-          done
-          exit 1
-
       - name: Comment on commit
         uses: actions/github-script@v7
         with:
           script: |
-            const sha = '${{ steps.staging-info.outputs.sha }}';
-            const msg = '${{ steps.staging-info.outputs.msg }}';
-
+            const sha = '${{ steps.info.outputs.sha }}';
+            const msg = '${{ steps.info.outputs.msg }}';
             await github.rest.repos.createCommitComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -365,103 +201,46 @@ jobs:
             });
 
   # =============================================================================
-  # DEPLOY PRODUCTION - To villa.cash on release tags
+  # DEPLOY PRODUCTION - On release tags
   # =============================================================================
   deploy-production:
     name: "🎉 Deploy Production"
     needs: ci
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
     environment:
       name: production
       url: https://villa.cash
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Get release info
-        id: release-info
+        id: info
         run: |
           TAG_NAME="${{ github.ref_name }}"
           echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "version=${TAG_NAME#v}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Generate production spec
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Wait for Railway deployment
         run: |
-          export DATABASE_URL
-          export MINTER_PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}"
-          envsubst '${DATABASE_URL} ${MINTER_PRIVATE_KEY}' < .do/app-production.yaml > .do/app-production-generated.yaml
+          echo "⏳ Railway deploys automatically on tag push"
+          echo "   Project: https://railway.com/project/${{ env.RAILWAY_PROJECT_ID }}"
+          sleep 90
 
-      - name: Deploy to villa.cash
-        id: deploy
+      - name: Smoke test production
         run: |
-          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
-
-          if [ -z "$APP_ID" ]; then
-            doctl apps create --spec .do/app-production-generated.yaml
-            echo "url=https://villa.cash" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          OLD_DEPLOYMENT_ID=$(doctl apps get $APP_ID --output json | jq -r '.[0].active_deployment.id // empty')
-          echo "Current deployment: $OLD_DEPLOYMENT_ID"
-
-          doctl apps update $APP_ID --spec .do/app-production-generated.yaml
-
-          doctl apps create-deployment $APP_ID --force-rebuild --wait=false || true
-
-          echo "url=https://villa.cash" >> $GITHUB_OUTPUT
-          echo "app-id=$APP_ID" >> $GITHUB_OUTPUT
-          echo "old-deployment-id=$OLD_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-
-      - name: Wait for build to complete
-        timeout-minutes: 15
-        continue-on-error: true
-        id: wait-build
-        run: |
-          APP_ID="${{ steps.deploy.outputs.app-id }}"
-          OLD_DEPLOYMENT_ID="${{ steps.deploy.outputs.old-deployment-id }}"
-
-          if [ -z "$APP_ID" ]; then
-            APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep "villa-production$" | awk '{print $1}')
-          fi
-
-          echo "Old deployment was: $OLD_DEPLOYMENT_ID"
-
-          for i in {1..90}; do
-            APP_JSON=$(doctl apps get $APP_ID --output json 2>/dev/null)
-            
-            IN_PROGRESS_PHASE=$(echo "$APP_JSON" | jq -r '.[0].in_progress_deployment.phase // empty')
-            
-            if [ -n "$IN_PROGRESS_PHASE" ]; then
-              echo "⏳ Building: $IN_PROGRESS_PHASE ($i/90)"
-              sleep 10
-              continue
-            fi
-            
-            ACTIVE_ID=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.id // empty')
-            ACTIVE_PHASE=$(echo "$APP_JSON" | jq -r '.[0].active_deployment.phase // empty')
-            
-            if [ "$ACTIVE_PHASE" = "ACTIVE" ] && [ "$ACTIVE_ID" != "$OLD_DEPLOYMENT_ID" ]; then
-              echo "✅ Production build complete (deployment: $ACTIVE_ID)"
+          for i in {1..20}; do
+            HEALTH=$(curl -sf "https://villa.cash/api/health" 2>/dev/null || echo "")
+            if [ -n "$HEALTH" ]; then
+              echo "✅ Production healthy"
+              echo "$HEALTH" | jq .
               exit 0
             fi
-            
-            echo "⏳ Waiting for new deployment... ($i/90)"
-            sleep 10
+            echo "⏳ Waiting for production... ($i/20)"
+            sleep 15
           done
-          echo "⚠️ Build timeout - continuing with smoke test"
-          exit 0
+          echo "⚠️ Production not responding yet - Railway may still be deploying"
 
       - name: Purge CloudFlare cache
         env:
@@ -472,27 +251,15 @@ jobs:
             curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               -H "Content-Type: application/json" \
-              --data '{"hosts":["villa.cash","www.villa.cash"]}' || true
+              --data '{"hosts":["villa.cash","www.villa.cash","key.villa.cash","docs.villa.cash"]}' || true
           fi
-
-      - name: Smoke test production
-        run: |
-          for i in {1..10}; do
-            if curl -sf "https://villa.cash/api/health" > /dev/null; then
-              BUILD_ID=$(curl -s https://villa.cash | grep -o '"buildId":"[^"]*"' | head -1)
-              echo "✅ Production healthy - $BUILD_ID"
-              exit 0
-            fi
-            sleep 5
-          done
-          exit 1
 
       - name: Create GitHub Release
         uses: actions/github-script@v7
         with:
           script: |
-            const tag = '${{ steps.release-info.outputs.tag }}';
-            const sha = '${{ steps.release-info.outputs.sha }}';
+            const tag = '${{ steps.info.outputs.tag }}';
+            const sha = '${{ steps.info.outputs.sha }}';
             const { owner, repo } = context.repo;
 
             const { data: comparison } = await github.rest.repos.compareCommits({
@@ -517,10 +284,9 @@ jobs:
                 draft: false,
                 prerelease: false
               });
-              console.log(`Created release ${tag}`);
             } catch (e) {
-              if (e.status === 422 && e.message.includes('already_exists')) {
-                console.log(`Release ${tag} already exists, skipping creation`);
+              if (e.status === 422) {
+                console.log(`Release ${tag} already exists`);
               } else {
                 throw e;
               }
@@ -542,5 +308,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🎉 Merged! Changes will auto-deploy to [construction.villa.cash](https://construction.villa.cash).\n\nCreate \`v*\` tag to deploy to production.`
+              body: `🎉 Merged! Railway will auto-deploy to [construction.villa.cash](https://construction.villa.cash).\n\nCreate \`v*\` tag to deploy to production.`
             });
