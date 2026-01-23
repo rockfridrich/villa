@@ -111,10 +111,7 @@ const DEV_ORIGINS = [
   "http://localhost:3001",
 ] as const;
 
-const REGISTERED_APP_ORIGINS = [
-  "https://lovable.dev",
-  "https://www.lovable.dev",
-] as const;
+
 
 /**
  * Check if an origin is a LAN IP address (for mobile LAN testing)
@@ -162,15 +159,20 @@ function isInPopup(): boolean {
   );
 }
 
+function isValidHttpsOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedOrigin(origin: string): boolean {
-  const isStandardOrigin = 
-    VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number]) ||
-    DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number]) ||
-    REGISTERED_APP_ORIGINS.includes(origin as (typeof REGISTERED_APP_ORIGINS)[number]);
-  
-  const isDevLanOrigin = isDevelopment() && isLanOrigin(origin);
-  
-  return isStandardOrigin || isDevLanOrigin;
+  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number])) return true;
+  if (DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number])) return true;
+  if (isDevelopment() && isLanOrigin(origin)) return true;
+  return isValidHttpsOrigin(origin);
 }
 
 function getValidatedParentOrigin(queryOrigin: string | null): string | null {

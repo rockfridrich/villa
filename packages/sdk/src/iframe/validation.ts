@@ -9,8 +9,8 @@ import { z } from "zod";
 import type { VillaMessage, ParentMessage, VillaErrorCode } from "./types";
 
 /**
- * Allowed origins for Villa auth
- * HTTPS-only in production - passkeys require secure context
+ * Villa auth origins - these are the only origins the SDK trusts for auth messages.
+ * The SDK can be used on ANY domain, but it only accepts auth responses from Villa.
  */
 export const ALLOWED_ORIGINS = [
   "https://villa.cash",

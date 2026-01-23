@@ -30,13 +30,19 @@ const DEV_ORIGINS = [
   "http://localhost:3000",
 ] as const;
 
+function isValidHttpsOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedOrigin(origin: string): boolean {
-  return (
-    VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number]) ||
-    DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number]) ||
-    origin.endsWith(".lovable.dev") ||
-    origin.endsWith(".vercel.app")
-  );
+  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number])) return true;
+  if (DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number])) return true;
+  return isValidHttpsOrigin(origin);
 }
 
 function getValidatedParentOrigin(queryOrigin: string | null): string | null {

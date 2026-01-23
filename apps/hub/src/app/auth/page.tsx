@@ -43,44 +43,34 @@ const DEV_ORIGINS = [
   'http://localhost:3001',
 ] as const
 
-// Registered external app origins (allowlist for third-party integrations)
-// Apps must register via docs.villa.cash to be added here
-const REGISTERED_APP_ORIGINS = [
-  // Lovable.dev (registered partner)
-  'https://lovable.dev',
-  'https://www.lovable.dev',
-  // Add registered apps here after verification
-] as const
-
 function isInIframe(): boolean {
   try {
     return window.self !== window.top
   } catch {
-    return true // Blocked access means we're in an iframe
+    return true
   }
 }
 
 function isInPopup(): boolean {
-  // Check if we're in a popup window opened by Villa SDK
-  // 1. Check if window.opener exists (indicates popup)
-  // 2. Check URL param for explicit mode=popup
   if (typeof window === 'undefined') return false
-
   const params = new URLSearchParams(window.location.search)
   const explicitMode = params.get('mode')
-
   return explicitMode === 'popup' || (window.opener != null && window.opener !== window)
 }
 
-/**
- * Check if origin is in the allowlist
- */
+function isValidHttpsOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin)
+    return url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function isAllowedOrigin(origin: string): boolean {
-  return (
-    VILLA_ORIGINS.includes(origin as typeof VILLA_ORIGINS[number]) ||
-    DEV_ORIGINS.includes(origin as typeof DEV_ORIGINS[number]) ||
-    REGISTERED_APP_ORIGINS.includes(origin as typeof REGISTERED_APP_ORIGINS[number])
-  )
+  if (VILLA_ORIGINS.includes(origin as typeof VILLA_ORIGINS[number])) return true
+  if (DEV_ORIGINS.includes(origin as typeof DEV_ORIGINS[number])) return true
+  return isValidHttpsOrigin(origin)
 }
 
 /**

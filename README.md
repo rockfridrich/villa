@@ -68,6 +68,19 @@ bun dev           # Start all services
 bun verify        # Typecheck + lint + test
 ```
 
+### Telemetry Dashboard (Local Only)
+
+Internal dashboard for monitoring deployments, CI status, and service health.
+
+```bash
+cd apps/telemetry
+bun dev           # Starts on http://localhost:3003
+bun test          # Run Playwright E2E tests
+```
+
+Requires `gh` CLI authenticated (`gh auth login`) for GitHub API access.
+Not deployed - local development tool only.
+
 ## Infrastructure
 
 All services run on [Railway](https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115).
