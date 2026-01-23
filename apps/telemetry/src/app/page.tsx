@@ -503,7 +503,8 @@ export default function TelemetryDashboard() {
     ENVIRONMENTS.map((e) => ({ ...e, status: "checking" as const })),
   );
   const [pipeline, setPipeline] = useState<PipelineData | null>(null);
-  const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([]);
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [buildStatus, setBuildStatus] = useState<BuildStatusData | null>(null);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
