@@ -1,7 +1,12 @@
 ---
 name: spec
 description: Feature specification agent. Creates specs with Why, UI Boundaries, and Tasks.
-tools: Read, Grep, Glob, Bash, WebSearch
+tools:
+  Read: true
+  Grep: true
+  Glob: true
+  Bash: true
+  WebSearch: true
 model: opus
 ---
 

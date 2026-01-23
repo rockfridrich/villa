@@ -1,7 +1,11 @@
 ---
 name: ops
 description: Operations agent. Handles Git commits, GitHub PR/comments, and DigitalOcean deploy verification.
-tools: Bash, Grep, Glob, Read
+tools:
+  Bash: true
+  Grep: true
+  Glob: true
+  Read: true
 model: haiku
 ---
 

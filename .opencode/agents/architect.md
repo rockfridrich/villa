@@ -1,7 +1,11 @@
 ---
 name: architect
 description: System design and task decomposition agent. Breaks features into parallelizable work units with explicit file ownership.
-tools: Read, Grep, Glob, WebSearch
+tools:
+  Read: true
+  Grep: true
+  Glob: true
+  WebSearch: true
 model: opus
 ---
 
