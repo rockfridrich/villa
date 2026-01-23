@@ -116,6 +116,34 @@ const REGISTERED_APP_ORIGINS = [
   "https://www.lovable.dev",
 ] as const;
 
+/**
+ * Check if an origin is a LAN IP address (for mobile LAN testing)
+ * Supports RFC 1918 private address ranges:
+ * - 10.0.0.0/8
+ * - 172.16.0.0/12
+ * - 192.168.0.0/16
+ */
+function isLanOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname;
+    return /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/.test(hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if we're in a development environment
+ */
+function isDevelopment(): boolean {
+  return process.env.NODE_ENV === "development" || 
+         (typeof window !== "undefined" && 
+          (window.location.hostname === "localhost" || 
+           window.location.hostname === "127.0.0.1" ||
+           isLanOrigin(window.location.origin)));
+}
+
 function isInIframe(): boolean {
   try {
     return window.self !== window.top;
@@ -135,13 +163,14 @@ function isInPopup(): boolean {
 }
 
 function isAllowedOrigin(origin: string): boolean {
-  return (
+  const isStandardOrigin = 
     VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number]) ||
     DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number]) ||
-    REGISTERED_APP_ORIGINS.includes(
-      origin as (typeof REGISTERED_APP_ORIGINS)[number],
-    )
-  );
+    REGISTERED_APP_ORIGINS.includes(origin as (typeof REGISTERED_APP_ORIGINS)[number]);
+  
+  const isDevLanOrigin = isDevelopment() && isLanOrigin(origin);
+  
+  return isStandardOrigin || isDevLanOrigin;
 }
 
 function getValidatedParentOrigin(queryOrigin: string | null): string | null {
