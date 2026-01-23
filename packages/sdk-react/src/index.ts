@@ -9,6 +9,8 @@
 export { useVilla } from "./useVilla";
 export { VillaButton } from "./VillaButton";
 export type { VillaButtonProps } from "./VillaButton";
+export { VillaProfile } from "./VillaProfile";
+export type { VillaProfileProps, VillaProfileUser } from "./VillaProfile";
 
 // Context & Provider (advanced)
 export { VillaProvider, useVillaContext } from "./context";

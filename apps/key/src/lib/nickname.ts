@@ -1,67 +1,19 @@
 const ADJECTIVES = [
-  "cosmic",
-  "mystic",
-  "stellar",
-  "neon",
-  "golden",
-  "swift",
-  "bold",
-  "zen",
-  "wild",
-  "chill",
-  "lucid",
-  "vivid",
-  "radiant",
-  "serene",
-  "epic",
-  "cyber",
-  "lunar",
-  "solar",
-  "astral",
-  "primal",
-  "nimble",
-  "sage",
-  "keen",
-  "deft",
-  "bright",
-  "quiet",
-  "brave",
-  "noble",
-  "clear",
-  "true",
+  "sunny", "misty", "golden", "crystal", "mossy",
+  "dewy", "breezy", "shady", "cozy", "warm",
+  "friendly", "gentle", "merry", "jolly", "cheerful",
+  "humble", "honest", "kind", "calm", "sweet",
+  "clever", "handy", "nimble", "swift", "steady",
+  "bright", "keen", "wise", "bold", "true",
 ] as const;
 
 const NOUNS = [
-  "fox",
-  "owl",
-  "wolf",
-  "phoenix",
-  "raven",
-  "wave",
-  "storm",
-  "flame",
-  "frost",
-  "aurora",
-  "pixel",
-  "cipher",
-  "spark",
-  "echo",
-  "drift",
-  "hawk",
-  "bear",
-  "lynx",
-  "crane",
-  "tiger",
-  "river",
-  "peak",
-  "grove",
-  "stone",
-  "wind",
-  "comet",
-  "nova",
-  "pulse",
-  "beam",
-  "arc",
+  "baker", "miller", "potter", "weaver", "smith",
+  "farmer", "keeper", "mason", "cooper", "carver",
+  "sparrow", "robin", "wren", "finch", "dove",
+  "fox", "hare", "deer", "otter", "badger",
+  "hearth", "meadow", "brook", "grove", "thicket",
+  "cottage", "garden", "orchard", "haven", "hollow",
 ] as const;
 
 function hashString(str: string): number {
@@ -89,4 +41,12 @@ export function generateNickname(seed?: string): string {
   const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   return `${capitalize(adjective)}${capitalize(noun)}`;
+}
+
+export function suggestNicknames(seed: string, count = 5): string[] {
+  const suggestions: string[] = [];
+  for (let i = 0; i < count; i++) {
+    suggestions.push(generateNickname(`${seed}-${i}`));
+  }
+  return suggestions;
 }

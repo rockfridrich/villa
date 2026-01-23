@@ -42,6 +42,7 @@ export type VillaErrorCode =
   | 'AUTH_FAILED'
   | 'PASSKEY_ERROR'
   | 'CONSENT_REQUIRED'
+  | 'LOGOUT'
 
 /**
  * Bridge configuration
