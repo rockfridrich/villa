@@ -17,14 +17,6 @@ export interface VillaProfileProps {
   style?: React.CSSProperties;
 }
 
-function ChevronDown() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
 function CopyIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -46,7 +38,7 @@ function SettingsIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="3" />
-      <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   );
 }
@@ -106,20 +98,41 @@ export function VillaProfile({
     onSignOut();
   }, [onSignOut]);
 
-  const buttonStyle: React.CSSProperties = {
-    display: "flex",
+  const pillButtonStyle: React.CSSProperties = {
+    display: "inline-flex",
     alignItems: "center",
-    gap: "8px",
-    padding: "8px 12px",
+    justifyContent: "center",
+    height: "36px",
+    paddingLeft: 0,
+    paddingRight: "12px",
     backgroundColor: "#FFFDF8",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: "12px",
+    border: "1px solid rgba(0,0,0,0.1)",
+    borderRadius: "9999px",
     cursor: "pointer",
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSize: "14px",
     fontWeight: 500,
     color: "#0D0D17",
     transition: "all 0.15s ease",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  };
+
+  const avatarContainerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    aspectRatio: "1",
+    padding: "4px",
+    marginRight: "2px",
+  };
+
+  const avatarStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "9999px",
+    objectFit: "cover",
+    backgroundColor: "#f0f0f0",
   };
 
   const dropdownStyle: React.CSSProperties = {
@@ -130,7 +143,7 @@ export function VillaProfile({
     backgroundColor: "#FFFDF8",
     border: "1px solid rgba(0,0,0,0.08)",
     borderRadius: "12px",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
     padding: "8px",
     zIndex: 1000,
   };
@@ -163,17 +176,20 @@ export function VillaProfile({
     <div ref={dropdownRef} style={{ position: "relative", display: "inline-block" }} className={className}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{ ...buttonStyle, ...style }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FFF9E6")}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FFFDF8")}
+        style={{ ...pillButtonStyle, ...style }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#FFF9E6";
+          e.currentTarget.style.borderColor = "rgba(255,224,71,0.5)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#FFFDF8";
+          e.currentTarget.style.borderColor = "rgba(0,0,0,0.1)";
+        }}
       >
-        <img
-          src={user.avatar}
-          alt=""
-          style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#f0f0f0" }}
-        />
-        <span>@{user.nickname}</span>
-        <ChevronDown />
+        <div style={avatarContainerStyle}>
+          <img src={user.avatar} alt="" style={avatarStyle} />
+        </div>
+        @{user.nickname}
       </button>
 
       {isOpen && (
@@ -194,7 +210,7 @@ export function VillaProfile({
                 border: "1px solid rgba(0,0,0,0.06)",
                 borderRadius: "6px",
                 cursor: "pointer",
-                fontFamily: "monospace",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 fontSize: "13px",
                 color: "#0D0D17",
               }}

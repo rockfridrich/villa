@@ -14,6 +14,22 @@ export interface VillaButtonProps {
   style?: React.CSSProperties;
 }
 
+function VillaLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 2L2 7v10l10 5 10-5V7L12 2z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M12 22V12" stroke="currentColor" strokeWidth="2" />
+      <path d="M2 7l10 5 10-5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 export function VillaButton({
   onSignIn,
   onSignOut,
@@ -44,20 +60,23 @@ export function VillaButton({
     }
   };
 
-  const signInButtonStyle: React.CSSProperties = {
+  const pillButtonStyle: React.CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: "8px",
-    padding: "12px 20px",
+    height: "36px",
+    padding: "0 16px",
     fontSize: "14px",
     fontWeight: 500,
-    borderRadius: "12px",
+    borderRadius: "9999px",
     border: "none",
     cursor: isLoading ? "wait" : "pointer",
     transition: "all 0.15s ease",
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     backgroundColor: "#FFE047",
     color: "#5C4813",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
   };
 
   if (isLoading) {
@@ -65,9 +84,18 @@ export function VillaButton({
       <button
         disabled
         className={className}
-        style={className ? style : { ...signInButtonStyle, cursor: "wait", ...style }}
+        style={className ? style : { ...pillButtonStyle, opacity: 0.7, cursor: "wait", ...style }}
       >
+        <span style={{ 
+          width: 16, 
+          height: 16, 
+          border: "2px solid currentColor",
+          borderTopColor: "transparent",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
         Connecting...
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </button>
     );
   }
@@ -90,17 +118,30 @@ export function VillaButton({
         onClick={handleSignOut}
         className={className}
         style={className ? style : {
-          ...signInButtonStyle,
-          backgroundColor: "#f5f5f5",
-          color: "#333",
+          ...pillButtonStyle,
+          paddingLeft: 0,
+          paddingRight: "12px",
+          backgroundColor: "#FFFDF8",
+          border: "1px solid rgba(0,0,0,0.1)",
+          color: "#0D0D17",
           ...style,
         }}
       >
-        <img
-          src={user.avatar}
-          alt=""
-          style={{ width: 24, height: 24, borderRadius: "50%" }}
-        />
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          aspectRatio: "1",
+          padding: "4px",
+          marginRight: "2px",
+        }}>
+          <img
+            src={user.avatar}
+            alt=""
+            style={{ width: "100%", height: "100%", borderRadius: "9999px", objectFit: "cover" }}
+          />
+        </div>
         @{user.nickname}
       </button>
     );
@@ -110,8 +151,15 @@ export function VillaButton({
     <button
       onClick={handleSignIn}
       className={className}
-      style={className ? style : { ...signInButtonStyle, ...style }}
+      style={className ? style : { ...pillButtonStyle, ...style }}
+      onMouseEnter={(e) => {
+        if (!className) e.currentTarget.style.backgroundColor = "#FFD93D";
+      }}
+      onMouseLeave={(e) => {
+        if (!className) e.currentTarget.style.backgroundColor = "#FFE047";
+      }}
     >
+      <VillaLogo />
       Sign in with Villa
     </button>
   );
