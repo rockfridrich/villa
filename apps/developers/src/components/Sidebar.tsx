@@ -14,13 +14,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/', label: 'Documentation', icon: BookOpen },
+  { href: '/architecture', label: 'Architecture', icon: Layers },
   { href: '/sdk', label: 'SDK Reference', icon: Package },
   { href: '/playground', label: 'Playground', icon: Play },
   { href: '/examples', label: 'Examples', icon: Code2 },
-  { href: '/ecosystem', label: 'Ecosystem', icon: Layers },
+  { href: '/ecosystem', label: 'Ecosystem', icon: Users },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
-  { href: '/contributors', label: 'Contributors', icon: Users },
-  { href: '/metrics', label: 'Metrics', icon: BarChart3 },
 ]
 
 // Doc sections (only shown on docs page)
@@ -30,12 +29,9 @@ interface Section {
 }
 
 const docSections: Section[] = [
-  { id: 'getting-started', title: 'Getting Started' },
-  { id: 'installation', title: 'Installation' },
   { id: 'quickstart', title: 'Quick Start' },
-  { id: 'api', title: 'API Reference' },
-  { id: 'components', title: 'Components' },
-  { id: 'ai', title: 'AI Integration' },
+  { id: 'lovable', title: 'Lovable Integration' },
+  { id: 'ai', title: 'AI Context' },
 ]
 
 // Animation variants

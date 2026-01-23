@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, ChevronRight, Book, Github } from "lucide-react";
+import { ExternalLink, ChevronRight, Book, Github, Heart, Sparkles, Terminal, Layers } from "lucide-react";
 import { CodeBlock } from "../components/code";
+import { CopyButton } from "../components/code";
 
 export default function DevelopersPage() {
   return (
@@ -10,6 +11,11 @@ export default function DevelopersPage() {
       <section className="pt-24 pb-12 px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 animate-in slide-in-from-left duration-700">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFE047]/10 border border-[#FFE047]/20 text-sm font-medium text-[#0D0D17]/80">
+              <Heart className="w-3.5 h-3.5 fill-[#FFE047] text-[#FFE047]" />
+              Works with Lovable
+            </div>
+            
             <h1 className="font-serif text-5xl sm:text-7xl tracking-tight leading-[0.9]">
               Villa SDK
               <span className="block text-[#0D0D17]/60 text-3xl sm:text-4xl mt-4 font-sans font-light">
@@ -29,10 +35,10 @@ export default function DevelopersPage() {
                 Start Building <ChevronRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/sdk"
+                href="/architecture"
                 className="inline-flex items-center gap-2 border border-[#0D0D17]/10 px-8 py-4 rounded-xl hover:bg-[#0D0D17]/5 transition-all"
               >
-                <Book className="w-4 h-4" /> Documentation
+                <Layers className="w-4 h-4" /> Architecture
               </Link>
             </div>
           </div>
@@ -108,40 +114,58 @@ export default function DevelopersPage() {
         </div>
       </section>
 
-      <section className="py-24 px-6 bg-[#0D0D17]/[0.02]">
-        <div className="max-w-5xl mx-auto space-y-12">
-          <h2 className="font-serif text-3xl text-center">Start Building</h2>
+      <section id="lovable" className="py-24 px-6 bg-[#FFE047]/5">
+        <div className="max-w-4xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#FFE047]/20 text-[#0D0D17] mb-2">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h2 className="font-serif text-4xl">Build with Lovable</h2>
+            <p className="text-[#0D0D17]/60 text-lg max-w-xl mx-auto">
+              Villa is optimized for AI generation. Just paste this prompt into Lovable.dev to add authentication.
+            </p>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl border border-[#0D0D17]/5 shadow-sm space-y-4">
+            <h3 className="font-medium text-sm uppercase tracking-wider text-[#0D0D17]/40">Copy this prompt</h3>
+            <div className="relative group">
+              <div className="bg-[#0D0D17]/[0.02] p-6 rounded-xl border border-[#0D0D17]/5 text-lg font-medium leading-relaxed">
+                Add Villa authentication using @rockfridrich/villa-sdk-react. Fetch context from docs.villa.cash/CLAUDE.txt
+              </div>
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <CopyButton text="Add Villa authentication using @rockfridrich/villa-sdk-react. Fetch context from docs.villa.cash/CLAUDE.txt" />
+              </div>
+            </div>
+            <p className="text-sm text-[#0D0D17]/40 text-center pt-2">
+              Lovable will automatically install dependencies and set up the auth flow.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="ai" className="py-24 px-6 bg-white border-t border-[#0D0D17]/5">
+        <div className="max-w-4xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#0D0D17]/5 text-[#0D0D17] mb-2">
+              <Terminal className="w-6 h-6" />
+            </div>
+            <h2 className="font-serif text-4xl">AI Context</h2>
+            <p className="text-[#0D0D17]/60 text-lg max-w-xl mx-auto">
+              Building with Cursor, Windsurf, or Claude Code? Add our context file to your project.
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <CodeBlock code="curl https://docs.villa.cash/CLAUDE.txt > CLAUDE.txt" language="bash" />
+          </div>
           
-          <div className="grid sm:grid-cols-3 gap-6">
-            <Link href="/sdk" className="group p-8 rounded-2xl bg-white border border-[#0D0D17]/5 hover:border-[#0D0D17]/20 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-[#FFE047]/20 flex items-center justify-center mb-6 text-[#0D0D17]">
-                <Book className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-xl mb-2 group-hover:text-[#FFE047] transition-colors bg-clip-text">Documentation</h3>
-              <p className="text-[#0D0D17]/60 leading-relaxed">
-                Full SDK reference, API details, and configuration options.
-              </p>
+          <div className="text-center pt-8">
+            <Link href="/architecture" className="inline-flex items-center gap-2 text-[#0D0D17]/60 hover:text-[#0D0D17] transition-colors">
+              <Book className="w-4 h-4" />
+              <span className="underline decoration-[#0D0D17]/20 underline-offset-4 hover:decoration-[#0D0D17]/40">
+                Deep dive into Villa Architecture
+              </span>
             </Link>
-
-            <Link href="/examples" className="group p-8 rounded-2xl bg-white border border-[#0D0D17]/5 hover:border-[#0D0D17]/20 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-[#FFE047]/20 flex items-center justify-center mb-6 text-[#0D0D17]">
-                <ExternalLink className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-xl mb-2 group-hover:text-[#FFE047] transition-colors">Examples</h3>
-              <p className="text-[#0D0D17]/60 leading-relaxed">
-                Copy-paste starter kits for Next.js, React, and Vanilla JS.
-              </p>
-            </Link>
-
-            <a href="https://github.com/rockfridrich/villa" target="_blank" rel="noopener noreferrer" className="group p-8 rounded-2xl bg-white border border-[#0D0D17]/5 hover:border-[#0D0D17]/20 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-[#FFE047]/20 flex items-center justify-center mb-6 text-[#0D0D17]">
-                <Github className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-xl mb-2 group-hover:text-[#FFE047] transition-colors">GitHub</h3>
-              <p className="text-[#0D0D17]/60 leading-relaxed">
-                Open source and built for the community. Star us on GitHub!
-              </p>
-            </a>
           </div>
         </div>
       </section>
