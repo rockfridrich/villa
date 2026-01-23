@@ -147,7 +147,7 @@ interface DatabaseData {
 }
 
 // Service configuration with proper branding
-const RAILWAY_PROJECT = "https://railway.app/project/f0c53e8b-2e16-4c8c-9a7c-5a4e0d8a0f0e";
+const RAILWAY_PROJECT = "https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115";
 
 const SERVICE_CONFIG: Record<string, {
   name: string;
