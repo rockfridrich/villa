@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, ChevronRight, Book, Github, Heart, Sparkles, Terminal, Layers } from "lucide-react";
+import { ChevronRight, Book, Heart, Sparkles, Terminal, Layers, RefreshCw } from "lucide-react";
 import { CodeBlock } from "../components/code";
 import { CopyButton } from "../components/code";
 
@@ -19,11 +19,11 @@ export default function DevelopersPage() {
             <h1 className="font-serif text-5xl sm:text-7xl tracking-tight leading-[0.9]">
               Villa SDK
               <span className="block text-[#0D0D17]/60 text-3xl sm:text-4xl mt-4 font-sans font-light">
-                One Line Auth
+                One Component Auth
               </span>
             </h1>
             <p className="text-xl text-[#0D0D17]/60 max-w-lg leading-relaxed">
-              Privacy-first passkey authentication for pop-up villages.
+              Passkey authentication with built-in profile UI.
               <br />
               Zero passwords. Zero config. Ship in 2 minutes.
             </p>
@@ -35,10 +35,10 @@ export default function DevelopersPage() {
                 Start Building <ChevronRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/architecture"
+                href="#upgrade"
                 className="inline-flex items-center gap-2 border border-[#0D0D17]/10 px-8 py-4 rounded-xl hover:bg-[#0D0D17]/5 transition-all"
               >
-                <Layers className="w-4 h-4" /> Architecture
+                <RefreshCw className="w-4 h-4" /> Upgrade Guide
               </Link>
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function DevelopersPage() {
         <div className="max-w-5xl mx-auto space-y-16">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-4xl">Quickstart</h2>
-            <p className="text-[#0D0D17]/60 text-lg">From zero to authenticated in 3 steps.</p>
+            <p className="text-[#0D0D17]/60 text-lg">One component does everything.</p>
           </div>
 
           <div className="space-y-12">
@@ -70,7 +70,6 @@ export default function DevelopersPage() {
               </div>
               <div className="space-y-3">
                 <h3 className="font-medium text-2xl">Install</h3>
-                <p className="text-[#0D0D17]/60">Add the SDK and React bindings to your project.</p>
                 <CodeBlock code="npm install @rockfridrich/villa-sdk-react" language="bash" />
               </div>
             </div>
@@ -78,43 +77,154 @@ export default function DevelopersPage() {
             <div className="grid md:grid-cols-[80px_1fr] gap-8">
               <div className="flex flex-col items-center pt-2">
                 <div className="w-10 h-10 rounded-full bg-[#FFE047] flex items-center justify-center font-bold text-lg shadow-sm">2</div>
-                <div className="w-px h-full bg-[#0D0D17]/10 mt-4 hidden md:block" />
               </div>
               <div className="space-y-3">
-                <h3 className="font-medium text-2xl">Import</h3>
-                <p className="text-[#0D0D17]/60">Import the auth component.</p>
-                <CodeBlock 
-                  code="import { VillaAuth } from '@rockfridrich/villa-sdk-react'" 
-                  language="typescript" 
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-[80px_1fr] gap-8">
-              <div className="flex flex-col items-center pt-2">
-                <div className="w-10 h-10 rounded-full bg-[#FFE047] flex items-center justify-center font-bold text-lg shadow-sm">3</div>
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-medium text-2xl">Ship it</h3>
-                <p className="text-[#0D0D17]/60">Use the component to authenticate users. It handles everything.</p>
+                <h3 className="font-medium text-2xl">Add VillaButton</h3>
+                <p className="text-[#0D0D17]/60">It handles sign-in, profile dropdown, settings, and sign-out.</p>
                 <CodeBlock
-                  code={`<VillaAuth
-  onComplete={(result) => {
-    if (result.success) {
-      console.log('Welcome,', result.identity.nickname)
-      // result.identity: { address, nickname, avatar }
-    }
-  }}
-/>`}
+                  code={`import { VillaButton } from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  return (
+    <header>
+      <VillaButton />
+    </header>
+  )
+}`}
                   language="tsx"
                 />
               </div>
             </div>
           </div>
+
+          <div className="bg-[#0D0D17]/[0.02] p-6 rounded-xl border border-[#0D0D17]/5">
+            <h4 className="font-medium mb-3">What VillaButton does:</h4>
+            <ul className="grid sm:grid-cols-2 gap-2 text-[#0D0D17]/70">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                Shows &ldquo;Sign in with Villa&rdquo; when logged out
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                Profile dropdown when logged in
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                Copy wallet address
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                Settings popup for profile editing
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
-      <section id="lovable" className="py-24 px-6 bg-[#FFE047]/5">
+      <section id="access-data" className="py-24 px-6 border-b border-[#0D0D17]/5">
+        <div className="max-w-5xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="font-serif text-4xl">Access User Data</h2>
+            <p className="text-[#0D0D17]/60 text-lg">Use the hook anywhere in your app.</p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <CodeBlock
+              code={`import { useVilla } from '@rockfridrich/villa-sdk-react'
+
+function Profile() {
+  const { user } = useVilla()
+  
+  if (!user) return null
+  
+  return (
+    <div>
+      <img src={user.avatar} alt="" />
+      <p>@{user.nickname}</p>
+      <p>{user.address}</p>
+    </div>
+  )
+}`}
+              language="tsx"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="upgrade" className="py-24 px-6 bg-[#FFE047]/5">
+        <div className="max-w-4xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#FFE047]/20 text-[#0D0D17] mb-2">
+              <RefreshCw className="w-6 h-6" />
+            </div>
+            <h2 className="font-serif text-4xl">Upgrade from v0</h2>
+            <p className="text-[#0D0D17]/60 text-lg max-w-xl mx-auto">
+              Already using Villa? Here&apos;s how to get the new profile UI.
+            </p>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl border border-[#0D0D17]/5 shadow-sm space-y-6">
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">1. Update packages</h3>
+              <CodeBlock code="npm update @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react" language="bash" />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">2. Replace VillaAuth with VillaButton</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <span className="text-sm text-[#0D0D17]/40">Before (v0.0.x)</span>
+                  <CodeBlock
+                    code={`<VillaAuth
+  onComplete={(result) => {
+    if (result.success) {
+      setUser(result.identity)
+    }
+  }}
+/>`}
+                    language="tsx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm text-[#0D0D17]/40">After (v0.1.x)</span>
+                  <CodeBlock
+                    code={`<VillaButton />`}
+                    language="tsx"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#0D0D17]/5">
+              <h4 className="font-medium mb-3">What&apos;s new in v0.1:</h4>
+              <ul className="space-y-2 text-[#0D0D17]/70">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                  VillaButton with built-in profile dropdown
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                  VillaProfile component for custom layouts
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                  villa.settings() for profile editing popup
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                  Copy wallet address with one click
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE047]" />
+                  Web3 gradient avatars
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="lovable" className="py-24 px-6 bg-white border-t border-[#0D0D17]/5">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#FFE047]/20 text-[#0D0D17] mb-2">
@@ -122,28 +232,24 @@ export default function DevelopersPage() {
             </div>
             <h2 className="font-serif text-4xl">Build with Lovable</h2>
             <p className="text-[#0D0D17]/60 text-lg max-w-xl mx-auto">
-              Villa is optimized for AI generation. Just paste this prompt into Lovable.dev to add authentication.
+              Just paste this prompt into Lovable.dev
             </p>
           </div>
 
-          <div className="bg-white p-8 rounded-2xl border border-[#0D0D17]/5 shadow-sm space-y-4">
-            <h3 className="font-medium text-sm uppercase tracking-wider text-[#0D0D17]/40">Copy this prompt</h3>
+          <div className="bg-[#0D0D17]/[0.02] p-8 rounded-2xl border border-[#0D0D17]/5 space-y-4">
             <div className="relative group">
-              <div className="bg-[#0D0D17]/[0.02] p-6 rounded-xl border border-[#0D0D17]/5 text-lg font-medium leading-relaxed">
-                Add Villa authentication using @rockfridrich/villa-sdk-react. Fetch context from docs.villa.cash/CLAUDE.txt
+              <div className="p-6 rounded-xl border border-[#0D0D17]/10 bg-white text-lg font-medium leading-relaxed">
+                Add Villa authentication using @rockfridrich/villa-sdk-react. Use VillaButton component. Fetch context from docs.villa.cash/LOVABLE.txt
               </div>
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <CopyButton text="Add Villa authentication using @rockfridrich/villa-sdk-react. Fetch context from docs.villa.cash/CLAUDE.txt" />
+                <CopyButton text="Add Villa authentication using @rockfridrich/villa-sdk-react. Use VillaButton component. Fetch context from docs.villa.cash/LOVABLE.txt" />
               </div>
             </div>
-            <p className="text-sm text-[#0D0D17]/40 text-center pt-2">
-              Lovable will automatically install dependencies and set up the auth flow.
-            </p>
           </div>
         </div>
       </section>
 
-      <section id="ai" className="py-24 px-6 bg-white border-t border-[#0D0D17]/5">
+      <section id="ai" className="py-24 px-6 border-t border-[#0D0D17]/5">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#0D0D17]/5 text-[#0D0D17] mb-2">
@@ -151,7 +257,7 @@ export default function DevelopersPage() {
             </div>
             <h2 className="font-serif text-4xl">AI Context</h2>
             <p className="text-[#0D0D17]/60 text-lg max-w-xl mx-auto">
-              Building with Cursor, Windsurf, or Claude Code? Add our context file to your project.
+              Using Cursor, Windsurf, or Claude Code?
             </p>
           </div>
 
