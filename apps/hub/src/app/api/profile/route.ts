@@ -8,18 +8,24 @@ import { rowToProfile, canChangeNickname, MAX_NICKNAME_CHANGES, NICKNAME_CHANGE_
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// Validation schema for profile creation
+const legacyAvatarSchema = z.object({
+  style: z.string(),
+  selection: z.string(),
+  variant: z.number().int().min(0),
+})
+
+const newAvatarSchema = z.object({
+  style: z.string(),
+  seed: z.string(),
+})
+
 const createProfileSchema = z.object({
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/i, 'Invalid address format'),
   nickname: z.string()
     .min(3, 'Nickname must be at least 3 characters')
     .max(30, 'Nickname must be 30 characters or less')
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Nickname must start with a letter and contain only letters, numbers, and underscores'),
-  avatar: z.object({
-    style: z.string(),
-    selection: z.string(),
-    variant: z.number().int().min(0),
-  }).optional(),
+  avatar: z.union([legacyAvatarSchema, newAvatarSchema]).optional(),
 })
 
 /**
@@ -71,7 +77,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Upsert profile
+    const avatarStyle = avatar?.style ?? null
+    const avatarSelection = avatar && 'selection' in avatar ? avatar.selection : (avatar && 'seed' in avatar ? avatar.seed : null)
+    const avatarVariant = avatar && 'variant' in avatar ? avatar.variant : 0
+
     const rows = await sql<ProfileRow[]>`
       INSERT INTO profiles (
         address,
@@ -84,9 +93,9 @@ export async function POST(request: Request) {
         ${normalizedAddress},
         ${nickname},
         ${normalizedNickname},
-        ${avatar?.style ?? null},
-        ${avatar?.selection ?? null},
-        ${avatar?.variant ?? null}
+        ${avatarStyle},
+        ${avatarSelection},
+        ${avatarVariant}
       )
       ON CONFLICT (address) DO UPDATE SET
         nickname = EXCLUDED.nickname,
