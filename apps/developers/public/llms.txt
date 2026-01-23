@@ -1,54 +1,22 @@
-# Villa SDK
+# Villa SDK - LLM Integration
 
-> Privacy-first passkey authentication for Base network. No wallets. No passwords. Just Face ID.
+> Passkey authentication for apps. One line to integrate.
 
-## Quick Integration (3 lines)
+## Install
+npm install @rockfridrich/villa-sdk-react
 
-```bash
-npm install @rockfridrich/villa-sdk viem zod
-```
-
-```typescript
-import { villa } from '@rockfridrich/villa-sdk'
-
-const user = await villa.signIn()
-console.log(user.address, user.nickname)
-```
-
-## React Integration
-
+## Use
 ```tsx
-import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+import { VillaAuth } from '@rockfridrich/villa-sdk-react'
 
-function App() {
-  const { user } = useVilla()
-  return user ? <p>@{user.nickname}</p> : <VillaButton />
-}
+<VillaAuth onComplete={(r) => r.success && console.log(r.identity)} />
 ```
 
-## API
+## Full Context
+- CLAUDE.txt: https://developers.villa.cash/CLAUDE.txt
+- GitHub: https://raw.githubusercontent.com/rockfridrich/villa/main/apps/developers/public/CLAUDE.txt
 
-### Simple (Recommended)
-```ts
-import { villa } from '@rockfridrich/villa-sdk'
-
-await villa.signIn()    // Sign in
-villa.user              // Current user
-villa.signOut()         // Sign out
-```
-
-### Advanced (Custom Config)
-```ts
-import { Villa } from '@rockfridrich/villa-sdk'
-const client = new Villa({ appId: 'my-app', network: 'base' })
-```
-
-## Types
-```typescript
-type VillaAuthResult =
-  | { success: true; identity: { address: string; nickname: string; avatar: AvatarConfig } }
-  | { success: false; error: string }
-```
-
-## Docs
-https://docs.villa.cash
+## What It Does
+- Passkey auth (Face ID, Touch ID, Windows Hello)
+- Returns: { address, nickname, avatar }
+- No passwords, no wallets, no config

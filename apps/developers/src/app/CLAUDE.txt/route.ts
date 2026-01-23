@@ -10,8 +10,9 @@ export async function GET() {
     return new NextResponse(content, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control":
-          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
       },
     });
   } catch {
