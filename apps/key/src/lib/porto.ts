@@ -30,8 +30,28 @@ function getPortoChains():
  * keystoreHost determines the WebAuthn Relying Party ID (rpId).
  * Passkeys are permanently bound to this domain - users see "villa.cash"
  * in browser/OS passkey prompts instead of "porto.sh".
+ * 
+ * For LAN testing: WebAuthn requires rpId to match the origin's hostname.
+ * IP-based origins cannot use domain suffix matching.
  */
-const VILLA_KEYSTORE_HOST = "villa.cash";
+function getKeystoreHost(): string {
+  if (typeof window === "undefined") return "villa.cash";
+  
+  const hostname = window.location.hostname;
+  
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "localhost";
+  }
+  
+  const isLanIp = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/.test(hostname);
+  if (isLanIp && process.env.NODE_ENV === "development") {
+    return hostname;
+  }
+  
+  return "villa.cash";
+}
+
+const VILLA_KEYSTORE_HOST = getKeystoreHost();
 
 /**
  * WebAuthn event handlers for Villa UI feedback
