@@ -2,7 +2,12 @@
 
 import { useCallback } from 'react'
 import { useAuth } from './hooks'
-import { getAvatarUrl, type Identity, type AvatarConfig } from '@rockfridrich/villa-sdk'
+import {
+  getAvatarUrl,
+  getWeb3AvatarStyles,
+  type Identity,
+  type AvatarConfig,
+} from '@rockfridrich/villa-sdk'
 import type { VillaAuthResponse } from './context'
 
 interface VillaAuthProps {
@@ -140,6 +145,27 @@ export function AvatarPreview({
       style={{
         borderRadius: '50%',
         backgroundColor: '#f5f5f5',
+      }}
+    />
+  )
+}
+
+interface Web3AvatarProps {
+  address: string
+  size?: number
+  className?: string
+}
+
+export function Web3Avatar({ address, size = 48, className = '' }: Web3AvatarProps) {
+  const styles = getWeb3AvatarStyles(address)
+
+  return (
+    <div
+      className={className}
+      style={{
+        width: size,
+        height: size,
+        ...styles,
       }}
     />
   )

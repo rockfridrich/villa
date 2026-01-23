@@ -15,8 +15,9 @@ export interface Identity {
   avatar?: AvatarConfig;
 }
 
-/** Supported avatar styles (DiceBear collection names) */
+/** Supported avatar styles */
 export type AvatarStyle =
+  | "web3" // Default: gradient avatar from wallet address
   | "lorelei"
   | "adventurer"
   | "avataaars"
@@ -25,11 +26,11 @@ export type AvatarStyle =
 
 /** Avatar configuration for deterministic generation */
 export interface AvatarConfig {
-  /** DiceBear style name */
+  /** Avatar style - "web3" (default gradient) or DiceBear styles */
   style: AvatarStyle;
   /** Seed for deterministic generation (usually address or nickname) */
   seed: string;
-  /** Optional gender preference for gendered styles */
+  /** Optional gender preference for gendered DiceBear styles */
   gender?: "male" | "female" | "other";
 }
 

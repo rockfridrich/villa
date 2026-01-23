@@ -30,7 +30,14 @@ export type {
 
 // Core utilities
 export { resolveEns, reverseEns } from "./ens";
-export { getAvatarUrl, createAvatarConfig } from "./avatar";
+export {
+  getAvatarUrl,
+  createAvatarConfig,
+  getAvatarStyles,
+  getWeb3GradientColors,
+  getWeb3AvatarStyles,
+  getWeb3AvatarDataUri,
+} from "./avatar";
 
 // Auth utilities
 export { signIn, signOut, isAuthenticated, getIdentity } from "./auth";

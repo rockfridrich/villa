@@ -22,7 +22,7 @@ export type {
 export { useIdentity, useAuth, useVillaConfig } from "./hooks";
 
 // Components
-export { VillaAuth, Avatar, AvatarPreview } from "./components";
+export { VillaAuth, Avatar, AvatarPreview, Web3Avatar } from "./components";
 
 // Re-export types from core SDK
 export type {
