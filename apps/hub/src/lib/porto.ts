@@ -763,16 +763,11 @@ export async function signInImmediate(): Promise<PortoConnectResult> {
 let portoIframeInstance: ReturnType<typeof Porto.create> | null = null
 let portoRpcServerInstance: ReturnType<typeof Porto.create> | null = null
 
-/**
- * Get environment-aware dialog host for rpcServer mode
- * - Production: https://key.villa.cash/auth
- * - Development: https://localhost:3000/auth
- */
 function getDialogHost(): string {
   if (process.env.NODE_ENV === 'production') {
     return 'https://key.villa.cash/auth'
   }
-  return 'https://localhost:3000/auth'
+  return 'https://localhost:3001/auth'
 }
 
 /**
@@ -823,7 +818,7 @@ export function getPortoRpcServer(container?: HTMLElement): ReturnType<typeof Po
             type: 'popup',
             size: { width: 380, height: 520 },
           }),
-      host: getDialogHost(), // Points to key.villa.cash/auth (production) or localhost:3000/auth (dev)
+      host: getDialogHost(),
       theme: villaTheme,
     }),
   })

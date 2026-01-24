@@ -126,12 +126,10 @@ export class Villa {
       apiUrl: config.apiUrl || "https://api.villa.cash",
     };
 
-    // Determine auth URL based on network
-    // Use villa.cash/auth for SDK iframe auth
     this.authUrl =
       this.config.network === "base-sepolia"
-        ? "https://beta.villa.cash/auth"
-        : "https://villa.cash/auth";
+        ? "https://fake-key.villa.cash/auth"
+        : "https://key.villa.cash/auth";
 
     // Try to load existing session
     this.currentSession = loadSession();

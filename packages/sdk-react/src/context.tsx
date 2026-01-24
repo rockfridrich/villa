@@ -44,7 +44,7 @@ interface VillaContextValue {
 const VillaContext = createContext<VillaContextValue | null>(null)
 
 const STORAGE_KEY = 'villa-identity'
-const AUTH_URL = 'https://villa.cash/auth'
+const AUTH_URL = 'https://key.villa.cash/auth'
 
 // Trusted origins for postMessage validation - must be exact match
 const TRUSTED_ORIGINS = new Set([

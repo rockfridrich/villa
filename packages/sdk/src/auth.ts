@@ -22,7 +22,7 @@ export interface AuthOptions {
   onClose?: () => void
 }
 
-const AUTH_URL = 'https://villa.cash/auth'
+const AUTH_URL = 'https://key.villa.cash/auth'
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 let currentSession: VillaSession | null = null
