@@ -39,6 +39,7 @@
       "name": "@villa/developers",
       "version": "0.1.0-alpha.1",
       "dependencies": {
+        "@rockfridrich/villa-sdk": "workspace:*",
         "clsx": "^2.1.0",
         "framer-motion": "^12.23.26",
         "lucide-react": "^0.400.0",

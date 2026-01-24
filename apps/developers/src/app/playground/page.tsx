@@ -1,379 +1,370 @@
 "use client";
 
-import { useState } from "react";
-import { Play, ChevronDown } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Play, Trash2, User, LogOut, Settings, Globe, Copy, Check } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { CopyButton } from "../../components/code";
+import { villa, type VillaUser } from "@rockfridrich/villa-sdk";
 
-// Pre-built examples
-const EXAMPLES = {
-  "sign-in": {
-    title: "Sign In User",
-    description: "Basic authentication flow",
-    code: `import { Villa } from '@rockfridrich/villa-sdk'
-
-const villa = new Villa({
-  appId: 'playground-demo',
-  network: 'base-sepolia'
-})
-
-// Sign in user
-const result = await villa.signIn({
-  scopes: ['profile', 'wallet']
-})
-
-if (result.success) {
-  console.log('Welcome!', result.identity.nickname)
-  console.log('Address:', result.identity.address)
-} else {
-  console.error('Error:', result.error)
-}`,
-  },
-  "get-profile": {
-    title: "Get User Profile",
-    description: "Retrieve authenticated user information",
-    code: `import { Villa } from '@rockfridrich/villa-sdk'
-
-const villa = new Villa({
-  appId: 'playground-demo'
-})
-
-// Check authentication status
-if (villa.isAuthenticated()) {
-  const identity = villa.getIdentity()
-
-  console.log('Nickname:', identity.nickname)
-  console.log('Address:', identity.address)
-  console.log('Avatar:', identity.avatar)
-} else {
-  console.log('Not authenticated')
-}`,
-  },
-  "resolve-ens": {
-    title: "Resolve ENS Name",
-    description: "Look up nickname to address",
-    code: `import { Villa } from '@rockfridrich/villa-sdk'
-
-const villa = new Villa({
-  network: 'base-sepolia'
-})
-
-// Resolve nickname to address
-const address = await villa.resolveEns('alice.villa.cash')
-
-if (address) {
-  console.log('alice.villa.cash ->', address)
-} else {
-  console.log('Nickname not found')
+interface LogEntry {
+  id: number;
+  timestamp: Date;
+  type: "info" | "success" | "error" | "warn";
+  method: string;
+  args?: unknown[];
+  result?: unknown;
+  duration?: number;
 }
 
-// Reverse lookup (address to nickname)
-const nickname = await villa.reverseEns(
-  '0x1234567890123456789012345678901234567890'
-)
+const EXAMPLES = {
+  "sign-in": {
+    title: "Sign In",
+    description: "Authenticate with passkey",
+    code: `// Sign in with Villa passkey
+const user = await villa.signIn()
 
-if (nickname) {
-  console.log('Address nickname:', nickname)
-}`,
+console.log('Welcome!', user.nickname)
+console.log('Address:', user.address)
+console.log('Avatar:', user.avatar)`,
+    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number, updateLog: (id: number, u: Partial<LogEntry>) => void) => {
+      const start = Date.now();
+      const logId = addLog({ type: "info", method: "villa.signIn()" });
+      try {
+        const user = await villa.signIn();
+        updateLog(logId, {
+          type: "success",
+          result: { nickname: user.nickname, address: user.address },
+          duration: Date.now() - start,
+        });
+        return user;
+      } catch (err) {
+        updateLog(logId, {
+          type: "error",
+          result: err instanceof Error ? err.message : "Unknown error",
+          duration: Date.now() - start,
+        });
+        throw err;
+      }
+    },
   },
-};
+  "get-user": {
+    title: "Get User",
+    description: "Check current session",
+    code: `// Get current user (from localStorage)
+const user = villa.user
+
+if (user) {
+  console.log('Signed in as:', user.nickname)
+  console.log('Address:', user.address)
+} else {
+  console.log('Not signed in')
+}`,
+    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
+      const user = villa.user;
+      addLog({
+        type: user ? "success" : "warn",
+        method: "villa.user",
+        result: user ? { nickname: user.nickname, address: user.address } : "Not signed in",
+      });
+      return user;
+    },
+  },
+  "sign-out": {
+    title: "Sign Out",
+    description: "Clear session",
+    code: `// Sign out and clear session
+villa.signOut()
+
+console.log('Signed out')
+console.log('User:', villa.user) // null`,
+    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
+      villa.signOut();
+      addLog({
+        type: "success",
+        method: "villa.signOut()",
+        result: "Session cleared",
+      });
+      return null;
+    },
+  },
+  "settings": {
+    title: "Settings",
+    description: "Open profile settings",
+    code: `// Open settings modal (requires sign-in)
+const result = await villa.settings()
+
+if (result.loggedOut) {
+  console.log('User logged out from settings')
+} else {
+  console.log('Settings updated:', result)
+}`,
+    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number, updateLog: (id: number, u: Partial<LogEntry>) => void) => {
+      const start = Date.now();
+      const logId = addLog({ type: "info", method: "villa.settings()" });
+      try {
+        const result = await villa.settings();
+        updateLog(logId, {
+          type: "success",
+          result,
+          duration: Date.now() - start,
+        });
+        return result;
+      } catch (err) {
+        updateLog(logId, {
+          type: "error",
+          result: err instanceof Error ? err.message : "Unknown error",
+          duration: Date.now() - start,
+        });
+        throw err;
+      }
+    },
+  },
+  "auth-change": {
+    title: "Auth Listener",
+    description: "Subscribe to auth changes",
+    code: `// Listen for auth state changes
+const unsubscribe = villa.onAuthChange((user) => {
+  if (user) {
+    console.log('User signed in:', user.nickname)
+  } else {
+    console.log('User signed out')
+  }
+})
+
+// Later: unsubscribe()`,
+    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
+      addLog({
+        type: "info",
+        method: "villa.onAuthChange(callback)",
+        result: "Listener registered - sign in/out to see events",
+      });
+      return null;
+    },
+  },
+} as const;
 
 type ExampleKey = keyof typeof EXAMPLES;
 
 export default function PlaygroundPage() {
   const [selectedExample, setSelectedExample] = useState<ExampleKey>("sign-in");
-  const [code, setCode] = useState(EXAMPLES["sign-in"].code);
-  const [output, setOutput] = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [user, setUser] = useState<VillaUser | null>(null);
+  const [copied, setCopied] = useState(false);
+  const logIdRef = useRef(0);
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const handleExampleChange = (key: ExampleKey) => {
-    setSelectedExample(key);
-    setCode(EXAMPLES[key].code);
-    setOutput([]);
-    setDropdownOpen(false);
-  };
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
 
-  const handleRun = () => {
+  useEffect(() => {
+    const unsubscribe = villa.onAuthChange((u) => {
+      setUser(u);
+      if (logs.length > 0) {
+        addLog({
+          type: u ? "success" : "warn",
+          method: "onAuthChange",
+          result: u ? { nickname: u.nickname, address: u.address } : "Signed out",
+        });
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const addLog = useCallback((entry: Omit<LogEntry, "id" | "timestamp">) => {
+    const newLog: LogEntry = {
+      ...entry,
+      id: logIdRef.current++,
+      timestamp: new Date(),
+    };
+    setLogs((prev) => [...prev, newLog]);
+    return newLog.id;
+  }, []);
+
+  const updateLog = useCallback((id: number, updates: Partial<LogEntry>) => {
+    setLogs((prev) => prev.map((log) => (log.id === id ? { ...log, ...updates } : log)));
+  }, []);
+
+  const clearLogs = useCallback(() => {
+    setLogs([]);
+    logIdRef.current = 0;
+  }, []);
+
+  const handleRun = useCallback(async () => {
     setIsRunning(true);
-    setOutput([
-      "[Playground] Running code in sandbox...",
-      "",
-      "[Note] This is a demo playground. Real execution requires integration with construction.villa.cash.",
-      "",
-      "To test live:",
-      "1. Install SDK: npm install @rockfridrich/villa-sdk",
-      "2. Use construction.villa.cash for authentication",
-      "3. Follow the quickstart guide in Documentation",
-    ]);
-
-    setTimeout(() => {
+    try {
+      const example = EXAMPLES[selectedExample];
+      await example.run(addLog, updateLog);
+    } catch {
+    } finally {
       setIsRunning(false);
-    }, 1000);
-  };
+    }
+  }, [selectedExample, addLog, updateLog]);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(EXAMPLES[selectedExample].code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [selectedExample]);
 
   const currentExample = EXAMPLES[selectedExample];
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <section className="py-12">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <h1 className="font-serif text-4xl sm:text-5xl tracking-tight">
-            Playground
-          </h1>
-          <p className="text-lg text-ink-muted max-w-2xl">
-            Interactive code sandbox to test Villa SDK. Try pre-built examples
-            or explore the live demo.
+      <section className="py-8">
+        <div className="max-w-6xl mx-auto space-y-2">
+          <h1 className="font-serif text-4xl tracking-tight">SDK Playground</h1>
+          <p className="text-ink-muted">
+            Test Villa SDK methods directly. Real passkey authentication on Base Sepolia.
           </p>
         </div>
       </section>
 
-      {/* Live Demo Embed */}
       <section className="pb-12">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-serif">Live Interactive Demo</h2>
-            <a
-              href="https://construction.villa.cash/sdk-demo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-accent-yellow hover:underline flex items-center gap-1"
-            >
-              Open in new tab
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </a>
-          </div>
-          <p className="text-ink-muted text-sm">
-            Try the full SDK integration below. Authentication uses real
-            passkeys on Base Sepolia testnet.
-          </p>
-          <div className="border border-ink/10 rounded-lg sm:rounded-xl overflow-hidden bg-cream-50 relative">
-            {!iframeLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-cream-50 z-10">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-4 border-accent-yellow border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-ink-muted">
-                    Loading demo...
-                  </span>
-                </div>
-              </div>
-            )}
-            <iframe
-              src="https://construction.villa.cash/sdk-demo"
-              className="w-full h-[500px] sm:h-[600px] lg:h-[700px] border-0"
-              title="Villa SDK Live Demo - Interactive passkey authentication"
-              allow="publickey-credentials-get *; publickey-credentials-create *"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-              onLoad={() => setIframeLoaded(true)}
-            />
-          </div>
-          <p className="text-xs text-ink-muted text-center">
-            Demo powered by construction.villa.cash • Passkeys stored securely
-            on your device
-          </p>
-        </div>
-      </section>
-
-      {/* Code Examples */}
-      <section className="pb-20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-serif mb-6">Code Examples</h2>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-ink-muted mb-2">
-              Select Example
-            </label>
-            <div className="relative">
+          {user && (
+            <div className="mb-6 flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <img src={user.avatar} alt="" className="w-10 h-10 rounded-full" />
+              <div className="flex-1">
+                <p className="font-medium text-green-900">@{user.nickname}</p>
+                <p className="text-xs text-green-700 font-mono">{user.address}</p>
+              </div>
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full sm:w-auto min-w-[280px] flex items-center justify-between gap-3 px-4 py-3 bg-cream-50 border border-ink/10 rounded-lg hover:bg-cream-100 transition-colors"
-                aria-expanded={dropdownOpen}
+                onClick={() => villa.signOut()}
+                className="p-2 text-green-700 hover:bg-green-100 rounded-lg transition-colors"
+                title="Sign out"
               >
-                <div className="text-left">
-                  <div className="font-medium text-ink">
-                    {currentExample.title}
-                  </div>
-                  <div className="text-xs text-ink-muted">
-                    {currentExample.description}
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-ink-muted transition-transform ${
-                    dropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
+                <LogOut className="w-4 h-4" />
               </button>
-
-              {dropdownOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setDropdownOpen(false)}
-                  />
-
-                  {/* Dropdown */}
-                  <div className="absolute top-full left-0 mt-2 w-full sm:w-auto min-w-[280px] bg-cream-50 border border-ink/10 rounded-lg shadow-lg z-20">
-                    {Object.entries(EXAMPLES).map(([key, example]) => (
-                      <button
-                        key={key}
-                        onClick={() => handleExampleChange(key as ExampleKey)}
-                        className={`w-full text-left px-4 py-3 hover:bg-cream-100 transition-colors first:rounded-t-lg last:rounded-b-lg border-b border-ink/5 last:border-b-0 ${
-                          selectedExample === key ? "bg-accent-yellow/10" : ""
-                        }`}
-                      >
-                        <div className="font-medium text-ink">
-                          {example.title}
-                        </div>
-                        <div className="text-xs text-ink-muted">
-                          {example.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Split View */}
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Code Editor */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-ink-muted">
-                  Code Editor
-                </h2>
-                <button
-                  onClick={handleRun}
-                  disabled={isRunning}
-                  className="flex items-center gap-2 bg-accent-yellow text-ink font-medium px-4 py-2 rounded-lg hover:bg-accent-yellow/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-11"
-                >
-                  <Play className="w-4 h-4" />
-                  {isRunning ? "Running..." : "Run Code"}
-                </button>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(EXAMPLES) as ExampleKey[]).map((key) => {
+                  const ex = EXAMPLES[key];
+                  const Icon = key === "sign-in" ? User : key === "sign-out" ? LogOut : key === "settings" ? Settings : Globe;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedExample(key)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedExample === key
+                          ? "bg-accent-yellow text-ink"
+                          : "bg-cream-100 text-ink-muted hover:bg-cream-200"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {ex.title}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="relative group rounded-lg overflow-hidden">
-                <div className="absolute top-4 right-4 z-10">
-                  <CopyButton text={code} />
+              <div className="relative">
+                <div className="absolute top-3 right-3 z-10 flex gap-2">
+                  <button
+                    onClick={handleCopy}
+                    className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded transition-colors"
+                    title="Copy code"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-neutral-400" />}
+                  </button>
                 </div>
-                <div className="bg-ink rounded-lg overflow-hidden border border-ink/20">
+                <div className="bg-[#282c34] rounded-lg overflow-hidden border border-ink/10">
+                  <div className="px-4 py-2 border-b border-ink/10 flex items-center justify-between">
+                    <span className="text-xs text-neutral-400">{currentExample.description}</span>
+                  </div>
                   <SyntaxHighlighter
                     language="typescript"
                     style={oneDark}
                     customStyle={{
                       margin: 0,
-                      padding: "1.5rem",
+                      padding: "1rem",
                       fontSize: "0.875rem",
                       lineHeight: "1.6",
                       backgroundColor: "transparent",
-                      minHeight: "400px",
+                      minHeight: "200px",
                     }}
-                    showLineNumbers={true}
-                    wrapLines={true}
                   >
-                    {code}
+                    {currentExample.code}
                   </SyntaxHighlighter>
                 </div>
               </div>
+
+              <button
+                onClick={handleRun}
+                disabled={isRunning}
+                className="w-full flex items-center justify-center gap-2 bg-accent-yellow text-ink font-medium px-4 py-3 rounded-lg hover:bg-accent-yellow/90 transition-colors disabled:opacity-50"
+              >
+                <Play className="w-4 h-4" />
+                {isRunning ? "Running..." : "Run"}
+              </button>
             </div>
 
-            {/* Preview/Output */}
             <div className="space-y-3">
-              <h2 className="text-sm font-medium text-ink-muted">
-                Console Output
-              </h2>
-              <div className="bg-ink text-cream-100 rounded-lg p-6 font-mono text-sm min-h-[400px] border border-ink/20">
-                {output.length === 0 ? (
-                  <div className="text-ink-muted">
-                    Click &quot;Run Code&quot; to execute the example.
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-medium text-ink-muted">Console</h2>
+                <button
+                  onClick={clearLogs}
+                  className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear
+                </button>
+              </div>
+
+              <div className="bg-[#1e1e1e] rounded-lg border border-ink/10 min-h-[400px] max-h-[500px] overflow-y-auto">
+                {logs.length === 0 ? (
+                  <div className="flex items-center justify-center h-[400px] text-neutral-500 text-sm">
+                    Click Run to execute SDK method
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    {output.map((line, index) => (
+                  <div className="p-3 space-y-2 font-mono text-sm">
+                    {logs.map((log) => (
                       <div
-                        key={index}
-                        className={
-                          line.startsWith("[") ? "text-accent-yellow" : ""
-                        }
+                        key={log.id}
+                        className={`p-2 rounded ${
+                          log.type === "error"
+                            ? "bg-red-900/30 border-l-2 border-red-500"
+                            : log.type === "success"
+                            ? "bg-green-900/30 border-l-2 border-green-500"
+                            : log.type === "warn"
+                            ? "bg-yellow-900/30 border-l-2 border-yellow-500"
+                            : "bg-neutral-800/50 border-l-2 border-neutral-600"
+                        }`}
                       >
-                        {line}
+                        <div className="flex items-center gap-2 text-xs text-neutral-400 mb-1">
+                          <span>{log.timestamp.toLocaleTimeString()}</span>
+                          {log.duration !== undefined && (
+                            <span className="px-1.5 py-0.5 bg-neutral-700 rounded">{log.duration}ms</span>
+                          )}
+                        </div>
+                        <div className="text-blue-400">{log.method}</div>
+                        {log.result !== undefined && (
+                          <pre className="mt-1 text-xs text-neutral-300 overflow-x-auto">
+                            {typeof log.result === "string" ? log.result : JSON.stringify(log.result, null, 2)}
+                          </pre>
+                        )}
                       </div>
                     ))}
+                    <div ref={logsEndRef} />
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Helpful Links */}
-          <div className="mt-8 bg-cream-50 border border-ink/5 rounded-lg p-6 space-y-4">
-            <h3 className="font-medium">Next Steps</h3>
-            <div className="grid sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <a
-                  href="/"
-                  className="text-accent-yellow hover:underline font-medium"
-                >
-                  Read the Documentation
-                </a>
-                <p className="text-ink-muted mt-1">
-                  Complete SDK reference with examples
-                </p>
-              </div>
-              <div>
-                <a
-                  href="https://construction.villa.cash/sdk-demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent-yellow hover:underline font-medium"
-                >
-                  Try Live Demo
-                </a>
-                <p className="text-ink-muted mt-1">
-                  See authentication flow in action
-                </p>
-              </div>
-              <div>
-                <a
-                  href="https://github.com/rockfridrich/villa"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent-yellow hover:underline font-medium"
-                >
-                  View Source Code
-                </a>
-                <p className="text-ink-muted mt-1">
-                  Explore SDK implementation on GitHub
-                </p>
-              </div>
-              <div>
-                <a
-                  href="https://github.com/rockfridrich/villa/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent-yellow hover:underline font-medium"
-                >
-                  Report Issues
-                </a>
-                <p className="text-ink-muted mt-1">Found a bug? Let us know</p>
-              </div>
-            </div>
+          <div className="mt-8 p-4 bg-cream-100 border border-ink/5 rounded-lg">
+            <h3 className="font-medium mb-2">How it works</h3>
+            <ul className="text-sm text-ink-muted space-y-1">
+              <li>SDK opens fullscreen iframe to <code className="px-1 bg-cream-200 rounded">villa.cash/auth</code></li>
+              <li>User authenticates with device passkey (FaceID/TouchID)</li>
+              <li>Identity returned via postMessage, stored in localStorage</li>
+              <li>Session persists for 7 days</li>
+            </ul>
           </div>
         </div>
       </section>

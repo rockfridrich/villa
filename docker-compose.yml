@@ -149,7 +149,7 @@ services:
       - villa-net
 
   # ===========================================================================
-  # Key Application - Passkey Management App
+  # Key Application - Passkey Management App (port 3001)
   # ===========================================================================
   key:
     build:
@@ -162,14 +162,14 @@ services:
       - dev
       - full
     ports:
-      - "${KEY_PORT:-3002}:3002"
+      - "${KEY_PORT:-3001}:3001"
     mem_limit: ${APP_MEM_LIMIT:-6g}
     environment:
       # Node
       - NODE_ENV=${NODE_ENV:-development}
       - NEXT_TELEMETRY_DISABLED=1
       - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
-      - PORT=3002
+      - PORT=3001
       # Database
       - DATABASE_URL=${DATABASE_URL:-postgresql://villa:villa_dev_password@postgres:5432/villa_dev}
       # Porto
@@ -202,7 +202,52 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3002/api/health",
+          "http://localhost:3001/api/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - villa-net
+
+  # ===========================================================================
+  # Developers/Docs Application (port 3002)
+  # ===========================================================================
+  developers:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - APP_PATH=apps/developers
+    container_name: villa-developers
+    profiles:
+      - dev
+      - full
+    ports:
+      - "${DEVELOPERS_PORT:-3002}:3002"
+    mem_limit: ${APP_MEM_LIMIT:-4g}
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
+      - PORT=3002
+    volumes:
+      - ./apps/developers/src:/app/apps/developers/src
+      - ./packages/sdk/src:/app/packages/sdk/src
+      - /app/node_modules
+      - /app/.next
+      - /app/apps/developers/node_modules
+      - /app/apps/developers/.next
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3002/",
         ]
       interval: 10s
       timeout: 5s

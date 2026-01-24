@@ -13,13 +13,11 @@ import type { VillaMessage, ParentMessage, VillaErrorCode } from "./types";
  * The SDK can be used on ANY domain, but it only accepts auth responses from Villa.
  */
 export const ALLOWED_ORIGINS = [
+  "https://key.villa.cash",
+  "https://fake-key.villa.cash",
   "https://villa.cash",
   "https://www.villa.cash",
-  "https://beta.villa.cash",
-  "https://dev-1.villa.cash",
-  "https://dev-2.villa.cash",
-  "https://key.villa.cash",
-  "https://beta-key.villa.cash",
+  "https://construction.villa.cash",
 ] as const;
 
 /**
@@ -27,14 +25,18 @@ export const ALLOWED_ORIGINS = [
  */
 export const DEV_ORIGINS = [
   "https://local.villa.cash",
+  "https://local-key.villa.cash",
+  "https://local-docs.villa.cash",
   "https://localhost",
   "https://localhost:3000",
   "https://localhost:3001",
-  "https://localhost:443",
+  "https://localhost:3002",
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://localhost:3002",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3001",
+  "http://127.0.0.1:3002",
 ] as const;
 
 /**

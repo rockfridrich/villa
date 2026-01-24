@@ -28,8 +28,27 @@ local.villa.cash:443 {
     }
 }
 
-# Key app: local-key.villa.cash
+# Key app: local-key.villa.cash -> port 3001
 local-key.villa.cash:443 {
+    tls internal
+
+    header {
+        X-Forwarded-Proto https
+        X-Villa-Env local
+    }
+
+    @health path /caddy-health
+    handle @health {
+        respond "OK" 200
+    }
+
+    handle {
+        reverse_proxy host.docker.internal:3001
+    }
+}
+
+# Docs app: local-docs.villa.cash -> port 3002
+local-docs.villa.cash:443 {
     tls internal
 
     header {

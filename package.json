@@ -14,10 +14,13 @@
   },
   "scripts": {
     "dev": "turbo run dev --filter=@villa/hub",
+    "dev:all": "./scripts/dev-all.sh",
     "dev:local": "./scripts/dev.sh --local",
     "dev:https": "bun run --cwd apps/hub dev:https",
     "dev:docker": "docker compose --profile dev up -d && bun dev",
     "dev:docker:down": "docker compose down",
+    "dev:hub": "bun run --cwd apps/hub dev",
+    "dev:key": "bun run --cwd apps/key dev",
     "dev:developers": "bun run --cwd apps/developers dev",
     "dev:telemetry": "turbo run dev --filter=@villa/telemetry",
     "docker:dev": "docker compose --profile dev up -d",

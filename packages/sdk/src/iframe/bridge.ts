@@ -43,26 +43,18 @@ const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
 
 const AUTH_URLS = {
-  base: "https://villa.cash/auth",
-  "base-sepolia": "https://beta.villa.cash/auth",
+  base: "https://key.villa.cash/auth",
+  "base-sepolia": "https://fake-key.villa.cash/auth",
 } as const;
 
-/**
- * Get auth URL based on network and environment
- * In development: uses current origin (local.villa.cash or localhost)
- */
 function getAuthUrl(network: "base" | "base-sepolia"): string {
-  // In development, use the same origin as the current page
   if (isDevelopment() && typeof window !== "undefined") {
-    const { hostname, protocol, port } = window.location;
-    // local.villa.cash, localhost, or 127.0.0.1
-    if (
-      hostname === "local.villa.cash" ||
-      hostname === "localhost" ||
-      hostname === "127.0.0.1"
-    ) {
-      const portSuffix = port ? `:${port}` : "";
-      return `${protocol}//${hostname}${portSuffix}/auth`;
+    const { hostname } = window.location;
+    if (hostname === "local.villa.cash") {
+      return "https://local-key.villa.cash/auth";
+    }
+    if (hostname === "local-docs.villa.cash" || hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:3001/auth";
     }
   }
   return AUTH_URLS[network];
@@ -115,7 +107,7 @@ export class VillaBridge {
       network: config.network || "base",
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,
       debug: config.debug || false,
-      preferPopup: config.preferPopup || false,
+      preferPopup: config.preferPopup !== false,
       iframeDetectionTimeout:
         config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
     };

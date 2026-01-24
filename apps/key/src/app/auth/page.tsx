@@ -90,15 +90,12 @@ async function fetchProfile(address: string): Promise<ProfileData | null> {
 }
 
 const VILLA_ORIGINS = [
+  "https://key.villa.cash",
+  "https://fake-key.villa.cash",
   "https://villa.cash",
   "https://www.villa.cash",
-  "https://beta.villa.cash",
-  "https://dev-1.villa.cash",
-  "https://dev-2.villa.cash",
+  "https://construction.villa.cash",
   "https://docs.villa.cash",
-  "https://developers.villa.cash",
-  "https://key.villa.cash",
-  "https://beta-key.villa.cash",
 ] as const;
 
 const DEV_ORIGINS = [

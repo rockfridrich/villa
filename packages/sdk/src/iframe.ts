@@ -12,15 +12,12 @@ import type { Identity } from "./types";
  * HTTPS-only for security - passkeys require HTTPS anyway
  */
 const TRUSTED_ORIGINS = [
+  "https://key.villa.cash",
+  "https://fake-key.villa.cash",
   "https://villa.cash",
   "https://www.villa.cash",
-  "https://beta.villa.cash",
-  "https://dev-1.villa.cash",
-  "https://dev-2.villa.cash",
+  "https://construction.villa.cash",
   "https://docs.villa.cash",
-  "https://developers.villa.cash", // Legacy, redirect to docs.villa.cash
-  "https://key.villa.cash",
-  "https://beta-key.villa.cash",
   "https://localhost:3000",
   "https://localhost:3001",
 ] as const;

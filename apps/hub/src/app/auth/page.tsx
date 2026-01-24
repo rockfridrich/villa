@@ -19,17 +19,13 @@ import { VillaAuthScreen } from '@/components/sdk'
  * - origin: (optional) parent origin for secure postMessage targeting
  */
 
-// Villa-owned origins (always trusted, no query param needed)
 const VILLA_ORIGINS = [
+  'https://key.villa.cash',
+  'https://fake-key.villa.cash',
   'https://villa.cash',
   'https://www.villa.cash',
-  'https://beta.villa.cash',
-  'https://dev-1.villa.cash',
-  'https://dev-2.villa.cash',
+  'https://construction.villa.cash',
   'https://docs.villa.cash',
-  'https://developers.villa.cash',
-  'https://key.villa.cash',
-  'https://beta-key.villa.cash',
 ] as const
 
 // Development origins (localhost/local.villa.cash - NEVER use wildcard)
