@@ -88,3 +88,16 @@ costs/
 certificates/*.pem
 certificates/*.crt
 certificates/*.key
+
+# AI Tool Runtime Files
+.claude/ci-status.log
+.claude/settings.local.json
+.claude/archive/
+.beads/*.db
+.beads/*.db-*
+.beads/daemon.*
+.beads/bd.sock
+.beads/.local_version
+.beads/last-touched
+.opencode/node_modules/
+.opencode/bun.lock

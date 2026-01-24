@@ -1,0 +1,13 @@
+# Runtime files
+ci-status.log
+settings.local.json
+
+# Archive folder (keep but don't track all contents)
+archive/
+
+# Keep tracked
+!CLAUDE.md
+!LEARNINGS.md
+!agents/
+!knowledge/
+!.gitignore

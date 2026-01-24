@@ -1,0 +1,18 @@
+# Runtime/local files
+node_modules/
+bun.lock
+*.log
+
+# Keep tracked
+!agents/
+!protocols/
+!knowledge/
+!workflows/
+!templates/
+!specs/
+!tasks/
+!contributors/
+!OPENCODE.md
+!AGENT_COSTS.md
+!package.json
+!.gitignore
