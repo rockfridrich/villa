@@ -1,22 +1,51 @@
-# Villa SDK - LLM Integration
+# Villa SDK
 
 > Passkey authentication for apps. One line to integrate.
 
 ## Install
-npm install @rockfridrich/villa-sdk-react
 
-## Use
-```tsx
-import { VillaAuth } from '@rockfridrich/villa-sdk-react'
-
-<VillaAuth onComplete={(r) => r.success && console.log(r.identity)} />
+```bash
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
 ```
 
-## Full Context
-- CLAUDE.txt: https://docs.villa.cash/CLAUDE.txt
-- GitHub: https://raw.githubusercontent.com/rockfridrich/villa/main/apps/developers/public/CLAUDE.txt
+## Quick Start
 
-## What It Does
-- Passkey auth (Face ID, Touch ID, Windows Hello)
-- Returns: { address, nickname, avatar }
-- No passwords, no wallets, no config
+```tsx
+import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  const { user } = useVilla()
+  return user ? <p>@{user.nickname}</p> : <VillaButton />
+}
+```
+
+## Vanilla JS
+
+```typescript
+import { villa } from '@rockfridrich/villa-sdk'
+
+const user = await villa.signIn()
+console.log(user.address, user.nickname)
+```
+
+## What It Returns
+
+```typescript
+{
+  address: '0x...',   // Ethereum address from passkey
+  nickname: 'alice',  // User-chosen username
+  avatar: '...'       // Avatar URL
+}
+```
+
+## Framework Guides
+
+- [React](https://docs.villa.cash/llms-react.txt) - Hooks, components, patterns
+- [Next.js](https://docs.villa.cash/llms-nextjs.txt) - App Router, server actions
+- [Full API](https://docs.villa.cash/CLAUDE.txt) - Complete SDK reference
+
+## Links
+
+- Docs: https://docs.villa.cash
+- Playground: https://docs.villa.cash/playground
+- npm: https://www.npmjs.com/package/@rockfridrich/villa-sdk

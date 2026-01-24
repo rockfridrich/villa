@@ -1,21 +1,14 @@
 # Villa SDK
 
-> Privacy-first passkey authentication for Base network. No wallets. No passwords. Just Face ID.
+> Passkey authentication for apps. One line to integrate.
 
-## Quick Integration (3 lines)
+## Install
 
 ```bash
-npm install @rockfridrich/villa-sdk viem zod
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
 ```
 
-```typescript
-import { villa } from '@rockfridrich/villa-sdk'
-
-const user = await villa.signIn()
-console.log(user.address, user.nickname)
-```
-
-## React Integration
+## Quick Start
 
 ```tsx
 import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
@@ -26,29 +19,33 @@ function App() {
 }
 ```
 
-## API
+## Vanilla JS
 
-### Simple (Recommended)
-```ts
+```typescript
 import { villa } from '@rockfridrich/villa-sdk'
 
-await villa.signIn()    // Sign in
-villa.user              // Current user
-villa.signOut()         // Sign out
+const user = await villa.signIn()
+console.log(user.address, user.nickname)
 ```
 
-### Advanced (Custom Config)
-```ts
-import { Villa } from '@rockfridrich/villa-sdk'
-const client = new Villa({ appId: 'my-app', network: 'base' })
-```
+## What It Returns
 
-## Types
 ```typescript
-type VillaAuthResult =
-  | { success: true; identity: { address: string; nickname: string; avatar: AvatarConfig } }
-  | { success: false; error: string }
+{
+  address: '0x...',   // Ethereum address from passkey
+  nickname: 'alice',  // User-chosen username
+  avatar: '...'       // Avatar URL
+}
 ```
 
-## Docs
-https://docs.villa.cash
+## Framework Guides
+
+- [React](https://docs.villa.cash/llms-react.txt) - Hooks, components, patterns
+- [Next.js](https://docs.villa.cash/llms-nextjs.txt) - App Router, server actions
+- [Full API](https://docs.villa.cash/CLAUDE.txt) - Complete SDK reference
+
+## Links
+
+- Docs: https://docs.villa.cash
+- Playground: https://docs.villa.cash/playground
+- npm: https://www.npmjs.com/package/@rockfridrich/villa-sdk

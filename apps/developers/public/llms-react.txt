@@ -1,0 +1,252 @@
+# Villa SDK - React Integration
+
+> Passkey authentication for React apps. Works with Vite, Create React App, Remix.
+
+## Install
+
+```bash
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
+```
+
+## Simple API (Recommended)
+
+No provider needed. Just use the hook:
+
+```tsx
+import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  const { user, signOut, isLoading } = useVilla()
+
+  if (isLoading) return <div>Loading...</div>
+
+  if (!user) {
+    return (
+      <VillaButton 
+        onSignIn={(user) => console.log('Welcome', user.nickname)} 
+      />
+    )
+  }
+
+  return (
+    <div>
+      <img src={user.avatar} alt="" />
+      <p>@{user.nickname}</p>
+      <p>{user.address}</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  )
+}
+```
+
+## useVilla Hook
+
+```typescript
+const { 
+  user,           // VillaUser | null
+  signIn,         // () => Promise<VillaUser>
+  signOut,        // () => void
+  isAuthenticated,// boolean
+  isLoading       // boolean
+} = useVilla()
+```
+
+## VillaButton Component
+
+```tsx
+<VillaButton 
+  onSignIn={(user) => {}}   // Called after successful sign in
+  onSignOut={() => {}}      // Called after sign out
+  className=""              // Optional custom class
+/>
+```
+
+## Provider Pattern (Advanced)
+
+For apps needing custom configuration:
+
+```tsx
+import { 
+  VillaProvider, 
+  VillaAuth, 
+  useIdentity, 
+  useAuth 
+} from '@rockfridrich/villa-sdk-react'
+
+function App() {
+  return (
+    <VillaProvider config={{ appId: 'my-app', network: 'base' }}>
+      <AuthenticatedApp />
+    </VillaProvider>
+  )
+}
+
+function AuthenticatedApp() {
+  const identity = useIdentity()
+  const { signOut, isLoading } = useAuth()
+
+  if (!identity) {
+    return <VillaAuth onComplete={(r) => r.success && console.log(r.identity)} />
+  }
+
+  return (
+    <div>
+      <h1>Welcome, @{identity.nickname}!</h1>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  )
+}
+```
+
+## Hooks Reference
+
+```typescript
+// Simple API (no provider)
+import { useVilla } from '@rockfridrich/villa-sdk-react'
+
+// Provider API
+import { useIdentity, useAuth, useVillaConfig } from '@rockfridrich/villa-sdk-react'
+
+const identity = useIdentity()  // Identity | null
+const { signIn, signOut, isAuthenticated, isLoading } = useAuth()
+const config = useVillaConfig() // VillaConfig
+```
+
+## Components Reference
+
+```tsx
+// Simple button (handles full flow)
+<VillaButton 
+  onSignIn={(user) => {}} 
+  onSignOut={() => {}} 
+/>
+
+// Full auth component (provider API)
+<VillaAuth 
+  onComplete={(result) => {}}
+  buttonText="Sign In with Villa"
+/>
+
+// Avatar display
+<Avatar identity={user} size={48} />
+
+// Avatar preview/picker
+<AvatarPreview
+  walletAddress="0x..."
+  selection="female"
+  variant={2}
+  size={64}
+/>
+```
+
+## Protected Route Pattern
+
+```tsx
+import { useVilla } from '@rockfridrich/villa-sdk-react'
+import { Navigate } from 'react-router-dom'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useVilla()
+  
+  if (isLoading) return <div>Loading...</div>
+  if (!user) return <Navigate to="/login" replace />
+  
+  return <>{children}</>
+}
+
+// Usage
+<Route path="/dashboard" element={
+  <ProtectedRoute>
+    <Dashboard />
+  </ProtectedRoute>
+} />
+```
+
+## Auth State Listener
+
+```tsx
+import { useEffect } from 'react'
+import { villa } from '@rockfridrich/villa-sdk'
+
+function AuthListener() {
+  useEffect(() => {
+    const unsubscribe = villa.onAuthChange((user) => {
+      if (user) {
+        console.log('Signed in:', user.nickname)
+        analytics.identify(user.address)
+      } else {
+        console.log('Signed out')
+        analytics.reset()
+      }
+    })
+    return unsubscribe
+  }, [])
+
+  return null
+}
+```
+
+## TypeScript Types
+
+```typescript
+interface VillaUser {
+  address: `0x${string}`
+  nickname: string
+  avatar: string  // URL
+}
+
+interface Identity {
+  address: `0x${string}`
+  nickname: string
+  avatar: AvatarConfig
+}
+
+interface AvatarConfig {
+  style: 'adventurer' | 'avataaars' | 'bottts' | 'thumbs'
+  seed: string
+}
+
+type VillaAuthResult = 
+  | { success: true; identity: Identity }
+  | { success: false; error: string; code: SignInErrorCode }
+
+type SignInErrorCode = 
+  | 'CANCELLED'      // User closed
+  | 'TIMEOUT'        // Too slow
+  | 'NETWORK_ERROR'  // Connection failed
+  | 'AUTH_ERROR'     // General error
+```
+
+## Error Handling
+
+```tsx
+function LoginPage() {
+  const { signIn } = useVilla()
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSignIn = async () => {
+    try {
+      await signIn()
+    } catch (err) {
+      if (err.message === 'CANCELLED') {
+        // User closed - expected, ignore
+        return
+      }
+      setError('Sign in failed. Please try again.')
+    }
+  }
+
+  return (
+    <div>
+      {error && <p className="error">{error}</p>}
+      <button onClick={handleSignIn}>Sign In</button>
+    </div>
+  )
+}
+```
+
+## Links
+
+- Full docs: https://docs.villa.cash
+- Playground: https://docs.villa.cash/playground
+- Next.js guide: https://docs.villa.cash/llms-nextjs.txt

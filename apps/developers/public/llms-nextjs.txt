@@ -1,0 +1,383 @@
+# Villa SDK - Next.js Integration
+
+> Passkey authentication for Next.js 13+ App Router. Server Components compatible.
+
+## Install
+
+```bash
+npm install @rockfridrich/villa-sdk @rockfridrich/villa-sdk-react viem zod
+```
+
+## Quick Setup (App Router)
+
+### 1. Create Providers (Client Component)
+
+```tsx
+// app/providers.tsx
+'use client'
+
+import { VillaProvider } from '@rockfridrich/villa-sdk-react'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <VillaProvider config={{ appId: 'my-nextjs-app', network: 'base' }}>
+      {children}
+    </VillaProvider>
+  )
+}
+```
+
+### 2. Wrap Layout
+
+```tsx
+// app/layout.tsx
+import { Providers } from './providers'
+
+export default function RootLayout({ 
+  children 
+}: { 
+  children: React.ReactNode 
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+### 3. Use in Pages (Client Components)
+
+```tsx
+// app/page.tsx
+'use client'
+
+import { useIdentity, VillaAuth } from '@rockfridrich/villa-sdk-react'
+
+export default function Home() {
+  const identity = useIdentity()
+
+  if (!identity) {
+    return (
+      <main>
+        <h1>Welcome to My App</h1>
+        <VillaAuth onComplete={(r) => r.success && console.log(r.identity)} />
+      </main>
+    )
+  }
+
+  return (
+    <main>
+      <h1>Welcome, @{identity.nickname}!</h1>
+      <p>Address: {identity.address}</p>
+    </main>
+  )
+}
+```
+
+## Simple API (No Provider)
+
+For simpler apps, skip the provider:
+
+```tsx
+// app/page.tsx
+'use client'
+
+import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+
+export default function Home() {
+  const { user, signOut } = useVilla()
+
+  if (!user) {
+    return <VillaButton onSignIn={(u) => console.log('Welcome', u.nickname)} />
+  }
+
+  return (
+    <div>
+      <p>@{user.nickname}</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  )
+}
+```
+
+## Protected Routes
+
+### Middleware Approach (Recommended)
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // Villa stores session in localStorage (client-side only)
+  // For server-side protection, use API route verification
+  // or check auth state in the page component
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: '/dashboard/:path*'
+}
+```
+
+### Client-Side Protection
+
+```tsx
+// app/dashboard/page.tsx
+'use client'
+
+import { useIdentity } from '@rockfridrich/villa-sdk-react'
+import { redirect } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function Dashboard() {
+  const identity = useIdentity()
+
+  useEffect(() => {
+    if (identity === null) {
+      redirect('/login')
+    }
+  }, [identity])
+
+  if (!identity) {
+    return <div>Loading...</div>
+  }
+
+  return <h1>Dashboard for @{identity.nickname}</h1>
+}
+```
+
+### Protected Layout Pattern
+
+```tsx
+// app/(protected)/layout.tsx
+'use client'
+
+import { useIdentity } from '@rockfridrich/villa-sdk-react'
+import { redirect } from 'next/navigation'
+
+export default function ProtectedLayout({ 
+  children 
+}: { 
+  children: React.ReactNode 
+}) {
+  const identity = useIdentity()
+
+  if (!identity) {
+    redirect('/login')
+  }
+
+  return <>{children}</>
+}
+```
+
+## API Routes
+
+### Verify Villa Identity
+
+```typescript
+// app/api/user/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  // Get address from header (client sends it)
+  const address = request.headers.get('x-villa-address')
+  
+  if (!address) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  // Fetch user data from your database
+  const user = await db.users.findByAddress(address)
+  
+  return NextResponse.json({ user })
+}
+```
+
+### Client-Side API Call
+
+```tsx
+'use client'
+
+import { useIdentity } from '@rockfridrich/villa-sdk-react'
+
+function Dashboard() {
+  const identity = useIdentity()
+
+  const fetchData = async () => {
+    const response = await fetch('/api/user', {
+      headers: {
+        'x-villa-address': identity?.address || ''
+      }
+    })
+    return response.json()
+  }
+
+  // ...
+}
+```
+
+## Server Actions (Experimental)
+
+```typescript
+// app/actions.ts
+'use server'
+
+export async function saveProfile(formData: FormData) {
+  const address = formData.get('address') as string
+  const bio = formData.get('bio') as string
+
+  // Save to database
+  await db.profiles.upsert({
+    address,
+    bio,
+    updatedAt: new Date()
+  })
+
+  return { success: true }
+}
+```
+
+```tsx
+// app/profile/page.tsx
+'use client'
+
+import { useIdentity } from '@rockfridrich/villa-sdk-react'
+import { saveProfile } from '../actions'
+
+export default function ProfilePage() {
+  const identity = useIdentity()
+
+  return (
+    <form action={saveProfile}>
+      <input type="hidden" name="address" value={identity?.address} />
+      <textarea name="bio" placeholder="Your bio" />
+      <button type="submit">Save</button>
+    </form>
+  )
+}
+```
+
+## Environment Variables
+
+```bash
+# .env.local
+NEXT_PUBLIC_VILLA_APP_ID=my-nextjs-app
+NEXT_PUBLIC_VILLA_NETWORK=base  # or base-sepolia for testing
+```
+
+```tsx
+// app/providers.tsx
+'use client'
+
+import { VillaProvider } from '@rockfridrich/villa-sdk-react'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <VillaProvider config={{ 
+      appId: process.env.NEXT_PUBLIC_VILLA_APP_ID!,
+      network: process.env.NEXT_PUBLIC_VILLA_NETWORK as 'base' | 'base-sepolia'
+    }}>
+      {children}
+    </VillaProvider>
+  )
+}
+```
+
+## Common Patterns
+
+### Auth State in Header
+
+```tsx
+// components/Header.tsx
+'use client'
+
+import { useVilla } from '@rockfridrich/villa-sdk-react'
+import Link from 'next/link'
+
+export function Header() {
+  const { user, signOut } = useVilla()
+
+  return (
+    <header>
+      <Link href="/">Home</Link>
+      {user ? (
+        <div>
+          <span>@{user.nickname}</span>
+          <button onClick={signOut}>Sign Out</button>
+        </div>
+      ) : (
+        <Link href="/login">Sign In</Link>
+      )}
+    </header>
+  )
+}
+```
+
+### Login Page
+
+```tsx
+// app/login/page.tsx
+'use client'
+
+import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function LoginPage() {
+  const { user } = useVilla()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  return (
+    <main>
+      <h1>Sign In</h1>
+      <VillaButton onSignIn={() => router.push('/dashboard')} />
+    </main>
+  )
+}
+```
+
+## TypeScript
+
+Villa SDK is fully typed. Key types:
+
+```typescript
+interface Identity {
+  address: `0x${string}`
+  nickname: string
+  avatar: AvatarConfig
+}
+
+interface VillaUser {
+  address: `0x${string}`
+  nickname: string
+  avatar: string  // URL
+}
+```
+
+## Important Notes
+
+1. **Client Components Only**: Villa SDK uses browser APIs (localStorage, postMessage). Always use `'use client'` directive.
+
+2. **Hydration**: The SDK handles hydration automatically. Initial render shows loading state.
+
+3. **Session Storage**: Sessions are stored in localStorage with 7-day TTL.
+
+4. **HTTPS Required**: Passkeys require HTTPS. Use `next dev --experimental-https` for local testing.
+
+## Links
+
+- Full docs: https://docs.villa.cash
+- Playground: https://docs.villa.cash/playground
+- React guide: https://docs.villa.cash/llms-react.txt
+- Core SDK: https://docs.villa.cash/CLAUDE.txt
