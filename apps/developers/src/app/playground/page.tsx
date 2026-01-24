@@ -1,373 +1,314 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Play, Trash2, User, LogOut, Settings, Globe, Copy, Check } from "lucide-react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowRight, 
+  Terminal, 
+  User, 
+  Zap, 
+  Shield, 
+  Code2, 
+  Sparkles,
+  LogOut,
+  Fingerprint,
+  CheckCircle2
+} from "lucide-react";
 import { villa, type VillaUser } from "@rockfridrich/villa-sdk";
+import { CodeBlock } from "../../components/code";
 
-interface LogEntry {
-  id: number;
-  timestamp: Date;
-  type: "info" | "success" | "error" | "warn";
-  method: string;
-  args?: unknown[];
-  result?: unknown;
-  duration?: number;
-}
-
-const EXAMPLES = {
-  "sign-in": {
-    title: "Sign In",
-    description: "Authenticate with passkey",
-    code: `// Sign in with Villa passkey
-const user = await villa.signIn()
-
-console.log('Welcome!', user.nickname)
-console.log('Address:', user.address)
-console.log('Avatar:', user.avatar)`,
-    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number, updateLog: (id: number, u: Partial<LogEntry>) => void) => {
-      const start = Date.now();
-      const logId = addLog({ type: "info", method: "villa.signIn()" });
-      try {
-        const user = await villa.signIn();
-        updateLog(logId, {
-          type: "success",
-          result: { nickname: user.nickname, address: user.address },
-          duration: Date.now() - start,
-        });
-        return user;
-      } catch (err) {
-        updateLog(logId, {
-          type: "error",
-          result: err instanceof Error ? err.message : "Unknown error",
-          duration: Date.now() - start,
-        });
-        throw err;
-      }
-    },
-  },
-  "get-user": {
-    title: "Get User",
-    description: "Check current session",
-    code: `// Get current user (from localStorage)
-const user = villa.user
-
-if (user) {
-  console.log('Signed in as:', user.nickname)
-  console.log('Address:', user.address)
-} else {
-  console.log('Not signed in')
-}`,
-    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
-      const user = villa.user;
-      addLog({
-        type: user ? "success" : "warn",
-        method: "villa.user",
-        result: user ? { nickname: user.nickname, address: user.address } : "Not signed in",
-      });
-      return user;
-    },
-  },
-  "sign-out": {
-    title: "Sign Out",
-    description: "Clear session",
-    code: `// Sign out and clear session
-villa.signOut()
-
-console.log('Signed out')
-console.log('User:', villa.user) // null`,
-    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
-      villa.signOut();
-      addLog({
-        type: "success",
-        method: "villa.signOut()",
-        result: "Session cleared",
-      });
-      return null;
-    },
-  },
-  "settings": {
-    title: "Settings",
-    description: "Open profile settings",
-    code: `// Open settings modal (requires sign-in)
-const result = await villa.settings()
-
-if (result.loggedOut) {
-  console.log('User logged out from settings')
-} else {
-  console.log('Settings updated:', result)
-}`,
-    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number, updateLog: (id: number, u: Partial<LogEntry>) => void) => {
-      const start = Date.now();
-      const logId = addLog({ type: "info", method: "villa.settings()" });
-      try {
-        const result = await villa.settings();
-        updateLog(logId, {
-          type: "success",
-          result,
-          duration: Date.now() - start,
-        });
-        return result;
-      } catch (err) {
-        updateLog(logId, {
-          type: "error",
-          result: err instanceof Error ? err.message : "Unknown error",
-          duration: Date.now() - start,
-        });
-        throw err;
-      }
-    },
-  },
-  "auth-change": {
-    title: "Auth Listener",
-    description: "Subscribe to auth changes",
-    code: `// Listen for auth state changes
-const unsubscribe = villa.onAuthChange((user) => {
-  if (user) {
-    console.log('User signed in:', user.nickname)
-  } else {
-    console.log('User signed out')
-  }
-})
-
-// Later: unsubscribe()`,
-    run: async (addLog: (e: Omit<LogEntry, "id" | "timestamp">) => number) => {
-      addLog({
-        type: "info",
-        method: "villa.onAuthChange(callback)",
-        result: "Listener registered - sign in/out to see events",
-      });
-      return null;
-    },
-  },
-} as const;
-
-type ExampleKey = keyof typeof EXAMPLES;
+const FADE_UP = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 }
+};
 
 export default function PlaygroundPage() {
-  const [selectedExample, setSelectedExample] = useState<ExampleKey>("sign-in");
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
   const [user, setUser] = useState<VillaUser | null>(null);
-  const [copied, setCopied] = useState(false);
-  const logIdRef = useRef(0);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
-
-  useEffect(() => {
-    const unsubscribe = villa.onAuthChange((u) => {
+    return villa.onAuthChange((u) => {
       setUser(u);
-      if (logs.length > 0) {
-        addLog({
-          type: u ? "success" : "warn",
-          method: "onAuthChange",
-          result: u ? { nickname: u.nickname, address: u.address } : "Signed out",
-        });
-      }
     });
-    return unsubscribe;
   }, []);
 
-  const addLog = useCallback((entry: Omit<LogEntry, "id" | "timestamp">) => {
-    const newLog: LogEntry = {
-      ...entry,
-      id: logIdRef.current++,
-      timestamp: new Date(),
-    };
-    setLogs((prev) => [...prev, newLog]);
-    return newLog.id;
-  }, []);
-
-  const updateLog = useCallback((id: number, updates: Partial<LogEntry>) => {
-    setLogs((prev) => prev.map((log) => (log.id === id ? { ...log, ...updates } : log)));
-  }, []);
-
-  const clearLogs = useCallback(() => {
-    setLogs([]);
-    logIdRef.current = 0;
-  }, []);
-
-  const handleRun = useCallback(async () => {
-    setIsRunning(true);
+  const handleSignIn = async () => {
+    setIsLoading(true);
     try {
-      const example = EXAMPLES[selectedExample];
-      await example.run(addLog, updateLog);
-    } catch {
+      await villa.signIn();
+    } catch (err) {
+      console.error(err);
     } finally {
-      setIsRunning(false);
+      setIsLoading(false);
     }
-  }, [selectedExample, addLog, updateLog]);
+  };
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(EXAMPLES[selectedExample].code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [selectedExample]);
-
-  const currentExample = EXAMPLES[selectedExample];
+  const handleSignOut = async () => {
+    await villa.signOut();
+  };
 
   return (
-    <div className="min-h-screen">
-      <section className="py-8">
-        <div className="max-w-6xl mx-auto space-y-2">
-          <h1 className="font-serif text-4xl tracking-tight">SDK Playground</h1>
-          <p className="text-ink-muted">
-            Test Villa SDK methods directly. Real passkey authentication on Base Sepolia.
-          </p>
-        </div>
-      </section>
+    <div className="min-h-screen bg-cream-50 text-ink selection:bg-accent-yellow/30">
+      {/* Background decoration */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full bg-accent-yellow/5 blur-3xl" />
+        <div className="absolute top-[40%] -left-[10%] w-[500px] h-[500px] rounded-full bg-accent-green/5 blur-3xl" />
+      </div>
 
-      <section className="pb-12">
-        <div className="max-w-6xl mx-auto">
-          {user && (
-            <div className="mb-6 flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <img src={user.avatar} alt="" className="w-10 h-10 rounded-full" />
-              <div className="flex-1">
-                <p className="font-medium text-green-900">@{user.nickname}</p>
-                <p className="text-xs text-green-700 font-mono">{user.address}</p>
-              </div>
-              <button
-                onClick={() => villa.signOut()}
-                className="p-2 text-green-700 hover:bg-green-100 rounded-lg transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+      <main className="relative max-w-6xl mx-auto px-6 pt-24 pb-20">
+        
+        {/* Hero Section */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-ink/5 shadow-sm text-sm font-medium text-ink/80 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-accent-yellow fill-accent-yellow" />
+              <span>SDK Playground</span>
             </div>
-          )}
-
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(EXAMPLES) as ExampleKey[]).map((key) => {
-                  const ex = EXAMPLES[key];
-                  const Icon = key === "sign-in" ? User : key === "sign-out" ? LogOut : key === "settings" ? Settings : Globe;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedExample(key)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        selectedExample === key
-                          ? "bg-accent-yellow text-ink"
-                          : "bg-cream-100 text-ink-muted hover:bg-cream-200"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {ex.title}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="relative">
-                <div className="absolute top-3 right-3 z-10 flex gap-2">
-                  <button
-                    onClick={handleCopy}
-                    className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded transition-colors"
-                    title="Copy code"
-                  >
-                    {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-neutral-400" />}
-                  </button>
-                </div>
-                <div className="bg-[#282c34] rounded-lg overflow-hidden border border-ink/10">
-                  <div className="px-4 py-2 border-b border-ink/10 flex items-center justify-between">
-                    <span className="text-xs text-neutral-400">{currentExample.description}</span>
-                  </div>
-                  <SyntaxHighlighter
-                    language="typescript"
-                    style={oneDark}
-                    customStyle={{
-                      margin: 0,
-                      padding: "1rem",
-                      fontSize: "0.875rem",
-                      lineHeight: "1.6",
-                      backgroundColor: "transparent",
-                      minHeight: "200px",
-                    }}
-                  >
-                    {currentExample.code}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-
-              <button
-                onClick={handleRun}
-                disabled={isRunning}
-                className="w-full flex items-center justify-center gap-2 bg-accent-yellow text-ink font-medium px-4 py-3 rounded-lg hover:bg-accent-yellow/90 transition-colors disabled:opacity-50"
-              >
-                <Play className="w-4 h-4" />
-                {isRunning ? "Running..." : "Run"}
-              </button>
+            
+            <div className="space-y-6">
+              <h1 className="font-serif text-5xl sm:text-7xl tracking-tight text-ink leading-[1.1]">
+                Auth for the <br />
+                <span className="text-ink/30 italic">next generation</span>
+              </h1>
+              <p className="text-xl text-ink-muted leading-relaxed max-w-lg">
+                Add passkey authentication to your app in minutes. 
+                Zero backend. Zero config. Just pure UX.
+              </p>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-ink-muted">Console</h2>
-                <button
-                  onClick={clearLogs}
-                  className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink transition-colors"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  Clear
-                </button>
-              </div>
-
-              <div className="bg-[#1e1e1e] rounded-lg border border-ink/10 min-h-[400px] max-h-[500px] overflow-y-auto">
-                {logs.length === 0 ? (
-                  <div className="flex items-center justify-center h-[400px] text-neutral-500 text-sm">
-                    Click Run to execute SDK method
-                  </div>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <button 
+                onClick={handleSignIn}
+                disabled={!!user || isLoading}
+                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-ink text-white rounded-xl font-medium text-lg shadow-lg shadow-ink/10 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {user ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-accent-green" />
+                    <span>Signed In</span>
+                  </>
                 ) : (
-                  <div className="p-3 space-y-2 font-mono text-sm">
-                    {logs.map((log) => (
-                      <div
-                        key={log.id}
-                        className={`p-2 rounded ${
-                          log.type === "error"
-                            ? "bg-red-900/30 border-l-2 border-red-500"
-                            : log.type === "success"
-                            ? "bg-green-900/30 border-l-2 border-green-500"
-                            : log.type === "warn"
-                            ? "bg-yellow-900/30 border-l-2 border-yellow-500"
-                            : "bg-neutral-800/50 border-l-2 border-neutral-600"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 text-xs text-neutral-400 mb-1">
-                          <span>{log.timestamp.toLocaleTimeString()}</span>
-                          {log.duration !== undefined && (
-                            <span className="px-1.5 py-0.5 bg-neutral-700 rounded">{log.duration}ms</span>
-                          )}
-                        </div>
-                        <div className="text-blue-400">{log.method}</div>
-                        {log.result !== undefined && (
-                          <pre className="mt-1 text-xs text-neutral-300 overflow-x-auto">
-                            {typeof log.result === "string" ? log.result : JSON.stringify(log.result, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    ))}
-                    <div ref={logsEndRef} />
-                  </div>
+                  <>
+                    <Fingerprint className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>{isLoading ? "Signing in..." : "Try Live Demo"}</span>
+                  </>
                 )}
+              </button>
+              <a 
+                href="/docs" 
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border border-ink/10 rounded-xl font-medium text-lg text-ink hover:bg-cream-50 transition-colors"
+              >
+                Read Docs
+              </a>
+            </div>
+          </motion.div>
+
+          {/* Interactive Demo Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative"
+          >
+            <div className="relative z-10 bg-white rounded-3xl border border-ink/5 shadow-villa-lg overflow-hidden backdrop-blur-xl">
+              <div className="px-6 py-4 border-b border-ink/5 bg-cream-50/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ink/10" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-ink/10" />
+                  </div>
+                  <span className="text-xs font-mono text-ink-muted ml-2">demo.tsx</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${user ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`} />
+                  <span className="text-xs font-medium text-ink-muted">
+                    {user ? 'Connected' : 'Waiting for user'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-8 min-h-[300px] flex flex-col items-center justify-center text-center">
+                <AnimatePresence mode="wait">
+                  {user ? (
+                    <motion.div
+                      key="signed-in"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="w-full max-w-sm space-y-6"
+                    >
+                      <div className="relative w-24 h-24 mx-auto">
+                        <img 
+                          src={user.avatar} 
+                          alt={user.nickname} 
+                          className="w-full h-full rounded-full border-4 border-white shadow-villa object-cover"
+                        />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-ink/5">
+                          <img src="/logo.svg" className="w-5 h-5" alt="Villa" onError={(e) => e.currentTarget.style.display = 'none'} />
+                          <Fingerprint className="w-4 h-4 text-accent-green" />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <h3 className="text-2xl font-serif text-ink">
+                          Welcome, <span className="text-accent-brown">@{user.nickname}</span>
+                        </h3>
+                        <p className="font-mono text-xs text-ink-muted truncate bg-ink/5 py-1 px-3 rounded-full mx-auto max-w-[200px]">
+                          {user.address}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <button 
+                          onClick={() => villa.settings()}
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-ink/10 rounded-lg text-sm font-medium hover:bg-cream-50 transition-colors"
+                        >
+                          Settings
+                        </button>
+                        <button 
+                          onClick={handleSignOut}
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium hover:bg-red-100/50 transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="signed-out"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="space-y-6 max-w-xs"
+                    >
+                      <div className="w-20 h-20 bg-ink/5 rounded-2xl mx-auto flex items-center justify-center rotate-3">
+                        <User className="w-10 h-10 text-ink/20" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-medium text-ink">Not Signed In</h3>
+                        <p className="text-sm text-ink-muted">
+                          Click the button on the left to experience the seamless passkey flow.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Code peek under the hood */}
+              <div className="bg-[#1e1e1e] p-4 border-t border-ink/5">
+                <div className="font-mono text-xs text-white/50 mb-2">Current State</div>
+                <pre className="font-mono text-xs text-white/80 overflow-x-auto">
+                  {user 
+                    ? JSON.stringify({ nickname: user.nickname, address: user.address, verified: true }, null, 2)
+                    : "// Waiting for authentication..."}
+                </pre>
               </div>
             </div>
+            
+            {/* Decoration dots */}
+            <div className="absolute -z-10 -bottom-4 -right-4 w-full h-full border-2 border-dashed border-ink/10 rounded-3xl" />
+          </motion.div>
+        </div>
+
+        {/* Features Grid */}
+        <section className="mb-32">
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Fingerprint,
+                title: "Passkey Native",
+                desc: "Built from the ground up for the WebAuthn standard. Biometric security by default."
+              },
+              {
+                icon: Zap,
+                title: "Zero Config",
+                desc: "No backend to configure. No database schemas. Just drop the SDK in and go."
+              },
+              {
+                icon: User,
+                title: "User Profiles",
+                desc: "Integrated profile management, avatars, and settings UI out of the box."
+              }
+            ].map((feature, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-8 rounded-2xl bg-white border border-ink/5 shadow-villa hover:shadow-villa-lg transition-all duration-300 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-cream-100 text-ink flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif text-2xl text-ink mb-3">{feature.title}</h3>
+                <p className="text-ink-muted leading-relaxed">
+                  {feature.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Integration Section */}
+        <section className="space-y-12">
+          <div className="text-center max-w-2xl mx-auto space-y-4">
+            <h2 className="font-serif text-4xl text-ink">Ready to integrate?</h2>
+            <p className="text-ink-muted text-lg">
+              Two lines of code to get started. It really is that simple.
+            </p>
           </div>
 
-          <div className="mt-8 p-4 bg-cream-100 border border-ink/5 rounded-lg">
-            <h3 className="font-medium mb-2">How it works</h3>
-            <ul className="text-sm text-ink-muted space-y-1">
-              <li>SDK opens popup to <code className="px-1 bg-cream-200 rounded">key.villa.cash/auth</code></li>
-              <li>User authenticates with device passkey (FaceID/TouchID)</li>
-              <li>Identity returned via postMessage, stored in localStorage</li>
-              <li>Session persists for 7 days</li>
-            </ul>
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-ink font-medium">
+                <div className="w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center text-xs">1</div>
+                <h3>Install the SDK</h3>
+              </div>
+              <CodeBlock 
+                language="bash" 
+                code="npm install @rockfridrich/villa-sdk" 
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-ink font-medium">
+                <div className="w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center text-xs">2</div>
+                <h3>Sign in user</h3>
+              </div>
+              <CodeBlock 
+                language="typescript" 
+                code={`import { villa } from "@rockfridrich/villa-sdk";
+
+// Trigger the passkey flow
+const user = await villa.signIn();
+
+console.log(user.nickname); // "alice"`} 
+              />
+            </div>
           </div>
-        </div>
-      </section>
+          
+          <div className="flex justify-center pt-8">
+             <a 
+                href="/docs" 
+                className="group inline-flex items-center gap-2 px-6 py-3 bg-white border border-ink/10 rounded-full font-medium text-ink hover:bg-cream-50 transition-colors shadow-sm"
+              >
+                <Code2 className="w-4 h-4" />
+                <span>View Full Documentation</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </a>
+          </div>
+        </section>
+
+      </main>
     </div>
   );
 }

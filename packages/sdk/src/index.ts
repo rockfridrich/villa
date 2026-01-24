@@ -124,6 +124,37 @@ export type {
   Result,
 } from "./types";
 
+// Domain types - Villa-native language hiding Web3 complexity
+export {
+  createAmount,
+  defineConfig,
+} from "./domain";
+export type {
+  Account,
+  Amount,
+  ActionType,
+  ActionStatus,
+  Action,
+  Receipt,
+  ApprovalRequest,
+  AppInfo,
+  Scope as DomainScope,
+  SharedNamespace,
+  Contact,
+  Favorite,
+  HistoryEntry,
+  Achievement,
+  Membership,
+  SharedSchemas,
+  NetworkConfig,
+  AuthConfig,
+  CloudConfig,
+  ThemeConfig,
+  AdvancedConfig,
+  VillaSDKConfig,
+  VillaCloudClient,
+} from "./domain";
+
 // WebAuthn types - authentication primitives
 export type {
   WebAuthnCredential,
