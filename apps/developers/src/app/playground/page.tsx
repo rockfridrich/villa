@@ -360,7 +360,7 @@ export default function PlaygroundPage() {
           <div className="mt-8 p-4 bg-cream-100 border border-ink/5 rounded-lg">
             <h3 className="font-medium mb-2">How it works</h3>
             <ul className="text-sm text-ink-muted space-y-1">
-              <li>SDK opens fullscreen iframe to <code className="px-1 bg-cream-200 rounded">villa.cash/auth</code></li>
+              <li>SDK opens popup to <code className="px-1 bg-cream-200 rounded">key.villa.cash/auth</code></li>
               <li>User authenticates with device passkey (FaceID/TouchID)</li>
               <li>Identity returned via postMessage, stored in localStorage</li>
               <li>Session persists for 7 days</li>
