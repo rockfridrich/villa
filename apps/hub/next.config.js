@@ -143,9 +143,41 @@ const nextConfig = {
           },
         ],
       },
-      // HTML pages (excluding /auth) - strict security headers
+      // /sdk-demo route - ALLOW iframe embedding for docs playground
       {
-        source: "/:path((?!api|_next|auth).*)",
+        source: "/sdk-demo",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              "publickey-credentials-get=*, publickey-credentials-create=*",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh",
+              "frame-src 'self' https://id.porto.sh",
+              `frame-ancestors ${authFrameAncestors}`,
+            ].join("; "),
+          },
+        ],
+      },
+      // HTML pages (excluding /auth, /sdk-demo) - strict security headers
+      {
+        source: "/:path((?!api|_next|auth|sdk-demo).*)",
         headers: [
           {
             key: "X-Frame-Options",
