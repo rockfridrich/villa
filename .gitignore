@@ -73,3 +73,18 @@ yarn.lock
 examples/*/node_modules/
 examples/*/.next/
 examples/*/.turbo/
+
+# Build artifacts
+test-results/
+*.tsbuildinfo
+
+# Local backups
+backups/
+
+# Cost tracking
+costs/
+
+# Local certificates (generated)
+certificates/*.pem
+certificates/*.crt
+certificates/*.key
