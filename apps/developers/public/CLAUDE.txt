@@ -373,7 +373,7 @@ After successful authentication:
 - `VillaBridge` - - Debug logging (opt-in) /
 - `Villa` - ``` /
 
-### Functions (71)
+### Functions (73)
 
 - `signIn` - /
 - `signOut` - Clears session from localStorage and memory. /
@@ -396,6 +396,8 @@ After successful authentication:
 - `isValidPrivateKey` - /
 - `secureClear` - /
 - `createLocalStorage` - - Hardware security modules /
+- `createAmount` - Create an Amount from a numeric value /
+- `defineConfig` - Create SDK configuration with sensible defaults /
 - `createAuthIframe` - /
 - `destroyAuthIframe` - Removes auth iframe from DOM /
 - `postMessage` - /
@@ -447,7 +449,7 @@ After successful authentication:
 - `getRecoverySignerAddress` - /
 - `isDeployed`
 
-### Types & Interfaces (56)
+### Types & Interfaces (79)
 
 - `AuthOptions`
 - `BrowserCapabilities`
@@ -459,6 +461,29 @@ After successful authentication:
 - `WalletResult` - Wallet generation result /
 - `EncryptionOptions` - Options for wallet encryption /
 - `WalletStorage` - Storage interface for wallet backups /
+- `Account` - Abstracts wallet/address complexity into familiar web concepts /
+- `Amount` - Never exposes raw blockchain units to developers /
+- `Action` - Replaces "transaction" terminology /
+- `Receipt` - Receipt - Proof that an action completed /
+- `ApprovalRequest` - Approval request - When an app needs user permission /
+- `AppInfo` - App info - Third-party application details /
+- `Contact` - Contact entry in shared namespace /
+- `Favorite` - Favorite entry in shared namespace /
+- `HistoryEntry` - History entry in shared namespace /
+- `Achievement` - Achievement entry in shared namespace /
+- `Membership` - Membership entry in shared namespace /
+- `SharedSchemas` - Type-safe shared data schemas /
+- `AuthConfig` - Authentication configuration /
+- `CloudConfig` - Cloud sync configuration /
+- `ThemeConfig` - Theme configuration /
+- `AdvancedConfig` - Advanced configuration (escape hatches) /
+- `VillaSDKConfig` - 4. Sensible, secure defaults /
+- `VillaCloudClient` - Will be implemented with TinyCloud backend /
+- `ActionType` - Action types - What users DO /
+- `ActionStatus` - Action status - Clear outcome states /
+- `Scope` - Data scopes that apps can request /
+- `SharedNamespace` - Apps can create custom namespaces with user approval /
+- `NetworkConfig` - Network configuration /
 - `IframeConfig`
 - `AuthMessage` - Message types for Villa SDK auth flow /
 - `VillaUser`
@@ -511,7 +536,7 @@ After successful authentication:
 - `PasskeyManagerType`
 - `WebAuthnErrorCode`
 
-### Constants (90)
+### Constants (92)
 
 - `villa`
 - `VillaBridge`
@@ -574,6 +599,8 @@ After successful authentication:
 - `getChainConfig`
 - `validatePortoConfig`
 - `createVillaTheme`
+- `createAmount`
+- `defineConfig`
 - `VILLA_PREFIX`
 - `TINYCLOUD_KEYS`
 - `getTinyCloudClient`
