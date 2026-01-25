@@ -23,6 +23,7 @@
     "dev:key": "bun run --cwd apps/key dev",
     "dev:developers": "bun run --cwd apps/developers dev",
     "dev:telemetry": "turbo run dev --filter=@villa/telemetry",
+    "costs": "bun scripts/costs.ts",
     "docker:dev": "docker compose --profile dev up -d",
     "docker:https": "docker compose --profile https up -d",
     "docker:full": "docker compose --profile full up -d",
