@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.4
 # Production Dockerfile for Villa Developers Portal
 
+ARG CACHE_BUST=1
 FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat git
 WORKDIR /app
