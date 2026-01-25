@@ -181,10 +181,12 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ZONE_ID" ]; then
+            echo "🗑️ Purging CloudFlare cache for staging..."
             curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               -H "Content-Type: application/json" \
               --data '{"hosts":["construction.villa.cash"]}' || true
+            echo "✅ Cache purged"
           fi
 
       - name: Comment on commit
@@ -248,10 +250,12 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ZONE_ID" ]; then
+            echo "🗑️ Purging CloudFlare cache for all villa.cash domains..."
             curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               -H "Content-Type: application/json" \
-              --data '{"hosts":["villa.cash","www.villa.cash","key.villa.cash","docs.villa.cash"]}' || true
+              --data '{"purge_everything":true}' || true
+            echo "✅ Cache purged"
           fi
 
       - name: Create GitHub Release
