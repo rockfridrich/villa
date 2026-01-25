@@ -4,6 +4,8 @@ import "./globals.css";
 import { Header } from "../components/Header";
 import { Sidebar } from "../components/Sidebar";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Villa SDK - Developer Documentation",
   description:
