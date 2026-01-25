@@ -278,11 +278,11 @@ function AuthPageContent() {
   );
 
   useEffect(() => {
-    if (!hasNotifiedReady.current) {
+    if (!hasNotifiedReady.current && targetOrigin) {
       hasNotifiedReady.current = true;
       postToParent({ type: "VILLA_READY" });
     }
-  }, [postToParent]);
+  }, [postToParent, targetOrigin]);
 
   useEffect(() => {
     setWebAuthnHandlers({
