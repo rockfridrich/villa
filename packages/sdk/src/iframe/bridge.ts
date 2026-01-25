@@ -107,7 +107,7 @@ export class VillaBridge {
       network: config.network || "base",
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,
       debug: config.debug || false,
-      preferPopup: config.preferPopup !== false,
+      preferPopup: config.preferPopup === true,
       iframeDetectionTimeout:
         config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
     };

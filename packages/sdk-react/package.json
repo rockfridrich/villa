@@ -1,6 +1,6 @@
 {
   "name": "@rockfridrich/villa-sdk-react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React bindings for Villa SDK - Privacy-first passkey authentication",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -36,10 +36,10 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "@rockfridrich/villa-sdk": "^0.1.0",
+    "@rockfridrich/villa-sdk": "^0.1.2",
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {

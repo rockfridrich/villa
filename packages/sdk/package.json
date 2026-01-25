@@ -1,6 +1,6 @@
 {
   "name": "@rockfridrich/villa-sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Villa Identity SDK - Privacy-first passkey authentication for Base network",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -43,7 +43,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@tinycloudlabs/web-sdk": "^0.2.1"

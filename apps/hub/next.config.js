@@ -175,10 +175,14 @@ const nextConfig = {
           },
         ],
       },
-      // HTML pages (excluding /auth, /sdk-demo) - strict security headers
+      // HTML pages (excluding /auth, /sdk-demo) - CDN cache + security headers
       {
         source: "/:path((?!api|_next|auth|sdk-demo).*)",
         headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
           {
             key: "X-Frame-Options",
             value: "DENY",
@@ -196,7 +200,6 @@ const nextConfig = {
             value: "geolocation=(), microphone=(), camera=()",
           },
           {
-            // CSP for Porto SDK
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
