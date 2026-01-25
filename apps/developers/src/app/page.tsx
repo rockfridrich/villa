@@ -1,11 +1,31 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, Book, Heart, Sparkles, Terminal, Layers, RefreshCw } from "lucide-react";
+import { ChevronRight, Book, Heart, Sparkles, Terminal, RefreshCw, Fingerprint, CheckCircle2 } from "lucide-react";
 import { CodeBlock } from "../components/code";
 import { CopyButton } from "../components/code";
+import { villa, type VillaUser } from "@rockfridrich/villa-sdk";
 
 export default function DevelopersPage() {
+  const [user, setUser] = useState<VillaUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    return villa.onAuthChange((u) => setUser(u));
+  }, []);
+
+  const handleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await villa.signIn();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFDF8] text-[#0D0D17]">
       <section className="pt-24 pb-12 px-6">
@@ -43,14 +63,49 @@ export default function DevelopersPage() {
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#0D0D17]/10 aspect-[4/3] bg-white animate-in slide-in-from-right duration-700 delay-200">
-            <div className="absolute inset-0 bg-[#0D0D17]/5 animate-pulse" />
-            <iframe
-              src="https://construction.villa.cash/sdk-demo"
-              className="w-full h-full relative z-10"
-              title="Villa SDK Demo"
-              loading="eager"
-            />
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#0D0D17]/10 bg-white animate-in slide-in-from-right duration-700 delay-200 p-8">
+            <div className="text-center space-y-6">
+              <div className="text-sm font-medium text-[#0D0D17]/40 uppercase tracking-wider">Live Demo</div>
+              
+              {user ? (
+                <div className="space-y-4">
+                  <img src={user.avatar} alt={user.nickname} className="w-20 h-20 rounded-full mx-auto border-4 border-[#FFE047]/20" />
+                  <div>
+                    <p className="text-2xl font-serif">@{user.nickname}</p>
+                    <p className="text-sm text-[#0D0D17]/40 font-mono truncate max-w-[200px] mx-auto">{user.address}</p>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={() => villa.settings()}
+                      className="px-4 py-2 text-sm border border-[#0D0D17]/10 rounded-lg hover:bg-[#0D0D17]/5 transition-colors"
+                    >
+                      Settings
+                    </button>
+                    <button
+                      onClick={() => villa.signOut()}
+                      className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="w-20 h-20 rounded-full bg-[#0D0D17]/5 mx-auto flex items-center justify-center">
+                    <Fingerprint className="w-10 h-10 text-[#0D0D17]/20" />
+                  </div>
+                  <button
+                    onClick={handleSignIn}
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-2 bg-[#0D0D17] text-white font-medium px-8 py-4 rounded-xl hover:bg-[#0D0D17]/90 transition-all disabled:opacity-50"
+                  >
+                    <Fingerprint className="w-5 h-5" />
+                    {isLoading ? "Signing in..." : "Try Sign In"}
+                  </button>
+                  <p className="text-sm text-[#0D0D17]/40">Uses real passkeys on Base</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
