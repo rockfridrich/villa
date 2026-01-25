@@ -56,46 +56,40 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           SERVICE_ID="afc99a53-eb94-45ff-b018-8fc29b8cc84a"
+          REVALIDATE_TOKEN="${{ steps.token.outputs.token }}"
           
           echo "🔧 Setting up CDN environment variables for villa-developers..."
           
-          # Set variables via Railway GraphQL API
-          MUTATION='mutation($input: VariableCollectionUpsertInput!) { variableCollectionUpsert(input: $input) }'
+          set_var() {
+            local name="$1"
+            local value="$2"
+            
+            RESULT=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"query\": \"mutation { variableUpsert(input: { projectId: \\\"$PROJECT_ID\\\", environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$SERVICE_ID\\\", name: \\\"$name\\\", value: \\\"$value\\\" }) }\"
+              }")
+            
+            if echo "$RESULT" | jq -e '.data.variableUpsert' > /dev/null; then
+              echo "  ✅ $name: [set]"
+              return 0
+            else
+              echo "  ❌ $name: failed"
+              echo "$RESULT" | jq '.errors[0].message' 2>/dev/null || true
+              return 1
+            fi
+          }
           
-          VARIABLES='{
-            "input": {
-              "projectId": "'$PROJECT_ID'",
-              "environmentId": "'$ENV_ID'",
-              "serviceId": "'$SERVICE_ID'",
-              "variables": {
-                "CLOUDFLARE_API_TOKEN": "'$CLOUDFLARE_API_TOKEN'",
-                "CLOUDFLARE_ZONE_ID": "'$CLOUDFLARE_ZONE_ID'",
-                "REVALIDATE_TOKEN": "'${{ steps.token.outputs.token }}'",
-                "NEXT_PUBLIC_APP_URL": "https://docs.villa.cash"
-              }
-            }
-          }'
+          echo "Setting variables..."
+          set_var "CLOUDFLARE_API_TOKEN" "$CLOUDFLARE_API_TOKEN"
+          set_var "CLOUDFLARE_ZONE_ID" "$CLOUDFLARE_ZONE_ID"
+          set_var "REVALIDATE_TOKEN" "$REVALIDATE_TOKEN"
+          set_var "NEXT_PUBLIC_APP_URL" "https://docs.villa.cash"
           
-          RESULT=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
-            -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\": \"$MUTATION\", \"variables\": $VARIABLES}")
-          
-          if echo "$RESULT" | jq -e '.data.variableCollectionUpsert' > /dev/null; then
-            echo "✅ Environment variables set successfully"
-            echo ""
-            echo "Variables configured:"
-            echo "  - CLOUDFLARE_API_TOKEN: [set]"
-            echo "  - CLOUDFLARE_ZONE_ID: [set]"
-            echo "  - REVALIDATE_TOKEN: [set]"
-            echo "  - NEXT_PUBLIC_APP_URL: https://docs.villa.cash"
-            echo ""
-            echo "⚠️ Service will redeploy automatically with new variables"
-          else
-            echo "❌ Failed to set variables"
-            echo "$RESULT" | jq '.'
-            exit 1
-          fi
+          echo ""
+          echo "✅ Environment variables configured"
+          echo "⚠️ Service will redeploy automatically with new variables"
 
       - name: List variables
         if: inputs.action == 'list-vars'
