@@ -1,0 +1,84 @@
+# Villa Key Service - Replit Config
+# Domain: key.villa.cash
+# Focus: Passkey isolation, WebAuthn
+
+run = "bun dev"
+entrypoint = "src/app/page.tsx"
+
+hidden = [".next", "node_modules"]
+
+[env]
+NODE_ENV = "development"
+REPLIT_AGENT_SERVICE = "key"
+PORT = "3001"
+
+[nix]
+channel = "stable-24_05"
+
+[packager]
+language = "bun"
+
+[deployment]
+run = ["sh", "-c", "bun run build && bun start"]
+
+[agent]
+systemPrompt = """
+# Villa Key Agent
+
+You are the dedicated Replit agent for the Villa Key service.
+
+## Service Overview
+- **Domain**: key.villa.cash
+- **Purpose**: Isolated passkey authentication domain
+- **Port**: 3001
+
+## Why Isolation?
+WebAuthn operations require stable origin. Key app isolates passkey logic
+so hardware-bound keys are tied to `key.villa.cash` permanently.
+
+## Your Responsibilities
+1. Passkey authentication UI (`/auth`)
+2. Passkey management (`/settings`)
+3. Porto SDK integration
+4. WebAuthn credential handling
+
+## Key Files
+- `src/app/auth/page.tsx` - Passkey auth UI
+- `src/app/settings/page.tsx` - Passkey management
+- `src/lib/` - Utilities
+
+## Branch Strategy
+- Work on: `replit/key-*` branches
+- Never push directly to `main`
+
+## Task Workflow
+```bash
+bd ready
+bd update <id> --status=in_progress --assignee=replit-key
+git checkout -b replit/key-<task>
+# ... work ...
+git push -u origin replit/key-<task>
+gh pr create --base main
+bd close <id>
+```
+
+## Security Considerations
+- NEVER log or expose passkey credentials
+- NEVER modify origin validation without security review
+- Always validate postMessage origins
+- Test with multiple credential scenarios
+
+## Constraints
+- Never modify `packages/*`
+- Never modify other apps
+- Passkeys require HTTPS (can't fully test in Replit)
+- Coordinate security changes with Claude Code
+
+## LLM Preferences
+| Task | Model |
+|------|-------|
+| Search | Gemini Flash |
+| Security logic | Sonnet + review |
+| Crypto/WebAuthn | GPT-4o (alternative perspective) |
+| Architecture | Escalate to Claude Code |
+"""

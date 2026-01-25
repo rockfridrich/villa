@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Multi-LLM routing configuration for optimal cost and capability",
+  "version": "2.0.0",
+  "providers": {
+    "anthropic": {
+      "models": {
+        "opus": { "id": "claude-opus-4-5-20251101", "cost_per_1m": 15.00, "context": 200000 },
+        "sonnet": { "id": "claude-sonnet-4-20250514", "cost_per_1m": 3.00, "context": 200000 },
+        "haiku": { "id": "claude-3-5-haiku-20241022", "cost_per_1m": 0.25, "context": 200000 }
+      }
+    },
+    "google": {
+      "models": {
+        "gemini-flash": { "id": "gemini-2.0-flash-exp", "cost_per_1m": 0.075, "context": 1000000 },
+        "gemini-pro": { "id": "gemini-1.5-pro", "cost_per_1m": 1.25, "context": 2000000 }
+      }
+    },
+    "openai": {
+      "models": {
+        "gpt-4o": { "id": "gpt-4o", "cost_per_1m": 2.50, "context": 128000 },
+        "gpt-4o-mini": { "id": "gpt-4o-mini", "cost_per_1m": 0.15, "context": 128000 },
+        "o1-preview": { "id": "o1-preview", "cost_per_1m": 15.00, "context": 128000 }
+      }
+    },
+    "xai": {
+      "models": {
+        "grok": { "id": "grok-2", "cost_per_1m": 5.00, "context": 131072, "features": ["real-time-web"] }
+      }
+    },
+    "openrouter": {
+      "models": {
+        "deepseek-r1": { "id": "deepseek/deepseek-r1", "cost_per_1m": 0.55, "context": 64000 },
+        "llama-405b": { "id": "meta-llama/llama-3.1-405b-instruct", "cost_per_1m": 2.70, "context": 131072 },
+        "qwen-72b": { "id": "qwen/qwen-2.5-72b-instruct", "cost_per_1m": 0.35, "context": 131072 }
+      }
+    }
+  },
+  "routing": {
+    "search": {
+      "primary": "google/gemini-flash",
+      "fallback": "anthropic/haiku",
+      "rationale": "1M context, fastest, cheapest for search"
+    },
+    "test_execution": {
+      "primary": "anthropic/haiku",
+      "fallback": "google/gemini-flash",
+      "rationale": "Structured output, deterministic"
+    },
+    "git_ops": {
+      "primary": "anthropic/haiku",
+      "fallback": "openai/gpt-4o-mini",
+      "rationale": "Deterministic tasks, low cost"
+    },
+    "implementation": {
+      "primary": "anthropic/sonnet",
+      "fallback": "openai/gpt-4o",
+      "rationale": "Best code quality"
+    },
+    "ui_design": {
+      "primary": "anthropic/sonnet",
+      "fallback": "openai/gpt-4o",
+      "rationale": "Visual reasoning"
+    },
+    "code_review": {
+      "primary": "openai/gpt-4o",
+      "fallback": "anthropic/sonnet",
+      "rationale": "Alternative perspective catches different issues"
+    },
+    "architecture": {
+      "primary": "anthropic/opus",
+      "fallback": "openai/o1-preview",
+      "rationale": "Deep reasoning required"
+    },
+    "research": {
+      "primary": "xai/grok",
+      "fallback": "google/gemini-pro",
+      "rationale": "Real-time web access"
+    },
+    "spec_writing": {
+      "primary": "anthropic/opus",
+      "fallback": "openai/gpt-4o",
+      "rationale": "Strategic thinking"
+    },
+    "quick_fix": {
+      "primary": "openrouter/deepseek-r1",
+      "fallback": "anthropic/haiku",
+      "rationale": "Fast, cheap, good for small fixes"
+    },
+    "bulk_refactor": {
+      "primary": "openrouter/qwen-72b",
+      "fallback": "google/gemini-pro",
+      "rationale": "Large context, good pattern matching"
+    }
+  },
+  "agent_assignments": {
+    "@explore": { "model": "google/gemini-flash", "tier": "worker" },
+    "@test": { "model": "anthropic/haiku", "tier": "worker" },
+    "@ops": { "model": "anthropic/haiku", "tier": "worker" },
+    "@router": { "model": "anthropic/haiku", "tier": "worker" },
+    "@ship": { "model": "anthropic/haiku", "tier": "worker" },
+    "@build": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@design": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@review": { "model": "openai/gpt-4o", "tier": "specialist" },
+    "@quality-gate": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@fix": { "model": "openrouter/deepseek-r1", "tier": "specialist" },
+    "@data": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@sdk": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@solidity": { "model": "anthropic/sonnet", "tier": "specialist" },
+    "@spec": { "model": "anthropic/opus", "tier": "architect" },
+    "@architect": { "model": "anthropic/opus", "tier": "architect" },
+    "@reflect": { "model": "anthropic/opus", "tier": "architect" },
+    "@product": { "model": "anthropic/opus", "tier": "architect" },
+    "@research": { "model": "xai/grok", "tier": "specialist" }
+  },
+  "platform_defaults": {
+    "claude_code": {
+      "orchestrator": "anthropic/opus",
+      "workers": "anthropic/haiku",
+      "specialists": "anthropic/sonnet"
+    },
+    "opencode": {
+      "orchestrator": "anthropic/sonnet",
+      "workers": "google/gemini-flash",
+      "research": "xai/grok"
+    },
+    "replit": {
+      "default": "anthropic/sonnet",
+      "available": ["openai/gpt-4o", "google/gemini-pro"]
+    }
+  },
+  "cost_limits": {
+    "daily_budget": 50,
+    "alert_threshold": 0.7,
+    "per_platform": {
+      "claude_code": 30,
+      "opencode": 10,
+      "replit": 10
+    }
+  },
+  "escalation_rules": [
+    {
+      "condition": "confidence < 60%",
+      "action": "escalate_tier",
+      "from": "worker",
+      "to": "specialist"
+    },
+    {
+      "condition": "security_implications",
+      "action": "escalate_tier",
+      "from": "specialist",
+      "to": "architect"
+    },
+    {
+      "condition": "breaking_changes",
+      "action": "escalate_tier",
+      "from": "specialist",
+      "to": "architect"
+    },
+    {
+      "condition": "stuck_2x_same_issue",
+      "action": "switch_provider",
+      "rationale": "Different model may have different approach"
+    }
+  ]
+}

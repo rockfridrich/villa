@@ -1,0 +1,72 @@
+# Villa Monorepo - Root Replit Config
+# For service-specific work, use the configs in apps/*/
+
+run = "bun dev"
+entrypoint = "apps/hub/src/app/page.tsx"
+
+hidden = [".next", "node_modules", ".turbo", ".beads"]
+
+[nix]
+channel = "stable-24_05"
+
+[env]
+NODE_ENV = "development"
+REPLIT_AGENT_SERVICE = "hub"
+
+[languages]
+[languages.typescript]
+pattern = "**/*.{ts,tsx}"
+[languages.typescript.languageServer]
+start = "typescript-language-server --stdio"
+
+[packager]
+language = "bun"
+
+[packager.features]
+enabledForHosting = false
+packageSearch = true
+guessImports = true
+
+[unitTest]
+language = "nodejs"
+
+[deployment]
+run = ["sh", "-c", "bun run build && bun start"]
+deploymentTarget = "cloudrun"
+
+[gitHubImport]
+requiredFiles = [".replit", "package.json"]
+
+[agent]
+# Replit Agent Configuration
+systemPrompt = """
+You are a Villa development agent working on the Hub service (villa.cash).
+
+## Context Loading
+Read these files at session start:
+1. AGENT_COORDINATION.md - Multi-agent system overview
+2. .claude/CLAUDE.md - Project rules and standards
+3. apps/hub/README.md - Service-specific docs
+
+## Your Role
+- Service: Hub (villa.cash)
+- Focus: Auth flows, API routes, profiles, landing pages
+- Branch: replit/hub-*
+
+## Coordination
+- Check `bd ready` for available tasks
+- Claim with `bd update <id> --status=in_progress --assignee=replit-hub`
+- Push to replit/hub-* branches only
+- Create PRs to main for review
+
+## Rules
+1. Never modify packages/* directly (use Claude Code)
+2. Never modify other apps/* (use their specific Replit)
+3. Run `bun verify` before committing
+4. Passkeys require HTTPS - use mock auth for dev
+
+## LLM Routing
+Your default model is Sonnet. For specific tasks:
+- Search/explore: Request Gemini Flash
+- Architecture questions: Escalate to Claude Code
+"""

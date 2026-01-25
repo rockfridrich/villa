@@ -1,95 +1,146 @@
 # Villa AI Agents
 
-> **TL;DR**: Use **Sisyphus** (OpenCode) for everything. Fall back to Claude Code only if stuck.
+> **TL;DR**: Multi-platform agent system - Claude Code orchestrates, OpenCode/Replit execute.
 
-## Quick Start
+## Quick Reference
 
-```
-You: "Add dark mode to the settings page"
-Sisyphus: *creates todo* → *delegates to frontend agent* → *verifies* → Done ✅
-```
+| Platform | Role | When to Use |
+|----------|------|-------------|
+| **Claude Code** | Primary orchestrator | Architecture, cross-service, SDK, security |
+| **OpenCode (Sisyphus)** | Background workers | Search, research, large context (1M) |
+| **Replit Agents** | Service-specific | Hub/Key/Docs UI, hot reload, isolation |
 
-That's it. Sisyphus handles orchestration automatically.
+**Coordination doc:** `AGENT_COORDINATION.md`
 
 ---
 
-## Which Agent to Use?
+## Platform Decision Tree
 
-| Situation | Use |
-|-----------|-----|
-| **Any task** | Sisyphus (default) |
-| **Sisyphus stuck 2+ times** | Claude Code |
-| **Environment broken** | Claude Code |
-
-### Sisyphus Capabilities
-
-Sisyphus can delegate to specialized subagents:
-
-| Task Type | Subagent | What It Does |
-|-----------|----------|--------------|
-| Find code | `explore` | Search codebase, find patterns |
-| Library docs | `librarian` | External docs, OSS examples |
-| UI/UX work | `frontend-ui-ux-engineer` | Visual design, styling |
-| Architecture | `oracle` | Deep reasoning, design decisions |
-| Documentation | `document-writer` | READMEs, API docs |
-
-**Example workflow:**
 ```
-User: "How does the auth flow work?"
-Sisyphus: *fires explore agent in background*
-Sisyphus: *reads results* → *explains to user*
+User Request
+     │
+     ├─ "find/search/where" ──────▶ OpenCode (@explore, Gemini)
+     │
+     ├─ "research/latest/docs" ───▶ OpenCode (Grok, real-time web)
+     │
+     ├─ Service-specific UI ──────▶ Replit (hub/key/docs agents)
+     │
+     ├─ Cross-service/SDK ────────▶ Claude Code (full context)
+     │
+     ├─ Architecture/Spec ────────▶ Claude Code (Opus)
+     │
+     └─ Security-critical ────────▶ Claude Code (review required)
 ```
 
 ---
 
-## Cost Tiers
+## Multi-LLM Routing
 
-| Tier | Agents | Cost | Use For |
-|------|--------|------|---------|
-| **Cheap** | explore, librarian, test, ops | $0.25/1M | Search, deploy, tests |
-| **Standard** | build, design, review | $3/1M | Implementation |
-| **Premium** | oracle, architect | $15/1M | Architecture decisions |
+See `.opencode/llm-router.json` for full config.
 
-Sisyphus automatically routes to the cheapest capable agent.
+| Task | Primary LLM | Cost | Rationale |
+|------|-------------|------|-----------|
+| Search/Explore | Gemini Flash | $0.075/1M | 1M context, fastest |
+| Test/Git/Deploy | Haiku | $0.25/1M | Deterministic tasks |
+| Implementation | Sonnet | $3/1M | Best code quality |
+| Code Review | GPT-4o | $2.50/1M | Alternative perspective |
+| Research | Grok | $5/1M | Real-time web access |
+| Architecture | Opus | $15/1M | Deep reasoning |
+| Quick fixes | DeepSeek R1 | $0.55/1M | Fast, cheap |
 
----
-
-## Examples
-
-### Find something
-```
-"Where is the login component?"
-→ Sisyphus fires explore agent → Returns file path
-Cost: ~$0.01
-```
-
-### Build something
-```
-"Add a logout button"
-→ Sisyphus implements directly (or delegates to frontend agent for UI)
-Cost: ~$0.10
-```
-
-### Design something
-```
-"Design the permission system"
-→ Sisyphus consults oracle for architecture
-Cost: ~$0.50
-```
+**Daily Budget:** $50 total ($30 Claude Code, $10 OpenCode, $10 Replit)
 
 ---
 
-## When Things Go Wrong
+## Replit Services
 
-| Problem | Solution |
-|---------|----------|
-| Sisyphus says "I'm stuck" | Switch to Claude Code |
-| Build/tests failing repeatedly | Let Sisyphus try 2x, then Claude Code |
-| "Command not found" errors | Claude Code (environment issue) |
-| Need to update agent configs | Claude Code |
+Each service has dedicated Replit agent with `.replit` config:
+
+| Service | Domain | Branch Pattern | Focus |
+|---------|--------|----------------|-------|
+| Hub | villa.cash | `replit/hub-*` | Auth, API, profiles |
+| Key | key.villa.cash | `replit/key-*` | Passkeys, WebAuthn |
+| Docs | docs.villa.cash | `replit/docs-*` | SDK docs, playground |
+| SDK | npm package | `replit/sdk-*` | Core library (review-only) |
+
+---
+
+## Session Boot
+
+### Claude Code
+```bash
+cat .claude/BOOT.md           # Load boot protocol
+./scripts/doctor.sh           # Check environment
+bd ready                      # Find available work
+```
+
+### OpenCode
+```bash
+cat .opencode/BOOT.md         # Load boot protocol
+cat .opencode/llm-router.json # Check LLM assignments
+bd ready                      # Find available work
+```
+
+### Replit
+- Each `.replit` file has `[agent].systemPrompt` with service-specific context
+- Check `bd ready` for assigned tasks
+
+---
+
+## Task Flow
+
+### Claim Task
+```bash
+bd update beads-xxx --status=in_progress --assignee=<platform>
+# claude-code | opencode | replit-hub | replit-key | replit-docs | replit-sdk
+```
+
+### Complete Task
+```bash
+bd close beads-xxx
+bd sync --flush-only
+```
+
+### Handoff Between Platforms
+```bash
+bd update beads-xxx --assignee=<new-platform> --notes="Handoff: <reason>"
+```
+
+---
+
+## Emergency Escalation
+
+| Stuck On | Escalate To | Why |
+|----------|-------------|-----|
+| Haiku task | Sonnet | More capable |
+| Sonnet task | GPT-4o or Opus | Different perspective |
+| Replit stuck | Claude Code | Full monorepo context |
+| OpenCode stuck | Claude Code | Can debug agents |
+| Architecture unclear | Opus + o1-preview | Deep reasoning |
+
+**Two-Strike Rule:** Same failure 2x → STOP, switch platform or LLM.
+
+---
+
+## Cost Optimization
+
+### DO
+- Use Gemini Flash for search (not Haiku or Sonnet)
+- Use Grok for real-time research
+- Use GPT-4o for code review (catches different issues)
+- Reserve Opus for architecture only
+
+### DON'T
+- Use Opus for file searches (60x more expensive)
+- Use Sonnet for tests (12x more expensive than Haiku)
+- Push without `bun verify` (CI rejection costs tokens)
 
 ---
 
 ## For Contributors
 
-See [OPENCODE-PARTNERSHIP.md](./OPENCODE-PARTNERSHIP.md) for detailed agent protocols.
+- `.claude/BOOT.md` - Claude Code session boot
+- `.opencode/BOOT.md` - OpenCode session boot
+- `.opencode/llm-router.json` - LLM routing config
+- `AGENT_COORDINATION.md` - Full multi-platform docs
+- `.replit` files - Replit agent prompts
