@@ -75,14 +75,18 @@ bd show <id>         # Task details
 
 ### Cost-Optimized Agents (see [agents/INDEX.md](agents/INDEX.md))
 
-| Tier        | Model  | Agents                   | Use For              |
-| ----------- | ------ | ------------------------ | -------------------- |
-| Workers     | haiku  | @explore, @test, @ops    | Search, test, deploy |
-| Specialists | sonnet | @build, @design, @review | Implementation       |
-| Quality     | sonnet | @quality-gate            | Auto-validation      |
-| Architects  | opus   | @spec, @architect        | Architecture only    |
+| Tier        | Model  | Cost/1M | Agents                   | Use For              |
+| ----------- | ------ | ------- | ------------------------ | -------------------- |
+| Workers     | haiku  | $0.25   | @explore, @test, @ops    | Search, test, deploy |
+| Specialists | sonnet | $3.00   | @build, @design, @review | Implementation       |
+| Quality     | sonnet | $3.00   | @quality-gate            | Auto-validation      |
+| Premium     | opus   | $15.00  | @oracle, @architect      | Architecture only    |
+
+**⚠️ Oracle is 60x more expensive than explore!**
 
 **Routing:** @router (haiku) classifies → appropriate tier → @quality-gate validates
+
+**Cost tracking:** `./scripts/session-costs.sh full 60 medium`
 
 **Cost target:** < $50/day (down from $115/day)
 

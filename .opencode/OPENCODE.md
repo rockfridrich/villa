@@ -361,6 +361,10 @@ sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
 | @quality-gate | sonnet | $3/1M    | Validation                |
 | @spec         | opus   | $15/1M   | Architecture              |
 
+**⚠️ Oracle/Opus is 60x more expensive than explore/haiku!**
+
+**Cost tracking:** `./scripts/session-costs.sh full 60 medium`
+
 **Rule:** Use scripts over repetitive AI code. If a task can be scripted, it should be.
 
 ---
