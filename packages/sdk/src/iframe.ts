@@ -8,21 +8,6 @@ import { z } from "zod";
 import type { Identity } from "./types";
 
 /**
- * Trusted origins for postMessage communication
- * HTTPS-only for security - passkeys require HTTPS anyway
- */
-const TRUSTED_ORIGINS = [
-  "https://key.villa.cash",
-  "https://fake-key.villa.cash",
-  "https://villa.cash",
-  "https://www.villa.cash",
-  "https://construction.villa.cash",
-  "https://docs.villa.cash",
-  "https://localhost:3000",
-  "https://localhost:3001",
-] as const;
-
-/**
  * Check if running in development mode
  */
 function isDevelopment(): boolean {
@@ -32,13 +17,20 @@ function isDevelopment(): boolean {
 }
 
 /**
- * Validates if origin is trusted
- *
- * @param origin - Origin to validate
- * @returns True if origin is trusted
+ * Validates if origin is trusted as a parent frame.
+ * Accepts any HTTPS origin (OAuth-like model) + localhost for dev.
  */
 function isOriginTrusted(origin: string): boolean {
-  return TRUSTED_ORIGINS.includes(origin as any);
+  if (origin.startsWith("https://")) {
+    return true;
+  }
+  if (
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export interface IframeConfig {

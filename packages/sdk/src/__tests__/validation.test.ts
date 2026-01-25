@@ -48,9 +48,7 @@ describe('validation', () => {
     test('returns array of allowed origins', () => {
       const origins = getValidOrigins()
 
-      // Should always include production origins
       expect(origins).toContain('https://villa.cash')
-      expect(origins).toContain('https://beta.villa.cash')
       expect(Array.isArray(origins)).toBe(true)
       expect(origins.length).toBeGreaterThanOrEqual(ALLOWED_ORIGINS.length)
     })
@@ -73,12 +71,17 @@ describe('validation', () => {
       expect(validateOrigin('https://dev-2.villa.cash')).toBe(true)
     })
 
-    test('rejects invalid origins', () => {
-      expect(validateOrigin('https://evil.com')).toBe(false)
+    test('accepts any HTTPS origin (OAuth-like model)', () => {
+      expect(validateOrigin('https://evil.com')).toBe(true)
+      expect(validateOrigin('https://any-third-party.com')).toBe(true)
+      expect(validateOrigin('https://villa.cash.evil.com')).toBe(true)
+    })
+
+    test('rejects non-HTTPS origins (except localhost)', () => {
       expect(validateOrigin('http://villa.cash')).toBe(false)
-      expect(validateOrigin('https://villa.cash.evil.com')).toBe(false)
       expect(validateOrigin('')).toBe(false)
       expect(validateOrigin('not-a-url')).toBe(false)
+      expect(validateOrigin('ftp://example.com')).toBe(false)
     })
 
     test('accepts localhost origins in development', () => {
@@ -92,13 +95,10 @@ describe('validation', () => {
       process.env.NODE_ENV = originalEnv
     })
 
-    test('validates origin against allowed list', () => {
-      // Production origins should always be valid
+    test('validates HTTPS origins as valid', () => {
       expect(validateOrigin('https://villa.cash')).toBe(true)
       expect(validateOrigin('https://beta.villa.cash')).toBe(true)
-
-      // Invalid origins should always be rejected
-      expect(validateOrigin('https://evil.com')).toBe(false)
+      expect(validateOrigin('https://any-domain.com')).toBe(true)
       expect(validateOrigin('')).toBe(false)
     })
   })
@@ -185,13 +185,12 @@ describe('validation', () => {
       expect(result).toBeNull()
     })
 
-    test('returns null for missing required fields', () => {
+    test('accepts identity without nickname (optional field)', () => {
       const data = {
         type: 'VILLA_AUTH_SUCCESS',
         payload: {
           identity: {
             address: '0x1234567890123456789012345678901234567890',
-            // Missing nickname
             avatar: {
               style: 'adventurer',
               seed: 'alice',
@@ -201,7 +200,8 @@ describe('validation', () => {
       }
       const result = parseVillaMessage(data)
 
-      expect(result).toBeNull()
+      expect(result).not.toBeNull()
+      expect(result?.type).toBe('VILLA_AUTH_SUCCESS')
     })
 
     test('returns null for invalid avatar style', () => {

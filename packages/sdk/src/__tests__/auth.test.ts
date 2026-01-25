@@ -161,7 +161,7 @@ describe('auth', () => {
       const promise = signIn()
 
       expect(iframe.createAuthIframe).toHaveBeenCalledWith({
-        url: 'https://villa.cash/auth',
+        url: 'https://key.villa.cash/auth',
       })
 
       // Clean up

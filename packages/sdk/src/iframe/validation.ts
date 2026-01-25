@@ -70,14 +70,36 @@ export function getValidOrigins(): readonly string[] {
 }
 
 /**
- * Validate if an origin is trusted
+ * Validate if an origin is trusted as a parent frame.
  *
- * @param origin - Origin to validate (e.g., 'https://villa.cash')
- * @returns true if origin is in allowlist
+ * SECURITY MODEL:
+ * The Villa SDK can be embedded in ANY website via iframe. This is safe because:
+ * 1. The iframe displays Villa's auth UI which the user explicitly interacts with
+ * 2. The user consciously decides whether to authenticate (similar to OAuth)
+ * 3. Only the user's own identity is returned to the parent - no sensitive data exposed
+ * 4. The passkey never leaves the user's device (WebAuthn hardware-bound)
+ *
+ * This follows the same trust model as OAuth providers (Google, GitHub, etc.)
+ * which accept authorization requests from any origin.
+ *
+ * @param origin - Origin to validate (e.g., 'https://example.com')
+ * @returns true if origin is valid (any HTTPS origin, or localhost/127.0.0.1 for dev)
  */
 export function validateOrigin(origin: string): boolean {
-  const validOrigins = getValidOrigins();
-  return validOrigins.includes(origin as (typeof validOrigins)[number]);
+  // Accept any HTTPS origin - third-party sites can embed Villa auth
+  if (origin.startsWith("https://")) {
+    return true;
+  }
+
+  // Allow localhost and 127.0.0.1 for development (HTTP allowed)
+  if (
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
