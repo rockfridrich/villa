@@ -435,6 +435,18 @@ export interface AdvancedConfig {
   authUrl?: string;
   
   /**
+   * Custom RPC URL for blockchain operations
+   * @example "https://mainnet.base.org" or "https://sepolia.base.org"
+   */
+  rpcUrl?: string;
+  
+  /**
+   * Chain ID override (auto-detected from network if not set)
+   * @example 8453 for Base mainnet, 84532 for Base Sepolia
+   */
+  chainId?: number;
+  
+  /**
    * Enable debug logging
    * @default false
    */

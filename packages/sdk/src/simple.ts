@@ -69,7 +69,7 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 let _config: VillaConfig = {
   appId: "villa-app",
-  network: "base",
+  network: "base-sepolia",
 };
 
 let _user: VillaUser | null = null;

@@ -99,7 +99,7 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
  * ```
  */
 export class Villa {
-  private config: Required<VillaConfig>;
+  private config: VillaConfig & { appId: string; network: "base" | "base-sepolia"; apiUrl: string };
   private currentSession: VillaSession | null = null;
   private authUrl: string;
 
@@ -119,11 +119,11 @@ export class Villa {
       throw new Error("[Villa SDK] appId cannot be empty");
     }
 
-    // Set defaults
     this.config = {
       appId: config.appId.trim(),
-      network: config.network || "base",
+      network: config.network || "base-sepolia",
       apiUrl: config.apiUrl || "https://api.villa.cash",
+      rpcUrl: config.rpcUrl,
     };
 
     this.authUrl =
@@ -428,12 +428,7 @@ export class Villa {
     return this.getIdentity() !== null;
   }
 
-  /**
-   * Gets the current SDK configuration
-   *
-   * @returns Current configuration
-   */
-  getConfig(): Readonly<Required<VillaConfig>> {
+  getConfig(): Readonly<VillaConfig> {
     return { ...this.config };
   }
 }

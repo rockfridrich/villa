@@ -55,10 +55,12 @@ export interface NicknameCheckResult {
 export interface VillaConfig {
   /** Application identifier for consent tracking */
   appId: string;
-  /** Network to use */
+  /** Network: "base" (mainnet) or "base-sepolia" (testnet, default for alpha) */
   network?: "base" | "base-sepolia";
   /** Override API URL (defaults to api.villa.cash) */
   apiUrl?: string;
+  /** Custom RPC URL for blockchain operations */
+  rpcUrl?: string;
 }
 
 /** Session state for authenticated users */
