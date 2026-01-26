@@ -30,23 +30,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build SDK packages
         run: |
-          pnpm --filter @rockfridrich/villa-sdk build
-          pnpm --filter @rockfridrich/villa-sdk-react build
+          bun run --filter @rockfridrich/villa-sdk build
+          bun run --filter @rockfridrich/villa-sdk-react build
 
       - name: Verify build output
         run: |
