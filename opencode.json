@@ -64,7 +64,7 @@
     "fix": {
       "description": "Quick bug fixes and small changes.",
       "mode": "subagent",
-      "model": "openrouter/deepseek/deepseek-r1:free",
+      "model": "openrouter/qwen/qwen-2.5-72b-instruct",
       "maxSteps": 20,
       "tools": {
         "Read": true,
@@ -78,7 +78,7 @@
     "review": {
       "description": "Code review for quality, security, and spec compliance.",
       "mode": "subagent",
-      "model": "openrouter/openai/gpt-4o-mini",
+      "model": "google/gemini-2.5-pro",
       "maxSteps": 15,
       "tools": {
         "Read": true,
@@ -99,6 +99,22 @@
         "Grep": true,
         "Glob": true,
         "WebSearch": true,
+        "Write": false,
+        "Edit": false,
+        "Bash": false
+      }
+    },
+    "research": {
+      "description": "Web research with real-time data access.",
+      "mode": "subagent",
+      "model": "xai/grok-2",
+      "maxSteps": 15,
+      "tools": {
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "WebSearch": true,
+        "WebFetch": true,
         "Write": false,
         "Edit": false,
         "Bash": false
