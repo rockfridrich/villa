@@ -268,11 +268,14 @@ function GlassLayout({ children, className = "", isEmbedded = false }: { childre
       </motion.div>
 
       {/* Footer Credit - Outside card for depth */}
-      <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-2 opacity-60">
-        <ShieldCheck className="w-4 h-4 text-accent-green" />
-        <span className="text-xs text-ink-muted font-medium tracking-wide">
-          Secured by passkeys on Base
-        </span>
+      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1 opacity-60">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-accent-green" />
+          <span className="text-xs text-ink-muted font-medium tracking-wide">
+            Secured by passkeys on Base
+          </span>
+        </div>
+        <span className="text-[10px] text-ink-muted/60 font-mono">v0.2.0</span>
       </div>
     </div>
   );

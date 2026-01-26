@@ -274,6 +274,11 @@ function SettingsContent() {
               placeholder="Enter nickname"
               className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#FFE047] text-[#0D0D17]"
             />
+            {nickname.trim() && (
+              <p className="text-sm text-[#0D0D17]/60 font-mono bg-[#FFE047]/10 px-3 py-2 rounded-lg">
+                @{nickname.trim().toLowerCase()}.villa.cash
+              </p>
+            )}
             {nicknameError && <p className="text-sm text-red-500">{nicknameError}</p>}
             <p className="text-xs text-[#0D0D17]/40">3-30 characters, letters, numbers, underscores</p>
           </div>

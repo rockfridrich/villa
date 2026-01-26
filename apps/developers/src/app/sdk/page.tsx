@@ -61,8 +61,11 @@ interface AvatarConfig {
     name: "VillaConfig",
     description: "Configuration for Villa SDK instance",
     code: `interface VillaConfig {
-  /** Your application ID */
-  appId: string
+  /** Application ID (optional - auto-derived from origin) */
+  appId?: string
+
+  /** Target environment: 'beta' | 'production' */
+  target?: 'beta' | 'production'
 
   /** Network to use */
   network?: 'base' | 'base-sepolia'
@@ -300,7 +303,8 @@ export default function SDKPage() {
               <CodeBlock
                 code={`import { Villa } from '@rockfridrich/villa-sdk'
 
-const villa = new Villa({ appId: 'your-app' })
+// Zero config - just works!
+const villa = new Villa()
 
 const result = await villa.signIn()
 if (result.success) {
@@ -324,17 +328,21 @@ if (result.success) {
           <div className="space-y-8">
             {/* Villa Constructor */}
             <div className="space-y-4">
-              <h3 className="font-mono text-xl">new Villa(config)</h3>
+              <h3 className="font-mono text-xl">new Villa(config?)</h3>
               <p className="text-ink-muted text-sm">
-                Create a new Villa SDK instance with your app configuration.
+                Create a new Villa SDK instance. All config is optional - works zero-config!
               </p>
               <CodeBlock
                 code={`import { Villa } from '@rockfridrich/villa-sdk'
 
+// Zero config (recommended) - appId auto-derived from origin
+const villa = new Villa()
+
+// Or with explicit config
 const villa = new Villa({
-  appId: 'your-app',           // Required: your app ID
+  appId: 'your-app',           // Optional: auto-derived from origin
+  target: 'production',        // Optional: 'beta' | 'production'
   network: 'base',             // Optional: 'base' | 'base-sepolia'
-  apiUrl: 'https://api.villa.cash',  // Optional: override API
   debug: false                 // Optional: enable debug logs
 })`}
                 language="typescript"

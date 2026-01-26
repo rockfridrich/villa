@@ -282,13 +282,13 @@ export default function PlaygroundPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-ink font-medium">
                 <div className="w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center text-xs">2</div>
-                <h3>Sign in user</h3>
+                <h3>Sign in user (zero config!)</h3>
               </div>
               <CodeBlock 
                 language="typescript" 
                 code={`import { villa } from "@rockfridrich/villa-sdk";
 
-// Trigger the passkey flow
+// Zero config - appId auto-derived from origin
 const user = await villa.signIn();
 
 console.log(user.nickname); // "alice"`} 
