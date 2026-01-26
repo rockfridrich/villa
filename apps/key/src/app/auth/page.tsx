@@ -16,6 +16,10 @@ import {
   signIn,
   isPortoSupported,
   setWebAuthnHandlers,
+  getRemotePorto,
+  initRemoteBridge,
+  RemoteActions,
+  RemoteEvents,
 } from "@/lib/porto";
 import { generateNickname } from "@/lib/nickname";
 
@@ -340,6 +344,60 @@ function AuthPageContent() {
       setTimeout(() => window.close(), 500);
     }
   }, [postToParent, inPopup]);
+
+  useEffect(() => {
+    if (!inIframe && !inPopup) return;
+
+    const porto = getRemotePorto();
+
+    initRemoteBridge().catch((e) => {
+      console.warn("[Villa Auth] Failed to init Porto bridge:", e);
+    });
+
+    const unsubscribe = RemoteEvents.onDialogRequest(porto, async (payload) => {
+      if (!payload.request) return;
+
+      const { request } = payload;
+
+      if (
+        request.method === "wallet_connect" ||
+        request.method === "eth_requestAccounts"
+      ) {
+        const params = request.params?.[0] as
+          | { capabilities?: { createAccount?: boolean } }
+          | undefined;
+        const isCreate = params?.capabilities?.createAccount === true;
+
+        setIsCreating(isCreate);
+        setAuthState("passkey-prompt");
+
+        try {
+          const result = isCreate ? await createAccount() : await signIn();
+          if (result.success) {
+            await RemoteActions.respond(porto, request, {
+              result: {
+                accounts: [{ address: result.address }],
+              },
+            });
+            handleSuccess(result.address, isCreate);
+          } else {
+            await RemoteActions.reject(porto, request);
+            setError(result.error?.message || "Authentication failed");
+            setAuthState("error");
+          }
+        } catch (err) {
+          await RemoteActions.reject(porto, request);
+          const errorMsg = err instanceof Error ? err.message : "Unknown error";
+          setError(errorMsg);
+          setAuthState("error");
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [inIframe, inPopup, handleSuccess]);
 
   const handleSignIn = async () => {
     setError(null);

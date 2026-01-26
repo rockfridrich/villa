@@ -1,4 +1,5 @@
 import { Porto, Mode } from "porto";
+import { Porto as RemotePorto, Actions, Events } from "porto/remote";
 import * as Chains from "porto/core/Chains";
 
 /**
@@ -228,3 +229,57 @@ export function isPortoSupported(): boolean {
     typeof window.PublicKeyCredential !== "undefined"
   );
 }
+
+let remotePortoInstance: ReturnType<typeof RemotePorto.create> | null = null;
+
+/**
+ * Get Remote Porto instance for receiving RPC requests from parent
+ * This is used when key.villa.cash/auth is opened as an iframe/popup by
+ * an SDK using Mode.dialog({ host: 'key.villa.cash/auth' })
+ */
+export function getRemotePorto(): ReturnType<typeof RemotePorto.create> {
+  if (!remotePortoInstance) {
+    remotePortoInstance = RemotePorto.create({
+      chains: getPortoChains(),
+      mode: Mode.relay({
+        keystoreHost: VILLA_KEYSTORE_HOST,
+        webAuthn: {
+          createFn: async (options) => {
+            if (!options) {
+              throw new Error("WebAuthn creation options are required");
+            }
+            const createOptions = options as CredentialCreationOptions;
+            if (createOptions.publicKey?.rp) {
+              createOptions.publicKey.rp.name = "Villa";
+            }
+            webAuthnHandlers.onPasskeyCreate?.();
+            const credential = await navigator.credentials.create(createOptions);
+            return credential as PublicKeyCredential;
+          },
+          getFn: async (options) => {
+            if (!options) {
+              throw new Error("WebAuthn request options are required");
+            }
+            webAuthnHandlers.onPasskeyGet?.();
+            const assertion = await navigator.credentials.get(
+              options as CredentialRequestOptions
+            );
+            return assertion as PublicKeyCredential;
+          },
+        },
+      }),
+    });
+  }
+  return remotePortoInstance;
+}
+
+/**
+ * Initialize the remote Porto bridge for receiving RPC requests
+ * Call this when the auth page loads in iframe/popup mode
+ */
+export async function initRemoteBridge(): Promise<void> {
+  const porto = getRemotePorto();
+  await porto.ready();
+}
+
+export { Actions as RemoteActions, Events as RemoteEvents };
