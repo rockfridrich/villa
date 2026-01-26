@@ -1,20 +1,24 @@
 # Villa Agent Cost Optimization Guide
 
-## Model Assignment (ENFORCED)
+## Model Assignment (ENFORCED) - v3.0
 
-| Task Type        | Agent            | Model  | Cost/1M | Rationale                         |
-| ---------------- | ---------------- | ------ | ------- | --------------------------------- |
-| **Search/Read**  | @explore         | Haiku  | $0.25   | Pattern matching, no reasoning    |
-| **Tests**        | @test            | Haiku  | $0.25   | Run commands, check output        |
-| **Git/Deploy**   | @ops             | Haiku  | $0.25   | Execute scripts, parse output     |
-| **Route Tasks**  | @router          | Haiku  | $0.25   | Classification only               |
-| **Code/Fix**     | @build           | Sonnet | $3      | Implementation requires reasoning |
-| **UI/UX**        | @design          | Sonnet | $3      | Visual decisions                  |
-| **Code Review**  | @review          | Sonnet | $3      | Quality checks                    |
-| **Validation**   | @quality-gate    | Sonnet | $3      | Verify against spec               |
-| **Architecture** | @spec            | Opus   | $15     | Complex system design ONLY        |
-| **Docs**         | @document-writer | Haiku  | $0.25   | Templated content                 |
-| **Research**     | @librarian       | Haiku  | $0.25   | Fetch + summarize                 |
+> **Preferred providers:** Anthropic, Google (Gemini), xAI (Grok), Qwen
+> **Removed:** OpenAI (GPT), DeepSeek
+
+| Task Type        | Agent      | Model           | Cost/1M | Rationale                            |
+| ---------------- | ---------- | --------------- | ------- | ------------------------------------ |
+| **Search/Read**  | @explore   | Gemini Flash    | $0.08   | 1M context, fastest for exploration  |
+| **Tests**        | @test      | Haiku           | $0.25   | Run commands, check output           |
+| **Git/Deploy**   | @ops       | Haiku           | $0.25   | Execute scripts, parse output        |
+| **Route Tasks**  | @router    | Haiku           | $0.25   | Classification only                  |
+| **Code/Fix**     | @build     | Sonnet          | $3.00   | Implementation requires reasoning    |
+| **Quick Fix**    | @fix       | Qwen 72B        | $0.35   | Fast, cheap bug fixes                |
+| **UI/UX**        | @design    | Sonnet          | $3.00   | Visual decisions                     |
+| **Code Review**  | @review    | Gemini Pro      | $1.25   | Alternative perspective, large PRs   |
+| **Validation**   | @quality   | Sonnet          | $3.00   | Verify against spec                  |
+| **Architecture** | @architect | Opus            | $15.00  | Complex system design ONLY           |
+| **Research**     | @research  | Grok            | $5.00   | Real-time web access                 |
+| **Spec Writing** | @spec      | Opus            | $15.00  | Strategic thinking                   |
 
 ## CRITICAL RULES
 
@@ -49,19 +53,15 @@
 
 ```
 Is it search/read/grep?
-  → YES: @explore (Haiku)
+  → YES: @explore (Gemini Flash)
   → NO: ↓
 
 Is it running tests/commands?
   → YES: @test or @ops (Haiku)
   → NO: ↓
 
-Is it writing documentation?
-  → YES: @document-writer (Haiku)
-  → NO: ↓
-
-Is it looking up external docs/examples?
-  → YES: @librarian (Haiku)
+Is it a quick bug fix?
+  → YES: @fix (Qwen 72B)
   → NO: ↓
 
 Is it writing/modifying code?
@@ -71,13 +71,17 @@ Is it writing/modifying code?
   → NO: ↓
 
 Is it code review?
-  → YES: @review (Sonnet)
+  → YES: @review (Gemini Pro)
+  → NO: ↓
+
+Is it web research with real-time data?
+  → YES: @research (Grok)
   → NO: ↓
 
 Is it system architecture/design?
   → YES: Is it security-critical or novel?
-    → YES: @spec (Opus)
-    → NO: @build (Sonnet) with Oracle consultation
+    → YES: @architect (Opus)
+    → NO: @build (Sonnet) with @architect consultation
   → NO: ↓
 
 Default: @build (Sonnet)
@@ -120,35 +124,54 @@ opencode session export --format json > session_$(date +%Y%m%d).json
 # | ... |
 ```
 
-## Benchmarks
+## Model Benchmarks
 
-### Haiku ($0.25/1M) - Use For:
+### Gemini Flash ($0.08/1M) - Search/Explore
+- Context: 1M tokens
+- Speed: 150+ tokens/sec
+- Tasks: file search, codebase exploration, pattern matching
 
+### Haiku ($0.25/1M) - Tests/Ops
+- Context: 200K tokens
 - Speed: 100+ tokens/sec
-- Good at: Pattern matching, extraction, classification
-- Tasks: grep, find, read, summarize, route, run tests
+- Tasks: run tests, git ops, command execution
 
-### Sonnet ($3/1M) - Use For:
+### Qwen 72B ($0.35/1M) - Quick Fixes
+- Context: 131K tokens
+- Speed: 80+ tokens/sec
+- Tasks: bug fixes, small refactors, typo corrections
 
+### Gemini Pro ($1.25/1M) - Code Review
+- Context: 2M tokens
+- Speed: 60+ tokens/sec
+- Tasks: large PR reviews, cross-file analysis
+
+### Sonnet ($3/1M) - Implementation
+- Context: 200K tokens
 - Speed: 50+ tokens/sec
-- Good at: Reasoning, code generation, analysis
-- Tasks: implement features, fix bugs, review code
+- Tasks: feature implementation, UI development
 
-### Opus ($15/1M) - Use ONLY For:
+### Grok ($5/1M) - Research
+- Context: 131K tokens
+- Speed: 40+ tokens/sec
+- Features: real-time web access
+- Tasks: documentation lookup, API research
 
+### Opus ($15/1M) - Architecture ONLY
+- Context: 200K tokens
 - Speed: 30+ tokens/sec
-- Good at: Complex reasoning, novel problems, security
-- Tasks: system architecture, security design, breaking changes
+- Tasks: system design, security decisions, breaking changes
 
 ## Anti-Patterns to Avoid
 
-| Bad Pattern            | Cost Impact   | Fix                       |
-| ---------------------- | ------------- | ------------------------- |
-| Opus writes unit tests | 60x overspend | @test runs, @build writes |
-| Opus fixes typos       | 60x overspend | @build or manual          |
-| Opus does code review  | 5x overspend  | @review (Sonnet)          |
-| Opus searches codebase | 60x overspend | @explore (Haiku)          |
-| Sonnet does grep       | 12x overspend | @explore (Haiku)          |
+| Bad Pattern            | Cost Impact    | Fix                          |
+| ---------------------- | -------------- | ---------------------------- |
+| Opus writes unit tests | 60x overspend  | @test runs, @build writes    |
+| Opus fixes typos       | 43x overspend  | @fix (Qwen)                  |
+| Opus does code review  | 12x overspend  | @review (Gemini Pro)         |
+| Opus searches codebase | 188x overspend | @explore (Gemini Flash)      |
+| Sonnet does grep       | 38x overspend  | @explore (Gemini Flash)      |
+| Sonnet does quick fix  | 9x overspend   | @fix (Qwen)                  |
 
 ## Escalation Protocol
 
