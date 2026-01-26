@@ -5,12 +5,12 @@
     "production": {
       "hub": "https://villa.cash",
       "key": "https://key.villa.cash",
-      "api": "https://villa.cash/api"
+      "api": "https://api.villa.cash"
     },
     "staging": {
       "hub": "https://construction.villa.cash",
       "key": "https://key.villa.cash",
-      "api": "https://construction.villa.cash/api"
+      "api": "https://api.villa.cash"
     }
   },
   "chains": {
