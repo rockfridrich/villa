@@ -100,8 +100,8 @@ export default function PlaygroundPage() {
                   </>
                 )}
               </button>
-              <a 
-                href="/docs" 
+              <a
+                href="/sdk"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border border-ink/10 rounded-xl font-medium text-lg text-ink hover:bg-cream-50 transition-colors"
               >
                 Read Docs
@@ -297,8 +297,8 @@ console.log(user.nickname); // "alice"`}
           </div>
           
           <div className="flex justify-center pt-8">
-             <a 
-                href="/docs" 
+             <a
+                href="/sdk"
                 className="group inline-flex items-center gap-2 px-6 py-3 bg-white border border-ink/10 rounded-full font-medium text-ink hover:bg-cream-50 transition-colors shadow-sm"
               >
                 <Code2 className="w-4 h-4" />

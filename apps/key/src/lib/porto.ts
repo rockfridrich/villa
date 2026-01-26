@@ -96,6 +96,10 @@ export function getPorto(): ReturnType<typeof Porto.create> {
             if (createOptions.publicKey?.rp) {
               createOptions.publicKey.rp.name = "Villa";
             }
+            // Set displayName for better identification in password managers
+            if (createOptions.publicKey?.user) {
+              createOptions.publicKey.user.displayName = "Your Villa Key";
+            }
             // Notify Villa UI that passkey creation is starting
             webAuthnHandlers.onPasskeyCreate?.();
             // Browser shows biometric prompt
@@ -251,6 +255,10 @@ export function getRemotePorto(): ReturnType<typeof RemotePorto.create> {
             const createOptions = options as CredentialCreationOptions;
             if (createOptions.publicKey?.rp) {
               createOptions.publicKey.rp.name = "Villa";
+            }
+            // Set displayName for better identification in password managers
+            if (createOptions.publicKey?.user) {
+              createOptions.publicKey.user.displayName = "Your Villa Key";
             }
             webAuthnHandlers.onPasskeyCreate?.();
             const credential = await navigator.credentials.create(createOptions);

@@ -245,9 +245,9 @@ export class VillaBridge {
         url.searchParams.set("origin", window.location.origin);
         url.searchParams.set("mode", "popup"); // Signal to auth page it's in popup mode
 
-        // Open popup window
-        const width = 480;
-        const height = 720;
+        // Open popup window (Porto-identical size)
+        const width = 380;
+        const height = 520;
         const left = Math.max(0, (window.screen.width - width) / 2);
         const top = Math.max(0, (window.screen.height - height) / 2);
 
@@ -622,6 +622,7 @@ export class VillaBridge {
     const overlay = document.createElement("div");
     overlay.id = "villa-loading-overlay";
 
+    // Loading overlay matches container size (380×520 on desktop)
     Object.assign(overlay.style, {
       position: "absolute",
       top: "0",
@@ -633,7 +634,7 @@ export class VillaBridge {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: "#FFFDF8",
-      borderRadius: isMobile ? "0" : "20px",
+      borderRadius: isMobile ? "0" : "14px",
       zIndex: "1",
       transition: "opacity 0.25s ease-out, transform 0.25s ease-out",
       animation: isMobile
@@ -757,13 +758,14 @@ export class VillaBridge {
         backgroundColor: "transparent",
       });
     } else {
+      // Porto-identical modal size
       Object.assign(iframe.style, {
-        width: "420px",
-        height: "560px",
+        width: "380px",
+        height: "520px",
         maxWidth: "calc(100vw - 48px)",
         maxHeight: "calc(100vh - 48px)",
         border: "none",
-        borderRadius: "20px",
+        borderRadius: "14px",
         backgroundColor: "#FFFDF8",
         boxShadow:
           "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
