@@ -96,11 +96,10 @@ export function VillaProvider({ children, config }: VillaProviderProps) {
     return new Promise((resolve) => {
       // Create iframe for auth
       const iframe = document.createElement('iframe')
-      const params = new URLSearchParams({
-        appId: config.appId,
-        network: config.network || 'base',
-        origin: window.location.origin,
-      })
+      const params = new URLSearchParams()
+      if (config.appId) params.set('appId', config.appId)
+      params.set('network', config.network || 'base')
+      params.set('origin', window.location.origin)
 
       iframe.src = `${AUTH_URL}?${params}`
       iframe.style.cssText = `

@@ -35,6 +35,7 @@ import {
   isDevelopment,
   ALLOWED_ORIGINS,
 } from "./validation";
+import { deriveAppId } from "../config";
 
 /** Default timeout: 5 minutes */
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
@@ -84,25 +85,11 @@ export class VillaBridge {
   private readonly authUrl: string;
   private mode: "iframe" | "popup" = "iframe";
 
-  /**
-   * Create a new VillaBridge instance
-   *
-   * @param config - Bridge configuration
-   * @throws {Error} If appId is missing or invalid
-   */
-  constructor(config: BridgeConfig) {
-    // Validate required fields
-    if (!config.appId || typeof config.appId !== "string") {
-      throw new Error("[VillaBridge] appId is required");
-    }
+  constructor(config: BridgeConfig = {}) {
+    const appId = config.appId?.trim() || deriveAppId();
 
-    if (config.appId.trim().length === 0) {
-      throw new Error("[VillaBridge] appId cannot be empty");
-    }
-
-    // Set defaults
     this.config = {
-      appId: config.appId.trim(),
+      appId,
       origin: config.origin || "",
       network: config.network || "base",
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,

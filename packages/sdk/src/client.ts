@@ -27,6 +27,7 @@ import {
   clearSession,
   isSessionValid,
 } from "./session";
+import { getTargetConfig, deriveAppId, type Target } from "./config";
 
 /**
  * Data scopes that apps can request
@@ -99,39 +100,31 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
  * ```
  */
 export class Villa {
-  private config: VillaConfig & { appId: string; network: "base" | "base-sepolia"; apiUrl: string };
+  private config: VillaConfig & { appId: string; network: "base" | "base-sepolia"; apiUrl: string; target: Target };
   private currentSession: VillaSession | null = null;
   private authUrl: string;
+  private debug: boolean;
 
-  /**
-   * Creates a new Villa SDK instance
-   *
-   * @param config - SDK configuration
-   * @throws {Error} If config is invalid
-   */
-  constructor(config: VillaConfig) {
-    // Validate required fields
-    if (!config.appId || typeof config.appId !== "string") {
-      throw new Error("[Villa SDK] appId is required and must be a string");
-    }
+  constructor(config: VillaConfig = {}) {
+    const target: Target = config.target || "beta";
+    const targetConfig = getTargetConfig(target);
+    const appId = config.appId?.trim() || deriveAppId();
 
-    if (config.appId.trim().length === 0) {
-      throw new Error("[Villa SDK] appId cannot be empty");
-    }
-
+    this.debug = config.debug || false;
     this.config = {
-      appId: config.appId.trim(),
-      network: config.network || "base-sepolia",
+      appId,
+      target,
+      network: config.network || (target === "production" ? "base" : "base-sepolia"),
       apiUrl: config.apiUrl || "https://api.villa.cash",
       rpcUrl: config.rpcUrl,
     };
 
-    this.authUrl =
-      this.config.network === "base-sepolia"
-        ? "https://fake-key.villa.cash/auth"
-        : "https://key.villa.cash/auth";
+    this.authUrl = `${targetConfig.key}/auth`;
 
-    // Try to load existing session
+    if (this.debug) {
+      console.log("[Villa SDK] Initialized", { target, appId, authUrl: this.authUrl });
+    }
+
     this.currentSession = loadSession();
   }
 

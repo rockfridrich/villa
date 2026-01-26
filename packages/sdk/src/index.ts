@@ -91,6 +91,10 @@ export {
 } from "./contracts";
 export type { ContractDeployment, ChainContracts } from "./contracts";
 
+// Target configuration
+export { TARGETS, getTargetConfig, deriveAppId } from "./config";
+export type { Target } from "./config";
+
 // Auth utilities - WebAuthn error handling & browser capabilities
 export {
   PasskeyManagerType,

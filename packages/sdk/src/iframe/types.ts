@@ -44,23 +44,13 @@ export type VillaErrorCode =
   | 'CONSENT_REQUIRED'
   | 'LOGOUT'
 
-/**
- * Bridge configuration
- */
 export interface BridgeConfig {
-  /** Your application ID */
-  appId: string
-  /** Override Villa auth origin (defaults to production) */
+  appId?: string
   origin?: string
-  /** Network to use (affects default origin) */
   network?: 'base' | 'base-sepolia'
-  /** Timeout for auth flow in ms (default: 5 minutes) */
   timeout?: number
-  /** Enable debug logging */
   debug?: boolean
-  /** Prefer popup over iframe (useful when iframes are blocked) */
   preferPopup?: boolean
-  /** Timeout to detect iframe blocking in ms (default: 3 seconds) */
   iframeDetectionTimeout?: number
 }
 
