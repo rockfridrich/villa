@@ -43,16 +43,21 @@ const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
 
 async function getAuthUrl(network: "base" | "base-sepolia"): Promise<string> {
-  if (isDevelopment() && typeof window !== "undefined") {
+  // Local development URLs - check regardless of NODE_ENV to support E2E tests
+  if (typeof window !== "undefined") {
     const { hostname } = window.location;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:3001/auth";
+    }
     if (hostname === "local.villa.cash") {
       return "https://local-key.villa.cash/auth";
     }
-    if (hostname === "local-docs.villa.cash" || hostname === "localhost" || hostname === "127.0.0.1") {
+    if (hostname === "local-docs.villa.cash") {
       return "http://localhost:3001/auth";
     }
   }
   
+  // Production/staging: fetch from config manifest
   const target: VillaTarget = network === "base" ? "production" : "staging";
   const config = await loadConfigManifest();
   const endpoints = getEndpoints(config, target);
