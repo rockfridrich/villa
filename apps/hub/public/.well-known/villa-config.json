@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "schemaVersion": "2024-01",
+  "endpoints": {
+    "production": {
+      "hub": "https://villa.cash",
+      "key": "https://key.villa.cash",
+      "api": "https://villa.cash/api"
+    },
+    "staging": {
+      "hub": "https://construction.villa.cash",
+      "key": "https://key.villa.cash",
+      "api": "https://construction.villa.cash/api"
+    }
+  },
+  "chains": {
+    "production": { "id": 8453, "name": "Base" },
+    "staging": { "id": 84532, "name": "Base Sepolia" }
+  },
+  "features": {
+    "claimNickname": false,
+    "socialLookup": true,
+    "avatarUpload": true
+  },
+  "contracts": {
+    "nicknameResolver": "0x180ddE044F1627156Cac6b2d068706508902AE9C",
+    "recoverySigner": "0xdFb55a363bdF549EE5C2e77D0aAaC39068ED5836"
+  },
+  "ui": {
+    "avatarStyles": ["lorelei", "bottts", "adventurer", "thumbs"],
+    "defaultAvatarStyle": "lorelei"
+  },
+  "sdk": {
+    "minVersion": "0.2.0",
+    "deprecatedMethods": []
+  }
+}

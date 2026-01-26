@@ -91,9 +91,14 @@ export {
 } from "./contracts";
 export type { ContractDeployment, ChainContracts } from "./contracts";
 
-// Target configuration
+// Target configuration (static defaults)
 export { TARGETS, getTargetConfig, deriveAppId } from "./config";
 export type { Target } from "./config";
+
+// Runtime config (dynamically loaded)
+export { loadConfigManifest, getEndpoints, getChain, clearConfigCache, DEFAULT_CONFIG } from "./config-loader";
+export { VillaConfigManifestSchema } from "./config-schema";
+export type { VillaConfigManifest, VillaEndpoints, VillaTarget } from "./config-schema";
 
 // Auth utilities - WebAuthn error handling & browser capabilities
 export {

@@ -36,19 +36,13 @@ import {
   ALLOWED_ORIGINS,
 } from "./validation";
 import { deriveAppId } from "../config";
+import { loadConfigManifest, getEndpoints } from "../config-loader";
+import type { VillaTarget } from "../config-schema";
 
-/** Default timeout: 5 minutes */
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
-
-/** Default iframe detection timeout: 3 seconds */
 const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
 
-const AUTH_URLS = {
-  base: "https://key.villa.cash/auth",
-  "base-sepolia": "https://fake-key.villa.cash/auth",
-} as const;
-
-function getAuthUrl(network: "base" | "base-sepolia"): string {
+async function getAuthUrl(network: "base" | "base-sepolia"): Promise<string> {
   if (isDevelopment() && typeof window !== "undefined") {
     const { hostname } = window.location;
     if (hostname === "local.villa.cash") {
@@ -58,7 +52,11 @@ function getAuthUrl(network: "base" | "base-sepolia"): string {
       return "http://localhost:3001/auth";
     }
   }
-  return AUTH_URLS[network];
+  
+  const target: VillaTarget = network === "base" ? "production" : "staging";
+  const config = await loadConfigManifest();
+  const endpoints = getEndpoints(config, target);
+  return `${endpoints.key}/auth`;
 }
 
 /**
@@ -82,7 +80,7 @@ export class VillaBridge {
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private iframeDetectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private state: BridgeState = "idle";
-  private readonly authUrl: string;
+  private authUrl: string | null = null;
   private mode: "iframe" | "popup" = "iframe";
 
   constructor(config: BridgeConfig = {}) {
@@ -99,9 +97,7 @@ export class VillaBridge {
         config.iframeDetectionTimeout || DEFAULT_IFRAME_DETECTION_TIMEOUT_MS,
     };
 
-    // Determine auth URL
     if (this.config.origin) {
-      // Custom origin provided - validate it
       if (!this.isOriginAllowed(this.config.origin)) {
         throw new Error(
           `[VillaBridge] Origin not in allowlist: ${this.config.origin}. ` +
@@ -109,15 +105,19 @@ export class VillaBridge {
         );
       }
       this.authUrl = `${this.config.origin}/auth`;
-    } else {
-      this.authUrl = getAuthUrl(this.config.network);
     }
 
     this.log("Initialized with config:", {
       appId: this.config.appId,
       network: this.config.network,
-      authUrl: this.authUrl,
     });
+  }
+
+  private async resolveAuthUrl(): Promise<string> {
+    if (this.authUrl) return this.authUrl;
+    this.authUrl = await getAuthUrl(this.config.network);
+    this.log("Resolved auth URL:", this.authUrl);
+    return this.authUrl;
   }
 
   /**
@@ -160,13 +160,13 @@ export class VillaBridge {
 
     this.state = "opening";
 
-    // If preferPopup is set, go straight to popup mode
+    await this.resolveAuthUrl();
+
     if (this.config.preferPopup) {
       this.log("Opening auth popup (preferPopup=true)...");
       return this.openPopup(scopes);
     }
 
-    // Otherwise, try iframe with fallback to popup
     this.log("Opening auth iframe (with popup fallback)...");
     return this.openIframeWithFallback(scopes);
   }
@@ -225,8 +225,7 @@ export class VillaBridge {
       try {
         this.mode = "popup";
 
-        // Build URL with params
-        const url = new URL(this.authUrl);
+        const url = new URL(this.authUrl!);
         url.searchParams.set("appId", this.config.appId);
         url.searchParams.set("scopes", scopes.join(","));
         url.searchParams.set("origin", window.location.origin);
@@ -439,8 +438,7 @@ export class VillaBridge {
       return;
     }
 
-    // Get target origin from auth URL
-    const url = new URL(this.authUrl);
+    const url = new URL(this.authUrl!);
     const targetOrigin = url.origin;
 
     this.log("Posting message:", message);
@@ -713,8 +711,7 @@ export class VillaBridge {
   private createIframe(scopes: string[]): HTMLIFrameElement {
     const iframe = document.createElement("iframe");
 
-    // Build URL with params
-    const url = new URL(this.authUrl);
+    const url = new URL(this.authUrl!);
     url.searchParams.set("appId", this.config.appId);
     url.searchParams.set("scopes", scopes.join(","));
     url.searchParams.set("origin", window.location.origin);

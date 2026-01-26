@@ -22,6 +22,7 @@
  */
 
 import type { Identity, VillaConfig } from "./types";
+import type { VillaConfigManifest } from "./config-schema";
 import { VillaBridge } from "./iframe/bridge";
 import {
   saveSession,
@@ -36,6 +37,7 @@ import {
   isTinyCloudSignedIn,
   type VillaProfile as TinyCloudProfile,
 } from "./tinycloud";
+import { loadConfigManifest, getEndpoints } from "./config-loader";
 
 export interface VillaUser {
   address: `0x${string}`;
@@ -74,12 +76,27 @@ interface VillaInstance {
 }
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-const API_URL = "https://villa.cash";
 
 let _config: VillaConfig = {
   appId: "villa-app",
   network: "base-sepolia",
 };
+
+let _configManifestPromise: Promise<VillaConfigManifest> | null = null;
+
+async function getConfigManifest(): Promise<VillaConfigManifest> {
+  if (!_configManifestPromise) {
+    _configManifestPromise = loadConfigManifest();
+  }
+  return _configManifestPromise;
+}
+
+async function getApiUrl(): Promise<string> {
+  if (_config.apiUrl) return _config.apiUrl;
+  const manifest = await getConfigManifest();
+  const target = _config.network === "base" ? "production" : "staging";
+  return getEndpoints(manifest, target).api;
+}
 
 let _user: VillaUser | null = null;
 let _listeners: Set<(user: VillaUser | null) => void> = new Set();
@@ -235,8 +252,9 @@ async function getProfile(address?: string): Promise<SimpleProfile | null> {
   }
 
   try {
+    const apiUrl = await getApiUrl();
     const response = await fetch(
-      `${_config.apiUrl || API_URL}/api/profile/${targetAddress.toLowerCase()}`
+      `${apiUrl}/profile/${targetAddress.toLowerCase()}`
     );
     
     if (!response.ok) {
@@ -269,7 +287,8 @@ async function uploadAvatar(file: File): Promise<string> {
   formData.append("file", file);
   formData.append("address", _user.address);
 
-  const response = await fetch(`${_config.apiUrl || API_URL}/api/profile`, {
+  const apiUrl = await getApiUrl();
+  const response = await fetch(`${apiUrl}/profile`, {
     method: "PATCH",
     body: JSON.stringify({
       address: _user.address,
