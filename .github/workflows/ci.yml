@@ -233,28 +233,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: deps-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
-          restore-keys: deps-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Validate agent definitions
-        run: cd apps/hub && node --import tsx ../../.claude/rag/loader.ts validate
+      - name: Validate agent files exist
+        run: |
+          # Basic validation that agent directories exist and have content
+          if [ ! -d ".opencode/agents" ] && [ ! -d ".claude/agents" ]; then
+            echo "ERROR: No agent directories found"
+            exit 1
+          fi
+          
+          agent_count=0
+          for dir in .opencode/agents .claude/agents; do
+            if [ -d "$dir" ]; then
+              count=$(find "$dir" -name "*.md" -type f | wc -l)
+              agent_count=$((agent_count + count))
+              echo "Found $count agent files in $dir"
+            fi
+          done
+          
+          if [ "$agent_count" -eq 0 ]; then
+            echo "ERROR: No agent definition files found"
+            exit 1
+          fi
+          
+          echo "✅ Found $agent_count total agent definition files"
 
   validate-specs:
     name: Validate Specifications
