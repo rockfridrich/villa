@@ -96,6 +96,10 @@ export function getPorto(): ReturnType<typeof Porto.create> {
             if (createOptions.publicKey?.rp) {
               createOptions.publicKey.rp.name = "Villa";
             }
+            // Set displayName for better identification in password managers
+            if (createOptions.publicKey?.user) {
+              createOptions.publicKey.user.displayName = "Your Villa Key";
+            }
             // Notify Villa UI that passkey creation is starting
             webAuthnHandlers.onPasskeyCreate?.();
             // Browser shows biometric prompt
@@ -230,6 +234,22 @@ export function isPortoSupported(): boolean {
   );
 }
 
+/**
+ * Check if user has existing accounts (without triggering WebAuthn)
+ * Returns true if accounts exist, false otherwise
+ */
+export async function hasExistingAccounts(): Promise<boolean> {
+  try {
+    const porto = getPorto();
+    const accounts = await porto.provider.request({
+      method: "wallet_getAccounts",
+    });
+    return Array.isArray(accounts) && accounts.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 let remotePortoInstance: ReturnType<typeof RemotePorto.create> | null = null;
 
 /**
@@ -251,6 +271,10 @@ export function getRemotePorto(): ReturnType<typeof RemotePorto.create> {
             const createOptions = options as CredentialCreationOptions;
             if (createOptions.publicKey?.rp) {
               createOptions.publicKey.rp.name = "Villa";
+            }
+            // Set displayName for better identification in password managers
+            if (createOptions.publicKey?.user) {
+              createOptions.publicKey.user.displayName = "Your Villa Key";
             }
             webAuthnHandlers.onPasskeyCreate?.();
             const credential = await navigator.credentials.create(createOptions);

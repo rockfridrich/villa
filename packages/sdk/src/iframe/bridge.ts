@@ -35,6 +35,7 @@ import {
   isDevelopment,
   ALLOWED_ORIGINS,
 } from "./validation";
+import { deriveAppId } from "../config";
 
 /** Default timeout: 5 minutes */
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
@@ -84,25 +85,11 @@ export class VillaBridge {
   private readonly authUrl: string;
   private mode: "iframe" | "popup" = "iframe";
 
-  /**
-   * Create a new VillaBridge instance
-   *
-   * @param config - Bridge configuration
-   * @throws {Error} If appId is missing or invalid
-   */
-  constructor(config: BridgeConfig) {
-    // Validate required fields
-    if (!config.appId || typeof config.appId !== "string") {
-      throw new Error("[VillaBridge] appId is required");
-    }
+  constructor(config: BridgeConfig = {}) {
+    const appId = config.appId?.trim() || deriveAppId();
 
-    if (config.appId.trim().length === 0) {
-      throw new Error("[VillaBridge] appId cannot be empty");
-    }
-
-    // Set defaults
     this.config = {
-      appId: config.appId.trim(),
+      appId,
       origin: config.origin || "",
       network: config.network || "base",
       timeout: config.timeout || DEFAULT_TIMEOUT_MS,
@@ -245,9 +232,9 @@ export class VillaBridge {
         url.searchParams.set("origin", window.location.origin);
         url.searchParams.set("mode", "popup"); // Signal to auth page it's in popup mode
 
-        // Open popup window
-        const width = 480;
-        const height = 720;
+        // Open popup window (Porto-identical size)
+        const width = 380;
+        const height = 520;
         const left = Math.max(0, (window.screen.width - width) / 2);
         const top = Math.max(0, (window.screen.height - height) / 2);
 
@@ -622,6 +609,7 @@ export class VillaBridge {
     const overlay = document.createElement("div");
     overlay.id = "villa-loading-overlay";
 
+    // Loading overlay matches container size (380×520 on desktop)
     Object.assign(overlay.style, {
       position: "absolute",
       top: "0",
@@ -633,7 +621,7 @@ export class VillaBridge {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: "#FFFDF8",
-      borderRadius: isMobile ? "0" : "20px",
+      borderRadius: isMobile ? "0" : "14px",
       zIndex: "1",
       transition: "opacity 0.25s ease-out, transform 0.25s ease-out",
       animation: isMobile
@@ -757,13 +745,14 @@ export class VillaBridge {
         backgroundColor: "transparent",
       });
     } else {
+      // Porto-identical modal size
       Object.assign(iframe.style, {
-        width: "420px",
-        height: "560px",
+        width: "380px",
+        height: "520px",
         maxWidth: "calc(100vw - 48px)",
         maxHeight: "calc(100vh - 48px)",
         border: "none",
-        borderRadius: "20px",
+        borderRadius: "14px",
         backgroundColor: "#FFFDF8",
         boxShadow:
           "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",

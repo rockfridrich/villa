@@ -5,9 +5,12 @@ import { useCallback, useEffect, useRef, useMemo, useState, Suspense } from "rea
 import { Loader2, LogOut, Check, X, User, Palette } from "lucide-react";
 import { Web3Avatar } from "@/lib/web3-avatar";
 
-const HUB_API_URL = process.env.NEXT_PUBLIC_HUB_API_URL || "https://beta.villa.cash";
+const HUB_API_URL = process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
 
-const AVATAR_STYLES = ["web3", "lorelei", "adventurer", "avataaars", "bottts", "thumbs"] as const;
+const AVATAR_STYLES = ["web3", "lorelei", "adventurer", "avataaars"] as const;
+
+const DIALOG_WIDTH = 380;
+const DIALOG_HEIGHT = 520;
 
 interface ProfileData {
   nickname: string;
@@ -17,7 +20,7 @@ interface ProfileData {
 const VILLA_ORIGINS = [
   "https://villa.cash",
   "https://www.villa.cash",
-  "https://beta.villa.cash",
+  "https://construction.villa.cash",
   "https://construction.villa.cash",
   "https://docs.villa.cash",
   "https://key.villa.cash",
@@ -175,7 +178,10 @@ function SettingsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center">
+      <div 
+        className="bg-[#FFFDF8] flex items-center justify-center"
+        style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT }}
+      >
         <Loader2 className="w-8 h-8 animate-spin text-[#FFE047]" />
       </div>
     );
@@ -183,7 +189,10 @@ function SettingsContent() {
 
   if (!address) {
     return (
-      <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center p-4">
+      <div 
+        className="bg-[#FFFDF8] flex items-center justify-center p-4"
+        style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT }}
+      >
         <div className="text-center">
           <p className="text-[#0D0D17]/60">Missing address parameter</p>
         </div>
@@ -192,16 +201,19 @@ function SettingsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] flex flex-col">
-      <div className="p-4 border-b border-black/5 flex items-center justify-between">
+    <div 
+      className="bg-[#FFFDF8] flex flex-col overflow-hidden"
+      style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT, maxWidth: '100vw', maxHeight: '100vh' }}
+    >
+      <div className="p-4 border-b border-black/5 flex items-center justify-between shrink-0">
         <h1 className="font-serif text-xl text-[#0D0D17]">Settings</h1>
         <button onClick={handleCancel} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
           <X className="w-5 h-5 text-[#0D0D17]/60" />
         </button>
       </div>
 
-      <div className="flex-1 p-6 space-y-8 overflow-auto">
-        <section className="space-y-4">
+      <div className="flex-1 p-4 space-y-6 overflow-auto">
+        <section className="space-y-3">
           <div className="flex items-center gap-2 text-[#0D0D17]/60">
             <Palette className="w-4 h-4" />
             <span className="text-sm font-medium uppercase tracking-wider">Avatar</span>
@@ -209,43 +221,43 @@ function SettingsContent() {
 
           <div className="flex justify-center">
             {selectedStyle === "web3" ? (
-              <Web3Avatar address={address} size={96} className="ring-4 ring-[#FFE047]/30" />
+              <Web3Avatar address={address} size={80} className="ring-4 ring-[#FFE047]/30" />
             ) : (
               <img
                 src={`https://api.dicebear.com/7.x/${selectedStyle}/svg?seed=${address}`}
                 alt="Avatar"
-                className="w-24 h-24 rounded-full ring-4 ring-[#FFE047]/30"
+                className="w-20 h-20 rounded-full ring-4 ring-[#FFE047]/30"
               />
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {AVATAR_STYLES.map((style) => (
               <button
                 key={style}
                 onClick={() => setSelectedStyle(style)}
-                className={`p-3 rounded-xl border-2 transition-all ${
+                className={`p-2 rounded-xl border-2 transition-all ${
                   selectedStyle === style
                     ? "border-[#FFE047] bg-[#FFE047]/10"
                     : "border-transparent bg-black/5 hover:bg-black/10"
                 }`}
               >
                 {style === "web3" ? (
-                  <Web3Avatar address={address} size={48} className="mx-auto" />
+                  <Web3Avatar address={address} size={40} className="mx-auto" />
                 ) : (
                   <img
-                    src={`https://api.dicebear.com/7.x/${style}/svg?seed=${address}`}
+                    src={`https://api.dicebear.com/7.x/${selectedStyle}/svg?seed=${address}`}
                     alt={style}
-                    className="w-12 h-12 mx-auto rounded-full"
+                    className="w-10 h-10 mx-auto rounded-full"
                   />
                 )}
-                <p className="text-xs text-center mt-2 text-[#0D0D17]/60 capitalize">{style}</p>
+                <p className="text-xs text-center mt-1 text-[#0D0D17]/60 capitalize">{style}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center gap-2 text-[#0D0D17]/60">
             <User className="w-4 h-4" />
             <span className="text-sm font-medium uppercase tracking-wider">Nickname</span>
@@ -262,17 +274,22 @@ function SettingsContent() {
               placeholder="Enter nickname"
               className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#FFE047] text-[#0D0D17]"
             />
+            {nickname.trim() && (
+              <p className="text-sm text-[#0D0D17]/60 font-mono bg-[#FFE047]/10 px-3 py-2 rounded-lg">
+                @{nickname.trim().toLowerCase()}.villa.cash
+              </p>
+            )}
             {nicknameError && <p className="text-sm text-red-500">{nicknameError}</p>}
             <p className="text-xs text-[#0D0D17]/40">3-30 characters, letters, numbers, underscores</p>
           </div>
         </section>
       </div>
 
-      <div className="p-4 border-t border-black/5 space-y-3">
+      <div className="p-4 border-t border-black/5 space-y-2 shrink-0">
         <button
           onClick={handleSave}
           disabled={saving || !nickname.trim()}
-          className="w-full py-4 bg-[#FFE047] text-[#0D0D17] font-medium rounded-xl hover:bg-[#FDD835] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-[#FFE047] text-[#0D0D17] font-medium rounded-xl hover:bg-[#FDD835] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
           Save Changes
@@ -280,7 +297,7 @@ function SettingsContent() {
 
         <button
           onClick={handleLogout}
-          className="w-full py-3 text-red-500 font-medium rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2 text-red-500 text-sm font-medium rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
         >
           <LogOut className="w-4 h-4" />
           Sign Out

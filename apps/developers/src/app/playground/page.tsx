@@ -100,8 +100,8 @@ export default function PlaygroundPage() {
                   </>
                 )}
               </button>
-              <a 
-                href="/docs" 
+              <a
+                href="/sdk"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border border-ink/10 rounded-xl font-medium text-lg text-ink hover:bg-cream-50 transition-colors"
               >
                 Read Docs
@@ -282,13 +282,13 @@ export default function PlaygroundPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-ink font-medium">
                 <div className="w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center text-xs">2</div>
-                <h3>Sign in user</h3>
+                <h3>Sign in user (zero config!)</h3>
               </div>
               <CodeBlock 
                 language="typescript" 
                 code={`import { villa } from "@rockfridrich/villa-sdk";
 
-// Trigger the passkey flow
+// Zero config - appId auto-derived from origin
 const user = await villa.signIn();
 
 console.log(user.nickname); // "alice"`} 
@@ -297,8 +297,8 @@ console.log(user.nickname); // "alice"`}
           </div>
           
           <div className="flex justify-center pt-8">
-             <a 
-                href="/docs" 
+             <a
+                href="/sdk"
                 className="group inline-flex items-center gap-2 px-6 py-3 bg-white border border-ink/10 rounded-full font-medium text-ink hover:bg-cream-50 transition-colors shadow-sm"
               >
                 <Code2 className="w-4 h-4" />

@@ -20,11 +20,12 @@ import {
   initRemoteBridge,
   RemoteActions,
   RemoteEvents,
+  hasExistingAccounts,
 } from "@/lib/porto";
 import { generateNickname } from "@/lib/nickname";
 
 const HUB_API_URL =
-  process.env.NEXT_PUBLIC_HUB_API_URL || "https://beta.villa.cash";
+  process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
 
 interface ProfileData {
   nickname: string;
@@ -267,11 +268,14 @@ function GlassLayout({ children, className = "", isEmbedded = false }: { childre
       </motion.div>
 
       {/* Footer Credit - Outside card for depth */}
-      <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-2 opacity-60">
-        <ShieldCheck className="w-4 h-4 text-accent-green" />
-        <span className="text-xs text-ink-muted font-medium tracking-wide">
-          Secured by passkeys on Base
-        </span>
+      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1 opacity-60">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-accent-green" />
+          <span className="text-xs text-ink-muted font-medium tracking-wide">
+            Secured by passkeys on Base
+          </span>
+        </div>
+        <span className="text-[10px] text-ink-muted/60 font-mono">v0.2.0</span>
       </div>
     </div>
   );
@@ -283,6 +287,7 @@ function AuthPageContent() {
   const [authState, setAuthState] = useState<AuthState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [hasAccounts, setHasAccounts] = useState<boolean | null>(null);
 
   const queryOrigin = searchParams.get("origin");
   const targetOrigin = useMemo(
@@ -328,6 +333,10 @@ function AuthPageContent() {
         setAuthState("error");
       },
     });
+  }, []);
+
+  useEffect(() => {
+    hasExistingAccounts().then(setHasAccounts);
   }, []);
 
   const handleSuccess = useCallback(
@@ -621,18 +630,20 @@ function AuthPageContent() {
           Sign In
         </button>
 
-        <button
-          onClick={handleCreateAccount}
-          disabled={authState !== "idle"}
-          className="w-full min-h-14 py-4 px-6 bg-white/50 border border-white/60
-                     text-ink font-medium rounded-2xl hover:bg-white/80
-                     focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
-                     disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          <UserPlus className="w-5 h-5" />
-          Create Villa ID
-        </button>
+        {hasAccounts === false && (
+          <button
+            onClick={handleCreateAccount}
+            disabled={authState !== "idle"}
+            className="w-full min-h-14 py-4 px-6 bg-white/50 border border-white/60
+                       text-ink font-medium rounded-2xl hover:bg-white/80
+                       focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-5 h-5" />
+            Create Villa ID
+          </button>
+        )}
 
         <button
           onClick={handleCancel}
