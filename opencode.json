@@ -1,0 +1,126 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "small_model": "anthropic/claude-3-5-haiku-20241022",
+  "autoupdate": true,
+  "instructions": [".opencode/BOOT.md", ".opencode/AGENT_COSTS.md", "CLAUDE.md"],
+  "agent": {
+    "explore": {
+      "description": "Fast codebase exploration. Find files, search code, answer questions.",
+      "mode": "subagent",
+      "model": "google/gemini-2.5-flash",
+      "maxSteps": 20,
+      "tools": {
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "Write": false,
+        "Edit": false,
+        "Bash": false
+      }
+    },
+    "test": {
+      "description": "Run tests and report results. No code changes.",
+      "mode": "subagent",
+      "model": "anthropic/claude-3-5-haiku-20241022",
+      "maxSteps": 10,
+      "tools": {
+        "Bash": true,
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "Write": false,
+        "Edit": false
+      }
+    },
+    "ops": {
+      "description": "Git operations, GitHub, deploy verification.",
+      "mode": "subagent",
+      "model": "anthropic/claude-3-5-haiku-20241022",
+      "maxSteps": 15,
+      "tools": {
+        "Bash": true,
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "Write": false,
+        "Edit": false
+      }
+    },
+    "build": {
+      "description": "Implement features with tests. Full code access.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "maxSteps": 50,
+      "tools": {
+        "Read": true,
+        "Write": true,
+        "Edit": true,
+        "Bash": true,
+        "Grep": true,
+        "Glob": true
+      }
+    },
+    "fix": {
+      "description": "Quick bug fixes and small changes.",
+      "mode": "subagent",
+      "model": "openrouter/deepseek/deepseek-r1:free",
+      "maxSteps": 20,
+      "tools": {
+        "Read": true,
+        "Write": true,
+        "Edit": true,
+        "Bash": true,
+        "Grep": true,
+        "Glob": true
+      }
+    },
+    "review": {
+      "description": "Code review for quality, security, and spec compliance.",
+      "mode": "subagent",
+      "model": "openrouter/openai/gpt-4o-mini",
+      "maxSteps": 15,
+      "tools": {
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "Bash": true,
+        "Write": false,
+        "Edit": false
+      }
+    },
+    "architect": {
+      "description": "System design and architecture decisions ONLY.",
+      "mode": "subagent",
+      "model": "anthropic/claude-opus-4-5-20251101",
+      "maxSteps": 10,
+      "tools": {
+        "Read": true,
+        "Grep": true,
+        "Glob": true,
+        "WebSearch": true,
+        "Write": false,
+        "Edit": false,
+        "Bash": false
+      }
+    }
+  },
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "bun *": "allow",
+      "git status": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git show *": "allow",
+      "ls *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "bd *": "allow",
+      "curl *": "ask"
+    },
+    "edit": "allow",
+    "write": "allow"
+  }
+}
