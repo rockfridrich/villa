@@ -8,7 +8,7 @@ test.describe('Returning User Flow', () => {
   })
 
   test.describe('Same Device (identity in localStorage)', () => {
-    test('redirects to home when complete identity exists', async ({ page }) => {
+    test('@smoke redirects to home when complete identity exists', async ({ page }) => {
       // Set up mock identity with avatar
       await page.evaluate(() => {
         const identity = {
@@ -34,7 +34,7 @@ test.describe('Returning User Flow', () => {
       await expect(page).toHaveURL(/\/home/)
     })
 
-    test('shows avatar on home page for returning user', async ({ page }) => {
+    test('@smoke shows avatar on home page for returning user', async ({ page }) => {
       // Set up mock identity with avatar
       await page.evaluate(() => {
         const identity = {

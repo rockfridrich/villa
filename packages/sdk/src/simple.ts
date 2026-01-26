@@ -34,7 +34,7 @@ import {
   saveProfile as saveTinyCloudProfile,
   getProfile as getTinyCloudProfile,
   isTinyCloudSignedIn,
-  type VillaProfile,
+  type VillaProfile as TinyCloudProfile,
 } from "./tinycloud";
 
 export interface VillaUser {
@@ -56,16 +56,25 @@ export interface SimpleSignInOptions {
   timeout?: number;
 }
 
+export interface SimpleProfile {
+  nickname: string;
+  avatar: string;
+  address: `0x${string}`;
+}
+
 interface VillaInstance {
   user: VillaUser | null;
   signIn: (options?: SimpleSignInOptions) => Promise<VillaUser>;
   signOut: () => void;
   settings: () => Promise<SettingsResult>;
+  getProfile: (address?: string) => Promise<SimpleProfile | null>;
+  uploadAvatar: (file: File) => Promise<string>;
   onAuthChange: (callback: (user: VillaUser | null) => void) => () => void;
   config: (options: Partial<VillaConfig>) => void;
 }
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const API_URL = "https://villa.cash";
 
 let _config: VillaConfig = {
   appId: "villa-app",
@@ -217,6 +226,78 @@ function getUser(): VillaUser | null {
   return _user;
 }
 
+async function getProfile(address?: string): Promise<SimpleProfile | null> {
+  init();
+  
+  const targetAddress = address || _user?.address;
+  if (!targetAddress) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `${_config.apiUrl || API_URL}/api/profile/${targetAddress.toLowerCase()}`
+    );
+    
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    const avatarUrl = data.avatar
+      ? `https://api.dicebear.com/7.x/${data.avatar.style}/svg?seed=${data.avatar.selection || data.avatar.seed}`
+      : `https://api.dicebear.com/7.x/lorelei/svg?seed=${targetAddress}`;
+
+    return {
+      nickname: data.nickname || targetAddress.slice(0, 8),
+      avatar: avatarUrl,
+      address: targetAddress as `0x${string}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function uploadAvatar(file: File): Promise<string> {
+  init();
+
+  if (!_user) {
+    throw new Error("Must be signed in to upload avatar");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("address", _user.address);
+
+  const response = await fetch(`${_config.apiUrl || API_URL}/api/profile`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      address: _user.address,
+      avatar: {
+        style: "custom",
+        selection: file.name,
+      },
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload avatar");
+  }
+
+  const data = await response.json();
+  const avatarUrl = data.avatar
+    ? `https://api.dicebear.com/7.x/${data.avatar.style}/svg?seed=${data.avatar.selection || data.avatar.seed}`
+    : `https://api.dicebear.com/7.x/lorelei/svg?seed=${_user.address}`;
+
+  _user = { ..._user, avatar: avatarUrl };
+  notifyListeners();
+
+  return avatarUrl;
+}
+
 export const villa: VillaInstance = {
   get user() {
     return getUser();
@@ -224,6 +305,8 @@ export const villa: VillaInstance = {
   signIn,
   signOut,
   settings: openSettings,
+  getProfile,
+  uploadAvatar,
   onAuthChange,
   config: configure,
 };
@@ -247,7 +330,7 @@ export async function syncProfileToTinyCloud(user: VillaUser): Promise<void> {
     await signInToTinyCloud();
   }
 
-  const profile: VillaProfile = {
+  const profile: TinyCloudProfile = {
     nickname: user.nickname,
     avatar: {
       style: user.raw.avatar?.style || "lorelei",
@@ -265,7 +348,7 @@ export async function syncProfileToTinyCloud(user: VillaUser): Promise<void> {
   await saveTinyCloudProfile(profile);
 }
 
-export async function loadProfileFromTinyCloud(): Promise<VillaProfile | null> {
+export async function loadProfileFromTinyCloud(): Promise<TinyCloudProfile | null> {
   if (!isTinyCloudSignedIn()) {
     await signInToTinyCloud();
   }

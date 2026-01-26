@@ -29,13 +29,13 @@ test.describe('Authentication Flows', () => {
   })
 
   test.describe('New User Onboarding Flow', () => {
-    test('redirects to onboarding when no identity exists', async ({ page }) => {
+    test('@smoke redirects to onboarding when no identity exists', async ({ page }) => {
       await page.goto('/')
       await page.waitForURL(/\/onboarding/, { timeout: 10000 })
       await expect(page).toHaveURL(/\/onboarding/)
     })
 
-    test('shows welcome screen with get started button', async ({ page }) => {
+    test('@smoke shows welcome screen with get started button', async ({ page }) => {
       await page.goto('/onboarding')
 
       // Wait for page to be fully loaded
@@ -130,7 +130,7 @@ test.describe('Authentication Flows', () => {
   })
 
   test.describe('Returning User Flow', () => {
-    test('redirects to home when complete identity exists', async ({ page }) => {
+    test('@smoke redirects to home when complete identity exists', async ({ page }) => {
       // Set up complete identity
       await page.evaluate(() => {
         const identity = {
@@ -171,7 +171,7 @@ test.describe('Authentication Flows', () => {
       await expect(page.getByRole('heading', { name: 'Pick your look' })).toBeVisible({ timeout: 5000 })
     })
 
-    test('home page displays user profile correctly', async ({ page }) => {
+    test('@smoke home page displays user profile correctly', async ({ page }) => {
       // Set up identity
       await page.evaluate(() => {
         const identity = {
@@ -328,7 +328,7 @@ test.describe('Authentication Flows', () => {
       await expect(logoutButton).toBeVisible()
     })
 
-    test('clicking logout redirects to onboarding', async ({ page }) => {
+    test('@smoke clicking logout redirects to onboarding', async ({ page }) => {
       await page.goto('/home')
 
       // Click logout in header

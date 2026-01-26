@@ -16,6 +16,10 @@ import {
   signIn,
   isPortoSupported,
   setWebAuthnHandlers,
+  getRemotePorto,
+  initRemoteBridge,
+  RemoteActions,
+  RemoteEvents,
 } from "@/lib/porto";
 import { generateNickname } from "@/lib/nickname";
 
@@ -216,7 +220,36 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
 type AuthState = "idle" | "passkey-prompt" | "processing" | "success" | "error";
 
 
-function GlassLayout({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+// Porto dialog dimensions (exact match)
+const DIALOG_WIDTH = 380;
+const DIALOG_HEIGHT = 520;
+
+function GlassLayout({ children, className = "", isEmbedded = false }: { children: React.ReactNode; className?: string; isEmbedded?: boolean }) {
+  // When embedded (iframe/popup), use exact Porto dimensions
+  if (isEmbedded) {
+    return (
+      <div 
+        className="w-full h-full relative flex flex-col items-center justify-center bg-[#FFFCF8] overflow-hidden font-sans"
+        style={{ 
+          width: DIALOG_WIDTH, 
+          height: DIALOG_HEIGHT,
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+        }}
+      >
+        <motion.div 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className={`w-full h-full flex flex-col items-center justify-center text-center p-6 ${className}`}
+        >
+          {children}
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Standalone mode - full page with ambient effects
   return (
     <div className="min-h-screen w-full relative flex items-center justify-center p-4 bg-[#FFFDF8] overflow-hidden font-sans">
       {/* Ambient Background Gradients */}
@@ -228,7 +261,7 @@ function GlassLayout({ children, className = "" }: { children: React.ReactNode; 
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative z-10 w-full max-w-[420px] bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_20px_40px_-10px_rgba(13,13,23,0.04)] rounded-[32px] p-8 md:p-10 flex flex-col items-center text-center ${className}`}
+        className={`relative z-10 w-full max-w-[380px] bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_20px_40px_-10px_rgba(13,13,23,0.04)] rounded-[24px] p-6 flex flex-col items-center text-center ${className}`}
       >
         {children}
       </motion.div>
@@ -258,6 +291,7 @@ function AuthPageContent() {
   );
   const inPopup = useMemo(() => isInPopup(), []);
   const inIframe = useMemo(() => isInIframe(), []);
+  const isEmbedded = inIframe || inPopup;
 
   const postToParent = useCallback(
     (message: Record<string, unknown>) => {
@@ -341,6 +375,60 @@ function AuthPageContent() {
     }
   }, [postToParent, inPopup]);
 
+  useEffect(() => {
+    if (!inIframe && !inPopup) return;
+
+    const porto = getRemotePorto();
+
+    initRemoteBridge().catch((e) => {
+      console.warn("[Villa Auth] Failed to init Porto bridge:", e);
+    });
+
+    const unsubscribe = RemoteEvents.onDialogRequest(porto, async (payload) => {
+      if (!payload.request) return;
+
+      const { request } = payload;
+
+      if (
+        request.method === "wallet_connect" ||
+        request.method === "eth_requestAccounts"
+      ) {
+        const params = request.params?.[0] as
+          | { capabilities?: { createAccount?: boolean } }
+          | undefined;
+        const isCreate = params?.capabilities?.createAccount === true;
+
+        setIsCreating(isCreate);
+        setAuthState("passkey-prompt");
+
+        try {
+          const result = isCreate ? await createAccount() : await signIn();
+          if (result.success) {
+            await RemoteActions.respond(porto, request, {
+              result: {
+                accounts: [{ address: result.address }],
+              },
+            });
+            handleSuccess(result.address, isCreate);
+          } else {
+            await RemoteActions.reject(porto, request);
+            setError(result.error?.message || "Authentication failed");
+            setAuthState("error");
+          }
+        } catch (err) {
+          await RemoteActions.reject(porto, request);
+          const errorMsg = err instanceof Error ? err.message : "Unknown error";
+          setError(errorMsg);
+          setAuthState("error");
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [inIframe, inPopup, handleSuccess]);
+
   const handleSignIn = async () => {
     setError(null);
     setIsCreating(false);
@@ -375,7 +463,7 @@ function AuthPageContent() {
 
   if (!isPortoSupported()) {
     return (
-      <GlassLayout>
+      <GlassLayout isEmbedded={isEmbedded}>
         <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-6">
            <span className="text-2xl">⚠️</span>
         </div>
@@ -392,7 +480,7 @@ function AuthPageContent() {
 
   if (authState === "passkey-prompt") {
     return (
-      <GlassLayout>
+      <GlassLayout isEmbedded={isEmbedded}>
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 2 }}
@@ -424,7 +512,7 @@ function AuthPageContent() {
 
   if (authState === "processing" || authState === "success") {
     return (
-      <GlassLayout>
+      <GlassLayout isEmbedded={isEmbedded}>
         {authState === "success" ? (
           <motion.div
             initial={{ scale: 0 }}
@@ -455,7 +543,7 @@ function AuthPageContent() {
 
   if (authState === "error") {
     return (
-      <GlassLayout>
+      <GlassLayout isEmbedded={isEmbedded}>
         <div className="w-20 h-20 mx-auto bg-red-100/50 rounded-2xl flex items-center justify-center mb-6">
           <span className="text-3xl">😕</span>
         </div>
@@ -491,7 +579,7 @@ function AuthPageContent() {
   }
 
   return (
-    <GlassLayout>
+    <GlassLayout isEmbedded={isEmbedded}>
       <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent-yellow to-villa-500 rounded-3xl flex items-center justify-center shadow-lg shadow-accent-yellow/20 mb-6 rotate-3">
         <span className="text-3xl font-serif text-accent-brown">V</span>
       </div>

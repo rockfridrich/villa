@@ -7,13 +7,13 @@ test.describe('Onboarding Flow', () => {
     await page.evaluate(() => localStorage.clear())
   })
 
-  test('redirects to onboarding when no identity', async ({ page }) => {
+  test('@smoke redirects to onboarding when no identity', async ({ page }) => {
     await page.goto('/')
     await page.waitForURL(/\/onboarding/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/onboarding/)
   })
 
-  test('shows welcome screen with get started button', async ({ page }) => {
+  test('@smoke shows welcome screen with get started button', async ({ page }) => {
     await page.goto('/onboarding')
 
     // Onboarding page has "Welcome to Villa" heading and "Get Started" button
@@ -63,13 +63,13 @@ test.describe('Home Screen', () => {
     })
   })
 
-  test('redirects to home when identity exists', async ({ page }) => {
+  test('@smoke redirects to home when identity exists', async ({ page }) => {
     await page.goto('/')
     await page.waitForURL(/\/home/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/home/)
   })
 
-  test('displays user profile', async ({ page }) => {
+  test('@smoke displays user profile', async ({ page }) => {
     await page.goto('/home')
 
     await expect(page.getByText('@Test User')).toBeVisible()
@@ -82,7 +82,7 @@ test.describe('Home Screen', () => {
     await expect(page.getByRole('button', { name: /Switch Account/i })).toBeVisible()
   })
 
-  test('clears identity and redirects on switch account', async ({ page }) => {
+  test('@smoke clears identity and redirects on switch account', async ({ page }) => {
     await page.goto('/home')
 
     await page.getByRole('button', { name: /Switch Account/i }).click()

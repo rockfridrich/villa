@@ -72,7 +72,7 @@ test.describe('Onboarding Flow Integration', () => {
 })
 
 test.describe('State Persistence Integration', () => {
-  test('identity persists across page reloads', async ({ page }) => {
+  test('@smoke identity persists across page reloads', async ({ page }) => {
     // Set up identity
     await page.goto('/')
     await page.evaluate(() => {
@@ -101,7 +101,7 @@ test.describe('State Persistence Integration', () => {
     await expect(page.getByText('0x1234...7890')).toBeVisible()
   })
 
-  test('clearing identity redirects to onboarding', async ({ page }) => {
+  test('@smoke clearing identity redirects to onboarding', async ({ page }) => {
     // Set up identity
     await page.goto('/')
     await page.evaluate(() => {
@@ -179,7 +179,7 @@ test.describe('Home Screen Integration', () => {
     await page.goto('/home')
   })
 
-  test('displays identity information correctly', async ({ page }) => {
+  test('@smoke displays identity information correctly', async ({ page }) => {
     // Verify display name with @ prefix
     await expect(page.getByText('@Integration Test User')).toBeVisible()
 
@@ -193,7 +193,7 @@ test.describe('Home Screen Integration', () => {
     await expect(page.locator('span.text-accent-green', { hasText: 'Active' })).toBeVisible()
   })
 
-  test('copy address functionality works', async ({ page }) => {
+  test('@smoke copy address functionality works', async ({ page }) => {
     // Grant clipboard permissions
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
 
@@ -215,7 +215,7 @@ test.describe('Home Screen Integration', () => {
     await expect(copyIcon).toBeVisible()
   })
 
-  test('switch account button clears state and redirects', async ({ page }) => {
+  test('@smoke switch account button clears state and redirects', async ({ page }) => {
     // Verify we're on home page with identity
     await expect(page.getByText('@Integration Test User')).toBeVisible()
 
@@ -448,7 +448,7 @@ test.describe('Mobile Integration', () => {
 })
 
 test.describe('Error Recovery Integration', () => {
-  test('app recovers from corrupt localStorage', async ({ page }) => {
+  test('@smoke app recovers from corrupt localStorage', async ({ page }) => {
     await page.goto('/')
 
     // Set corrupt data
@@ -493,7 +493,7 @@ test.describe('Error Recovery Integration', () => {
 })
 
 test.describe('Cross-Page Integration', () => {
-  test('navigation between pages maintains state', async ({ page }) => {
+  test('@smoke navigation between pages maintains state', async ({ page }) => {
     // Set up identity
     await page.goto('/')
     await page.evaluate(() => {
@@ -523,7 +523,7 @@ test.describe('Cross-Page Integration', () => {
     await expect(page.getByText('@Navigation Test')).toBeVisible()
   })
 
-  test('direct navigation to home without identity redirects', async ({ page }) => {
+  test('@smoke direct navigation to home without identity redirects', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
 
