@@ -1,19 +1,19 @@
 const ADJECTIVES = [
-  "sunny", "misty", "golden", "crystal", "mossy",
-  "dewy", "breezy", "shady", "cozy", "warm",
-  "friendly", "gentle", "merry", "jolly", "cheerful",
-  "humble", "honest", "kind", "calm", "sweet",
-  "clever", "handy", "nimble", "swift", "steady",
-  "bright", "keen", "wise", "bold", "true",
+  "swift", "gentle", "brave", "calm", "keen",
+  "bold", "wise", "free", "wild", "bright",
+  "noble", "proud", "quick", "sure", "true",
+  "agile", "clever", "fierce", "lucky", "merry",
+  "nimble", "silent", "steady", "strong", "vivid",
+  "golden", "misty", "sunny", "serene", "radiant",
 ] as const;
 
-const NOUNS = [
-  "baker", "miller", "potter", "weaver", "smith",
-  "farmer", "keeper", "mason", "cooper", "carver",
-  "sparrow", "robin", "wren", "finch", "dove",
-  "fox", "hare", "deer", "otter", "badger",
-  "hearth", "meadow", "brook", "grove", "thicket",
-  "cottage", "garden", "orchard", "haven", "hollow",
+const VIETNAM_ANIMALS = [
+  "buffalo", "pangolin", "macaque", "langur", "loris",
+  "civet", "deer", "otter", "crane", "pheasant",
+  "python", "gecko", "turtle", "egret", "heron",
+  "peacock", "gibbon", "muntjac", "serow", "gaur",
+  "leopard", "tiger", "elephant", "rhino", "bear",
+  "dolphin", "dugong", "hornbill", "kingfisher", "ibis",
 ] as const;
 
 function hashString(str: string): number {
@@ -34,13 +34,13 @@ export function generateNickname(seed?: string): string {
   if (seed) {
     const hash = hashString(seed);
     const adjIndex = hash % ADJECTIVES.length;
-    const nounIndex = (hash >> 8) % NOUNS.length;
-    return `${capitalize(ADJECTIVES[adjIndex])}${capitalize(NOUNS[nounIndex])}`;
+    const animalIndex = (hash >> 8) % VIETNAM_ANIMALS.length;
+    return `${capitalize(ADJECTIVES[adjIndex])}${capitalize(VIETNAM_ANIMALS[animalIndex])}`;
   }
 
   const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  return `${capitalize(adjective)}${capitalize(noun)}`;
+  const animal = VIETNAM_ANIMALS[Math.floor(Math.random() * VIETNAM_ANIMALS.length)];
+  return `${capitalize(adjective)}${capitalize(animal)}`;
 }
 
 export function suggestNicknames(seed: string, count = 5): string[] {
@@ -50,3 +50,5 @@ export function suggestNicknames(seed: string, count = 5): string[] {
   }
   return suggestions;
 }
+
+export { VIETNAM_ANIMALS, ADJECTIVES };

@@ -234,6 +234,22 @@ export function isPortoSupported(): boolean {
   );
 }
 
+/**
+ * Check if user has existing accounts (without triggering WebAuthn)
+ * Returns true if accounts exist, false otherwise
+ */
+export async function hasExistingAccounts(): Promise<boolean> {
+  try {
+    const porto = getPorto();
+    const accounts = await porto.provider.request({
+      method: "wallet_getAccounts",
+    });
+    return Array.isArray(accounts) && accounts.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 let remotePortoInstance: ReturnType<typeof RemotePorto.create> | null = null;
 
 /**
