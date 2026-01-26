@@ -3,7 +3,7 @@
 > Privacy-first passkey authentication for Base network.
 > Use this context when helping developers integrate Villa authentication.
 
-**Auto-generated:** 2026-01-26 | **Version:** 0.1.3
+**Auto-generated:** 2026-01-26 | **Version:** 0.2.0
 
 ## Quick Reference
 
@@ -373,7 +373,7 @@ After successful authentication:
 - `VillaBridge` - - Debug logging (opt-in) /
 - `Villa` - ``` /
 
-### Functions (73)
+### Functions (75)
 
 - `signIn` - /
 - `signOut` - Clears session from localStorage and memory. /
@@ -443,13 +443,15 @@ After successful authentication:
 - `isReservedNickname`
 - `getAvailableAdjectives`
 - `getAvailableNouns`
+- `getTargetConfig`
+- `deriveAppId`
 - `getContracts` - } /
 - `getContractsForChain` - const contracts = getContractsForChain(baseSepolia) /
 - `getNicknameResolverAddress` - /
 - `getRecoverySignerAddress` - /
 - `isDeployed`
 
-### Types & Interfaces (80)
+### Types & Interfaces (81)
 
 - `AuthOptions`
 - `BrowserCapabilities`
@@ -490,7 +492,7 @@ After successful authentication:
 - `SettingsResult`
 - `SimpleSignInOptions`
 - `SimpleProfile`
-- `BridgeConfig` - Bridge configuration /
+- `BridgeConfig`
 - `BridgeEventMap` - Event callback types /
 - `VillaMessage` - Message types sent FROM Villa iframe TO parent app /
 - `ParentMessage` - Message types sent FROM parent app TO Villa iframe /
@@ -505,6 +507,7 @@ After successful authentication:
 - `TinyCloudSession`
 - `NicknameValidationResult`
 - `NicknameValidationError`
+- `Target`
 - `SignInOptions` - Sign-in options /
 - `Scope` - Data scopes that apps can request /
 - `SignInProgress` - Progress steps during sign-in flow /
@@ -537,7 +540,7 @@ After successful authentication:
 - `PasskeyManagerType`
 - `WebAuthnErrorCode`
 
-### Constants (92)
+### Constants (96)
 
 - `villa`
 - `VillaBridge`
@@ -590,6 +593,9 @@ After successful authentication:
 - `isDeployed`
 - `CONTRACTS`
 - `DEPLOYED_CHAINS`
+- `TARGETS`
+- `getTargetConfig`
+- `deriveAppId`
 - `PasskeyManagerType`
 - `WebAuthnErrorCode`
 - `parseWebAuthnError`
@@ -629,6 +635,7 @@ After successful authentication:
 - `VILLA_PREFIX`
 - `TINYCLOUD_KEYS`
 - `NICKNAME_RULES`
+- `TARGETS`
 - `CONTRACTS`
 - `DEPLOYED_CHAINS`
 
