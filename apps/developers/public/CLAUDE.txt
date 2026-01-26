@@ -3,7 +3,7 @@
 > Privacy-first passkey authentication for Base network.
 > Use this context when helping developers integrate Villa authentication.
 
-**Auto-generated:** 2026-01-25 | **Version:** 0.1.3
+**Auto-generated:** 2026-01-26 | **Version:** 0.1.3
 
 ## Quick Reference
 
@@ -449,7 +449,7 @@ After successful authentication:
 - `getRecoverySignerAddress` - /
 - `isDeployed`
 
-### Types & Interfaces (79)
+### Types & Interfaces (80)
 
 - `AuthOptions`
 - `BrowserCapabilities`
@@ -489,6 +489,7 @@ After successful authentication:
 - `VillaUser`
 - `SettingsResult`
 - `SimpleSignInOptions`
+- `SimpleProfile`
 - `BridgeConfig` - Bridge configuration /
 - `BridgeEventMap` - Event callback types /
 - `VillaMessage` - Message types sent FROM Villa iframe TO parent app /
