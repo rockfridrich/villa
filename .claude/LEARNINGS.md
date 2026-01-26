@@ -1155,3 +1155,33 @@ CMD ["pnpm", "dev"]
 - Workflow: Railway Environment Setup
 - Run: https://github.com/rockfridrich/villa/actions/runs/21330974240
 - Action: Check `gh run view 21330974240 --log-failed`
+
+### CI Failure - 2026-01-25 17:19
+- Workflow: Railway Environment Setup
+- Run: https://github.com/rockfridrich/villa/actions/runs/21331000105
+- Action: Check `gh run view 21331000105 --log-failed`
+
+### CI Failure - 2026-01-25 17:27
+- Workflow: Railway Environment Setup
+- Run: https://github.com/rockfridrich/villa/actions/runs/21331106704
+- Action: Check `gh run view 21331106704 --log-failed`
+
+### CI Failure - 2026-01-25 21:12
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/21333876409
+- Action: Check `gh run view 21333876409 --log-failed`
+
+### CI Failure - 2026-01-25 23:22
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/21335648085
+- Action: Check `gh run view 21335648085 --log-failed`
+
+### CI Failure - 2026-01-25 23:36
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/21335844354
+- Action: Check `gh run view 21335844354 --log-failed`
+
+### CI Failure - 2026-01-25 23:54
+- Workflow: Deploy
+- Run: https://github.com/rockfridrich/villa/actions/runs/21336046642
+- Action: Check `gh run view 21336046642 --log-failed`

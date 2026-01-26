@@ -27,7 +27,7 @@ async function triggerSignIn(page: { evaluate: (fn: () => void) => Promise<void>
 }
 
 test.describe('SDK Iframe - Authentication Flow', () => {
-  test('iframe opens when signIn is triggered', async ({ page }) => {
+  test('@smoke iframe opens when signIn is triggered', async ({ page }) => {
     // Navigate to test harness
     await page.goto('/test')
 
@@ -69,7 +69,7 @@ test.describe('SDK Iframe - Authentication Flow', () => {
     ).toBeVisible({ timeout: 5000 })
   })
 
-  test('escape key closes iframe', async ({ page }) => {
+  test('@smoke escape key closes iframe', async ({ page }) => {
     await page.goto('/test')
 
     // Ensure page loads
@@ -115,7 +115,7 @@ test.describe('SDK Iframe - Authentication Flow', () => {
 })
 
 test.describe('SDK Iframe - Loading States', () => {
-  test('shows overlay with iframe when triggered', async ({ page }) => {
+  test('@smoke shows overlay with iframe when triggered', async ({ page }) => {
     await page.goto('/test')
 
     // Ensure page loads before triggering signIn
@@ -132,7 +132,7 @@ test.describe('SDK Iframe - Loading States', () => {
     await expect(iframe).toBeVisible({ timeout: 5000 })
   })
 
-  test('iframe eventually loads and becomes ready', async ({ page }) => {
+  test('@smoke iframe eventually loads and becomes ready', async ({ page }) => {
     await page.goto('/test')
 
     // Ensure page loads before triggering signIn
@@ -226,7 +226,7 @@ test.describe('SDK Iframe - postMessage Security', () => {
 })
 
 test.describe('SDK Iframe - Timeout Handling', () => {
-  test('handles loading and displays iframe', async ({ page }) => {
+  test('@smoke handles loading and displays iframe', async ({ page }) => {
     await page.goto('/test')
 
     // Verify test harness loads first
@@ -245,7 +245,7 @@ test.describe('SDK Iframe - Timeout Handling', () => {
 })
 
 test.describe('SDK Iframe - Animation', () => {
-  test('overlay appears with expected styles', async ({ page }) => {
+  test('@smoke overlay appears with expected styles', async ({ page }) => {
     await page.goto('/test')
 
     // Ensure page loads first

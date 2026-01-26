@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Developer Portal Landing', () => {
-  test('displays hero section with SDK value prop', async ({ page }) => {
+  test('@smoke displays hero section with SDK value prop', async ({ page }) => {
     await page.goto('/developers')
 
     // Check for the specific heading text
@@ -18,7 +18,7 @@ test.describe('Developer Portal Landing', () => {
     await expect(page.getByText('Privacy-first passkey authentication on Base')).toBeVisible()
   })
 
-  test('shows connect wallet CTA button', async ({ page }) => {
+  test('@smoke shows connect wallet CTA button', async ({ page }) => {
     await page.goto('/developers')
 
     // More specific button selector
@@ -26,7 +26,7 @@ test.describe('Developer Portal Landing', () => {
     await expect(connectButton).toBeVisible()
   })
 
-  test('displays feature highlights', async ({ page }) => {
+  test('@smoke displays feature highlights', async ({ page }) => {
     await page.goto('/developers')
 
     // Should have feature cards (4 features: Passkey Auth, Privacy-First, Fast Integration, ENS Compatible)
@@ -34,7 +34,7 @@ test.describe('Developer Portal Landing', () => {
     await expect(cards).toHaveCount(4)
   })
 
-  test('shows code snippet preview', async ({ page }) => {
+  test('@smoke shows code snippet preview', async ({ page }) => {
     await page.goto('/developers')
 
     // Should have a code block with VillaIdentity
@@ -139,7 +139,7 @@ test.describe('App Registration Flow', () => {
 })
 
 test.describe('Quick Start Documentation', () => {
-  test('displays installation instructions', async ({ page }) => {
+  test('@smoke displays installation instructions', async ({ page }) => {
     await page.goto('/developers/docs')
 
     // Look for specific npm install command in code block

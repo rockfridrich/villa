@@ -21,14 +21,14 @@ test.describe('Guestbook Demo', () => {
     })
   })
 
-  test('redirects to auth when not signed in', async ({ page }) => {
+  test('@smoke redirects to auth when not signed in', async ({ page }) => {
     await page.goto('/guestbook')
 
     // Should show auth flow (VillaAuth component)
     await expect(page.getByRole('heading', { name: /your identity/i })).toBeVisible({ timeout: 10000 })
   })
 
-  test('shows guestbook UI when signed in', async ({ page }) => {
+  test('@smoke shows guestbook UI when signed in', async ({ page }) => {
     // Mock signed-in user
     await page.goto('/')
     await page.evaluate(() => {
