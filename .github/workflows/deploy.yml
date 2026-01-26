@@ -56,7 +56,6 @@ jobs:
           path: |
             node_modules
             ~/.bun/install/cache
-            .turbo
           key: deps-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: deps-${{ runner.os }}-
 
@@ -64,8 +63,9 @@ jobs:
         run: bun install --frozen-lockfile
 
       # Run lint and typecheck in parallel using turbo
+      # Use --force to skip stale turbo cache on CI
       - name: Run checks (parallel)
-        run: bun turbo run lint typecheck --parallel --cache-dir=.turbo
+        run: bun turbo run lint typecheck --parallel --force
 
       - name: Check if E2E needed
         id: check-paths
@@ -147,7 +147,6 @@ jobs:
           path: |
             node_modules
             ~/.bun/install/cache
-            .turbo
           key: deps-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: deps-${{ runner.os }}-
 
@@ -155,7 +154,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run checks (parallel)
-        run: bun turbo run typecheck lint --parallel --cache-dir=.turbo
+        run: bun turbo run typecheck lint --parallel --force
 
   # =============================================================================
   # DEPLOY STAGING - Parallel service deployment with health checks
