@@ -57,6 +57,77 @@
 - Brief tooltip or text: "Generated from your unique key"
 - Deterministic from address (reproducible)
 
+### 8. Settings Popup UX & Persistence [P0]
+**Issue:** Settings popup needs proper design, UX, and persistence
+**Fix:**
+- Match Porto-identical design (380×520px, centered)
+- Nickname editing with validation
+- Avatar selection/regeneration
+- Persist changes to database immediately
+- Sync state between popup and parent window
+- Loading states for save operations
+- Error handling with retry
+
+---
+
+## Nickname & Domain Architecture [P0]
+
+### 9. ENS-Compatible Nickname System
+**Architecture:**
+```
+Nickname Storage (Two-Tier):
+
+1. Database (Default - Free)
+   - nickname stored in Villa DB
+   - domain: nickname.villa.cash (resolved via API)
+   - integrity via DB + backup storage
+   - can be changed anytime
+
+2. On-Chain ENS (Claimed - Paid)
+   - nickname.villa.cash registered on Base ENS
+   - immutable, user owns it
+   - resolved via ENS protocol
+   - "Claim Nickname" = pay to register on-chain
+```
+
+**Flow:**
+```typescript
+// Check nickname availability
+villa.nickname.check('SwiftBuffalo')
+// → { available: true, claimable: true }
+
+// Reserve in DB (free, default)
+villa.nickname.reserve('SwiftBuffalo')
+// → stored in DB, domain works via API
+
+// Claim on-chain (paid, permanent) - COMING SOON
+villa.nickname.claim('SwiftBuffalo')
+// → triggers ENS registration on Base
+// → user pays gas + registration fee
+```
+
+**Domain Resolution:**
+```typescript
+villa.profile.domain // "swiftbuffalo.villa.cash"
+
+// Resolution priority:
+// 1. Check on-chain ENS first
+// 2. Fallback to DB lookup
+// 3. Return null if not found
+```
+
+**Database + Backup Strategy:**
+- Primary: PostgreSQL (Railway)
+- Backup: TinyCloud (user-controlled, encrypted)
+- Sync: Write to both, read from fastest
+- Integrity: Hash verification on read
+
+**UI for "Claim Nickname" (Coming Soon):**
+- Show "Reserved" badge for DB nicknames
+- Show "Claimed ✓" badge for on-chain
+- "Claim Forever" button → payment flow
+- Price: TBD (gas + small fee)
+
 ---
 
 ## Docs Site Fixes
