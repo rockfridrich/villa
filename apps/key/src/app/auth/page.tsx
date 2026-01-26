@@ -25,7 +25,7 @@ import {
 import { generateNickname } from "@/lib/nickname";
 
 const HUB_API_URL =
-  process.env.NEXT_PUBLIC_HUB_API_URL || "https://beta.villa.cash";
+  process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
 
 interface ProfileData {
   nickname: string;

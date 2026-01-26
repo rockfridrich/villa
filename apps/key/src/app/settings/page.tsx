@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useMemo, useState, Suspense } from "rea
 import { Loader2, LogOut, Check, X, User, Palette } from "lucide-react";
 import { Web3Avatar } from "@/lib/web3-avatar";
 
-const HUB_API_URL = process.env.NEXT_PUBLIC_HUB_API_URL || "https://beta.villa.cash";
+const HUB_API_URL = process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
 
 const AVATAR_STYLES = ["web3", "lorelei", "adventurer", "avataaars"] as const;
 
@@ -20,7 +20,7 @@ interface ProfileData {
 const VILLA_ORIGINS = [
   "https://villa.cash",
   "https://www.villa.cash",
-  "https://beta.villa.cash",
+  "https://construction.villa.cash",
   "https://construction.villa.cash",
   "https://docs.villa.cash",
   "https://key.villa.cash",
