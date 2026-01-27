@@ -54,7 +54,11 @@ function getAuthUrl(network: "base" | "base-sepolia"): string {
     if (hostname === "local.villa.cash") {
       return "https://local-key.villa.cash/auth";
     }
-    if (hostname === "local-docs.villa.cash" || hostname === "localhost" || hostname === "127.0.0.1") {
+    if (
+      hostname === "local-docs.villa.cash" ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1"
+    ) {
       return "http://localhost:3001/auth";
     }
   }
@@ -83,6 +87,7 @@ export class VillaBridge {
   private iframeDetectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private state: BridgeState = "idle";
   private readonly authUrl: string;
+  private readonly settingsUrl: string;
   private mode: "iframe" | "popup" = "iframe";
 
   constructor(config: BridgeConfig = {}) {
@@ -113,10 +118,13 @@ export class VillaBridge {
       this.authUrl = getAuthUrl(this.config.network);
     }
 
+    this.settingsUrl = this.authUrl.replace("/auth", "/settings");
+
     this.log("Initialized with config:", {
       appId: this.config.appId,
       network: this.config.network,
       authUrl: this.authUrl,
+      settingsUrl: this.settingsUrl,
     });
   }
 
@@ -142,10 +150,14 @@ export class VillaBridge {
    * Resolves when iframe/popup signals VILLA_READY.
    *
    * @param scopes - Optional scopes to request (default: ['profile'])
+   * @param params - Optional additional query parameters
    * @returns Promise that resolves when ready
    * @throws {Error} If bridge is already open or DOM is unavailable
    */
-  async open(scopes: string[] = ["profile"]): Promise<void> {
+  async open(
+    scopes: string[] = ["profile"],
+    params?: Record<string, string>,
+  ): Promise<void> {
     if (this.state !== "idle" && this.state !== "closed") {
       throw new Error(
         `[VillaBridge] Cannot open: current state is ${this.state}`,
@@ -163,25 +175,28 @@ export class VillaBridge {
     // If preferPopup is set, go straight to popup mode
     if (this.config.preferPopup) {
       this.log("Opening auth popup (preferPopup=true)...");
-      return this.openPopup(scopes);
+      return this.openPopup(scopes, params);
     }
 
     // Otherwise, try iframe with fallback to popup
     this.log("Opening auth iframe (with popup fallback)...");
-    return this.openIframeWithFallback(scopes);
+    return this.openIframeWithFallback(scopes, params);
   }
 
   /**
    * Open iframe with automatic fallback to popup if blocked
    */
-  private async openIframeWithFallback(scopes: string[]): Promise<void> {
+  private async openIframeWithFallback(
+    scopes: string[],
+    params?: Record<string, string>,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         // Create container with fullscreen styles
         this.container = this.createContainer();
 
         // Create iframe
-        this.iframe = this.createIframe(scopes);
+        this.iframe = this.createIframe(scopes, params);
 
         // Append iframe to container, container to body
         this.container.appendChild(this.iframe);
@@ -198,7 +213,7 @@ export class VillaBridge {
         this.iframeDetectionTimeoutId = setTimeout(() => {
           this.log("Iframe appears to be blocked, falling back to popup...");
           this.cleanupIframe();
-          this.openPopup(scopes).then(resolve).catch(reject);
+          this.openPopup(scopes, params).then(resolve).catch(reject);
         }, this.config.iframeDetectionTimeout);
 
         // Set up overall timeout
@@ -220,17 +235,27 @@ export class VillaBridge {
   /**
    * Open popup window for auth
    */
-  private async openPopup(scopes: string[]): Promise<void> {
+  private async openPopup(
+    scopes: string[],
+    params?: Record<string, string>,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.mode = "popup";
 
-        // Build URL with params
-        const url = new URL(this.authUrl);
+        const baseUrl = scopes.includes("settings")
+          ? this.settingsUrl
+          : this.authUrl;
+        const url = new URL(baseUrl);
         url.searchParams.set("appId", this.config.appId);
         url.searchParams.set("scopes", scopes.join(","));
         url.searchParams.set("origin", window.location.origin);
-        url.searchParams.set("mode", "popup"); // Signal to auth page it's in popup mode
+        url.searchParams.set("mode", "popup");
+        if (params) {
+          Object.entries(params).forEach(([key, value]) => {
+            url.searchParams.set(key, value);
+          });
+        }
 
         // Open popup window (Porto-identical size)
         const width = 380;
@@ -319,13 +344,13 @@ export class VillaBridge {
     const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
 
     if (this.container && !isMobile) {
-      this.container.style.backgroundColor = "rgba(0, 0, 0, 0)";
-      this.container.style.backdropFilter = "blur(0px)";
+      this.container.style.backgroundColor = "rgba(255, 253, 248, 0)";
+      this.container.style.backdropFilter = "blur(0px) saturate(100%)";
       (
         this.container.style as CSSStyleDeclaration & {
           WebkitBackdropFilter: string;
         }
-      ).WebkitBackdropFilter = "blur(0px)";
+      ).WebkitBackdropFilter = "blur(0px) saturate(100%)";
 
       if (this.iframe) {
         this.iframe.style.animation =
@@ -504,15 +529,14 @@ export class VillaBridge {
           "background-color 0.3s ease, backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease",
       });
 
-      // Trigger backdrop animation after frame
       requestAnimationFrame(() => {
-        container.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-        container.style.backdropFilter = "blur(12px)";
+        container.style.backgroundColor = "rgba(255, 253, 248, 0.72)";
+        container.style.backdropFilter = "blur(20px) saturate(180%)";
         (
           container.style as CSSStyleDeclaration & {
             WebkitBackdropFilter: string;
           }
-        ).WebkitBackdropFilter = "blur(12px)";
+        ).WebkitBackdropFilter = "blur(20px) saturate(180%)";
       });
 
       // Click backdrop to close (cancel)
@@ -620,7 +644,7 @@ export class VillaBridge {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#FFFDF8",
+      backgroundColor: "rgba(255, 253, 248, 0.85)",
       borderRadius: isMobile ? "0" : "14px",
       zIndex: "1",
       transition: "opacity 0.25s ease-out, transform 0.25s ease-out",
@@ -629,7 +653,7 @@ export class VillaBridge {
         : "villa-scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       boxShadow: isMobile
         ? "none"
-        : "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+        : "0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04)",
     });
 
     const logo = document.createElement("div");
@@ -643,7 +667,7 @@ export class VillaBridge {
       justifyContent: "center",
       marginBottom: "28px",
       boxShadow:
-        "0 8px 24px rgba(245, 208, 48, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
+        "0 4px 16px rgba(245, 208, 48, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
       animation: "villa-pulse 2s ease-in-out infinite",
     });
 
@@ -710,14 +734,24 @@ export class VillaBridge {
   /**
    * Create iframe element - modal card on desktop, fullscreen on mobile
    */
-  private createIframe(scopes: string[]): HTMLIFrameElement {
+  private createIframe(
+    scopes: string[],
+    params?: Record<string, string>,
+  ): HTMLIFrameElement {
     const iframe = document.createElement("iframe");
 
-    // Build URL with params
-    const url = new URL(this.authUrl);
+    const baseUrl = scopes.includes("settings")
+      ? this.settingsUrl
+      : this.authUrl;
+    const url = new URL(baseUrl);
     url.searchParams.set("appId", this.config.appId);
     url.searchParams.set("scopes", scopes.join(","));
     url.searchParams.set("origin", window.location.origin);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+      });
+    }
 
     iframe.src = url.toString();
     iframe.id = "villa-auth-iframe";
@@ -745,7 +779,6 @@ export class VillaBridge {
         backgroundColor: "transparent",
       });
     } else {
-      // Porto-identical modal size
       Object.assign(iframe.style, {
         width: "380px",
         height: "520px",
@@ -755,7 +788,7 @@ export class VillaBridge {
         borderRadius: "14px",
         backgroundColor: "#FFFDF8",
         boxShadow:
-          "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+          "0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04)",
         overflow: "hidden",
         animation: "villa-scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       });

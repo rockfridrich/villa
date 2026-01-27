@@ -1,11 +1,19 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useMemo, useState, Suspense } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  Suspense,
+} from "react";
 import { Loader2, LogOut, Check, X, User, Palette } from "lucide-react";
 import { Web3Avatar } from "@/lib/web3-avatar";
 
-const HUB_API_URL = process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
+const HUB_API_URL =
+  process.env.NEXT_PUBLIC_HUB_API_URL || "https://construction.villa.cash";
 
 const AVATAR_STYLES = ["web3", "lorelei", "adventurer", "avataaars"] as const;
 
@@ -36,14 +44,15 @@ const DEV_ORIGINS = [
 function isValidHttpsOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
-    return url.protocol === 'https:';
+    return url.protocol === "https:";
   } catch {
     return false;
   }
 }
 
 function isAllowedOrigin(origin: string): boolean {
-  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number])) return true;
+  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number]))
+    return true;
   if (DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number])) return true;
   return isValidHttpsOrigin(origin);
 }
@@ -66,7 +75,15 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
 function isInPopup(): boolean {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get("mode") === "popup" || (window.opener != null && window.opener !== window);
+  return (
+    params.get("mode") === "popup" ||
+    (window.opener != null && window.opener !== window)
+  );
+}
+
+function isInIframe(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.self !== window.top;
 }
 
 function SettingsContent() {
@@ -81,19 +98,23 @@ function SettingsContent() {
 
   const queryOrigin = searchParams.get("origin");
   const address = searchParams.get("address");
-  const targetOrigin = useMemo(() => getValidatedParentOrigin(queryOrigin), [queryOrigin]);
+  const targetOrigin = useMemo(
+    () => getValidatedParentOrigin(queryOrigin),
+    [queryOrigin],
+  );
   const inPopup = useMemo(() => isInPopup(), []);
+  const inIframe = useMemo(() => isInIframe(), []);
 
   const postToParent = useCallback(
     (message: Record<string, unknown>) => {
-      if (!inPopup) return;
+      if (!inPopup && !inIframe) return;
       if (!targetOrigin) return;
-      const target = window.opener;
+      const target = inIframe ? window.parent : window.opener;
       if (target) {
         target.postMessage(message, targetOrigin);
       }
     },
-    [targetOrigin, inPopup],
+    [targetOrigin, inPopup, inIframe],
   );
 
   useEffect(() => {
@@ -110,7 +131,9 @@ function SettingsContent() {
         return;
       }
       try {
-        const res = await fetch(`${HUB_API_URL}/api/profile/${address.toLowerCase()}`);
+        const res = await fetch(
+          `${HUB_API_URL}/api/profile/${address.toLowerCase()}`,
+        );
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -170,7 +193,10 @@ function SettingsContent() {
   };
 
   const handleLogout = () => {
-    postToParent({ type: "VILLA_AUTH_ERROR", payload: { error: "User logged out", code: "LOGOUT" } });
+    postToParent({
+      type: "VILLA_AUTH_ERROR",
+      payload: { error: "User logged out", code: "LOGOUT" },
+    });
     if (inPopup) {
       setTimeout(() => window.close(), 300);
     }
@@ -178,7 +204,7 @@ function SettingsContent() {
 
   if (loading) {
     return (
-      <div 
+      <div
         className="bg-[#FFFDF8] flex items-center justify-center"
         style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT }}
       >
@@ -189,7 +215,7 @@ function SettingsContent() {
 
   if (!address) {
     return (
-      <div 
+      <div
         className="bg-[#FFFDF8] flex items-center justify-center p-4"
         style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT }}
       >
@@ -201,13 +227,21 @@ function SettingsContent() {
   }
 
   return (
-    <div 
+    <div
       className="bg-[#FFFDF8] flex flex-col overflow-hidden"
-      style={{ width: DIALOG_WIDTH, height: DIALOG_HEIGHT, maxWidth: '100vw', maxHeight: '100vh' }}
+      style={{
+        width: DIALOG_WIDTH,
+        height: DIALOG_HEIGHT,
+        maxWidth: "100vw",
+        maxHeight: "100vh",
+      }}
     >
       <div className="p-4 border-b border-black/5 flex items-center justify-between shrink-0">
         <h1 className="font-serif text-xl text-[#0D0D17]">Settings</h1>
-        <button onClick={handleCancel} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+        <button
+          onClick={handleCancel}
+          className="p-2 hover:bg-black/5 rounded-lg transition-colors"
+        >
           <X className="w-5 h-5 text-[#0D0D17]/60" />
         </button>
       </div>
@@ -216,12 +250,18 @@ function SettingsContent() {
         <section className="space-y-3">
           <div className="flex items-center gap-2 text-[#0D0D17]/60">
             <Palette className="w-4 h-4" />
-            <span className="text-sm font-medium uppercase tracking-wider">Avatar</span>
+            <span className="text-sm font-medium uppercase tracking-wider">
+              Avatar
+            </span>
           </div>
 
           <div className="flex justify-center">
             {selectedStyle === "web3" ? (
-              <Web3Avatar address={address} size={80} className="ring-4 ring-[#FFE047]/30" />
+              <Web3Avatar
+                address={address}
+                size={80}
+                className="ring-4 ring-[#FFE047]/30"
+              />
             ) : (
               <img
                 src={`https://api.dicebear.com/7.x/${selectedStyle}/svg?seed=${address}`}
@@ -251,7 +291,9 @@ function SettingsContent() {
                     className="w-10 h-10 mx-auto rounded-full"
                   />
                 )}
-                <p className="text-xs text-center mt-1 text-[#0D0D17]/60 capitalize">{style}</p>
+                <p className="text-xs text-center mt-1 text-[#0D0D17]/60 capitalize">
+                  {style}
+                </p>
               </button>
             ))}
           </div>
@@ -260,7 +302,9 @@ function SettingsContent() {
         <section className="space-y-3">
           <div className="flex items-center gap-2 text-[#0D0D17]/60">
             <User className="w-4 h-4" />
-            <span className="text-sm font-medium uppercase tracking-wider">Nickname</span>
+            <span className="text-sm font-medium uppercase tracking-wider">
+              Nickname
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -279,8 +323,12 @@ function SettingsContent() {
                 @{nickname.trim().toLowerCase()}.villa.cash
               </p>
             )}
-            {nicknameError && <p className="text-sm text-red-500">{nicknameError}</p>}
-            <p className="text-xs text-[#0D0D17]/40">3-30 characters, letters, numbers, underscores</p>
+            {nicknameError && (
+              <p className="text-sm text-red-500">{nicknameError}</p>
+            )}
+            <p className="text-xs text-[#0D0D17]/40">
+              3-30 characters, letters, numbers, underscores
+            </p>
           </div>
         </section>
       </div>
@@ -291,7 +339,11 @@ function SettingsContent() {
           disabled={saving || !nickname.trim()}
           className="w-full py-3 bg-[#FFE047] text-[#0D0D17] font-medium rounded-xl hover:bg-[#FDD835] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+          {saving ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Check className="w-5 h-5" />
+          )}
           Save Changes
         </button>
 

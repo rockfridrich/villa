@@ -1,67 +1,67 @@
 const ADJECTIVES = [
-  "cosmic",
-  "mystic",
-  "stellar",
-  "neon",
-  "golden",
   "swift",
-  "bold",
-  "zen",
-  "wild",
-  "chill",
-  "lucid",
-  "vivid",
-  "radiant",
-  "serene",
-  "epic",
-  "cyber",
-  "lunar",
-  "solar",
-  "astral",
-  "primal",
-  "nimble",
-  "sage",
-  "keen",
-  "deft",
-  "bright",
-  "quiet",
+  "gentle",
   "brave",
+  "calm",
+  "keen",
+  "bold",
+  "wise",
+  "free",
+  "wild",
+  "bright",
   "noble",
-  "clear",
+  "proud",
+  "quick",
+  "sure",
   "true",
+  "agile",
+  "clever",
+  "fierce",
+  "lucky",
+  "merry",
+  "nimble",
+  "silent",
+  "steady",
+  "strong",
+  "vivid",
+  "golden",
+  "misty",
+  "sunny",
+  "serene",
+  "radiant",
 ] as const;
 
-const NOUNS = [
-  "fox",
-  "owl",
-  "wolf",
-  "phoenix",
-  "raven",
-  "wave",
-  "storm",
-  "flame",
-  "frost",
-  "aurora",
-  "pixel",
-  "cipher",
-  "spark",
-  "echo",
-  "drift",
-  "hawk",
-  "bear",
-  "lynx",
+const VIETNAM_ANIMALS = [
+  "buffalo",
+  "pangolin",
+  "macaque",
+  "langur",
+  "loris",
+  "civet",
+  "deer",
+  "otter",
   "crane",
+  "pheasant",
+  "python",
+  "gecko",
+  "turtle",
+  "egret",
+  "heron",
+  "peacock",
+  "gibbon",
+  "muntjac",
+  "serow",
+  "gaur",
+  "leopard",
   "tiger",
-  "river",
-  "peak",
-  "grove",
-  "stone",
-  "wind",
-  "comet",
-  "nova",
-  "pulse",
-  "beam",
-  "arc",
+  "elephant",
+  "rhino",
+  "bear",
+  "dolphin",
+  "dugong",
+  "hornbill",
+  "kingfisher",
+  "ibis",
 ] as const;
 
 const RESERVED_NICKNAMES = new Set([
@@ -112,13 +112,13 @@ export function generateNickname(seed?: string): string {
   if (seed) {
     const hash = hashString(seed);
     const adjIndex = hash % ADJECTIVES.length;
-    const nounIndex = (hash >> 8) % NOUNS.length;
-    return `${capitalize(ADJECTIVES[adjIndex])}${capitalize(NOUNS[nounIndex])}`;
+    const animalIndex = (hash >> 8) % VIETNAM_ANIMALS.length;
+    return `${capitalize(ADJECTIVES[adjIndex])}${capitalize(VIETNAM_ANIMALS[animalIndex])}`;
   }
 
   const adjective = getRandomElement(ADJECTIVES);
-  const noun = getRandomElement(NOUNS);
-  return `${capitalize(adjective)}${capitalize(noun)}`;
+  const animal = getRandomElement(VIETNAM_ANIMALS);
+  return `${capitalize(adjective)}${capitalize(animal)}`;
 }
 
 export function generateUniqueNickname(
@@ -191,5 +191,5 @@ export function getAvailableAdjectives(): readonly string[] {
 }
 
 export function getAvailableNouns(): readonly string[] {
-  return NOUNS;
+  return VIETNAM_ANIMALS;
 }

@@ -210,7 +210,7 @@ async function openSettings(): Promise<SettingsResult> {
       }
     });
 
-    bridge.open(["settings"]).catch(reject);
+    bridge.open(["settings"], { address: _user!.address }).catch(reject);
   });
 }
 
@@ -228,7 +228,7 @@ function getUser(): VillaUser | null {
 
 async function getProfile(address?: string): Promise<SimpleProfile | null> {
   init();
-  
+
   const targetAddress = address || _user?.address;
   if (!targetAddress) {
     return null;
@@ -236,9 +236,9 @@ async function getProfile(address?: string): Promise<SimpleProfile | null> {
 
   try {
     const response = await fetch(
-      `${_config.apiUrl || API_URL}/api/profile/${targetAddress.toLowerCase()}`
+      `${_config.apiUrl || API_URL}/api/profile/${targetAddress.toLowerCase()}`,
     );
-    
+
     if (!response.ok) {
       return null;
     }
