@@ -1,4 +1,4 @@
-# Villa
+# Villa — Claude Code Context
 
 Privacy-first passkey authentication on **Base** network. Porto SDK + Villa theming.
 
@@ -13,91 +13,50 @@ Privacy-first passkey authentication on **Base** network. Porto SDK + Villa them
 
 ```bash
 # Option 1: Native HTTPS (requires mkcert setup)
-pnpm dev:https
+bun dev:https
 
 # Option 2: Docker with HTTPS proxy (recommended)
-pnpm docker:https   # Start Caddy HTTPS proxy
-pnpm dev            # Run Next.js natively
+bun docker:https   # Start Caddy HTTPS proxy
+bun dev            # Run Next.js natively
 # Access at: https://local.villa.cash
 ```
 
-**Why:** WebAuthn (passkeys) requires a "secure context" - either HTTPS or localhost. The `localhost` exception doesn't work reliably for passkey APIs, especially with cross-origin iframes (Porto SDK). Always use HTTPS.
+**Why:** WebAuthn requires a "secure context" (HTTPS). The `localhost` exception doesn't work reliably for passkey APIs, especially with cross-origin iframes (Porto SDK). Always use HTTPS.
 
 **Setup for docker:https:**
 
 1. Add to `/etc/hosts`: `127.0.0.1 local.villa.cash local-key.villa.cash`
-2. Run `pnpm docker:https` to start Caddy with self-signed certs
-3. Run `pnpm dev` to start Next.js
+2. Run `bun docker:https` to start Caddy with self-signed certs
+3. Run `bun dev` to start Next.js
 4. Access at `https://local.villa.cash`
-
-**Hot reload:** Both options support hot reload. Docker only runs the HTTPS proxy (Caddy) - Next.js runs natively for instant HMR.
-
----
-
-## Context Loading (RAG)
-
-**Orchestrator Identity:** Read [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for partnership model
-**Philosophy:** Read [MANIFESTO.md](MANIFESTO.md) for repo-as-truth principles
-**Test Context:** `pnpm context:validate` (also runs in CI)
-
----
-
-## Multi-Developer Preferences
-
-**Shared** (checked in): `.claude/shared/defaults.json`
-**Local** (gitignored): `.claude/local/preferences.json`
-
-```bash
-pnpm prefs:show      # View effective preferences
-pnpm prefs:report    # Full report with pending questions
-cp .claude/local/preferences.template.json .claude/local/preferences.json  # Setup
-```
-
-Claude learns your preferences over time. See [shared/preferences.schema.ts](shared/preferences.schema.ts) for options.
 
 ---
 
 ## Quick Reference
 
 ```bash
-pnpm dev             # Local dev (apps/web)
-pnpm verify          # ALWAYS run before pushing
-pnpm qa              # Mobile QA via ngrok
-pnpm build           # Build all packages
-pnpm typecheck       # Type check all packages
+bun dev              # Local dev (hub on :3000)
+bun verify           # ALWAYS run before pushing (typecheck + lint + test)
+bun build            # Build all packages
+bun typecheck        # TypeScript only
+bun test             # All tests
 
 # Task orchestration (Beads)
 bd ready             # Find available work
 bd show <id>         # Task details
-./scripts/bd-workflow.sh start <id>   # Claim task
-./scripts/bd-workflow.sh done <id>    # Complete task
+bd update <id> --status=in_progress   # Claim task
+bd close <id>        # Complete task
+bd sync --flush-only # Export to JSONL
 ```
-
-### Cost-Optimized Agents (see [agents/INDEX.md](agents/INDEX.md))
-
-| Tier        | Model  | Cost/1M | Agents                   | Use For              |
-| ----------- | ------ | ------- | ------------------------ | -------------------- |
-| Workers     | haiku  | $0.25   | @explore, @test, @ops    | Search, test, deploy |
-| Specialists | sonnet | $3.00   | @build, @design, @review | Implementation       |
-| Quality     | sonnet | $3.00   | @quality-gate            | Auto-validation      |
-| Premium     | opus   | $15.00  | @oracle, @architect      | Architecture only    |
-
-**⚠️ Oracle is 60x more expensive than explore!**
-
-**Routing:** @router (haiku) classifies → appropriate tier → @quality-gate validates
-
-**Cost tracking:** `./scripts/session-costs.sh full 60 medium`
-
-**Cost target:** < $50/day (down from $115/day)
 
 ---
 
 ## Before You Code
 
 ```
-1. Is there an approved spec? → No? Write spec first.
-2. Run `pnpm verify` before EVERY push.
-3. Uncertain about approach? → ASK, don't guess.
+1. Is there an approved spec? No? Write spec first.
+2. Run `bun verify` before EVERY push.
+3. Uncertain about approach? ASK, don't guess.
 4. One feature per PR. One commit per logical change.
 ```
 
@@ -106,26 +65,21 @@ bd show <id>         # Task details
 ## Collaboration Protocol
 
 ### Session Start
-
 Confirm with human: **Goal** (specific outcome), **Scope** (minimal or comprehensive), **Handoff** (testing participation?)
 
 ### CI Time-Box (ENFORCED)
-
 - 1st failure: Fix and push
-- 2nd same failure: **STOP** → Ask user for direction
+- 2nd same failure: **STOP** — Ask user for direction
 - Never >3 attempts without explicit approval
 
 ### Human Testing Handoff
-
 When user offers to test:
-
 1. Push current state (even imperfect)
 2. Provide: URL, steps, expected behavior
 3. **WAIT** — do NOT continue "fixing"
 
 ### Clean Exit
-
-Before ending: `git status` clean, `pnpm verify` passes, summary of done/pending/blocked
+Before ending: `git status` clean, `bun verify` passes, summary of done/pending/blocked
 
 ---
 
@@ -139,16 +93,13 @@ Before ending: `git status` clean, `pnpm verify` passes, summary of done/pending
 
 ---
 
-## Anti-Patterns (Token Burners)
+## Anti-Patterns
 
-- ❌ Using Opus for file searches (use @explore haiku)
-- ❌ Using Opus for test runs (use @test haiku)
-- ❌ Skipping @quality-gate validation
-- ❌ Pushing without running tests locally
-- ❌ Implementing before spec is approved
-- ❌ Creating new files when editing existing works
-- ❌ Multiple PRs for same feature (iterate in one PR)
-- ❌ CI debugging loops without checking deployment health
+- Do not push without running `bun verify` locally
+- Do not implement before spec is approved
+- Do not create new files when editing existing ones works
+- Do not open multiple PRs for the same feature (iterate in one PR)
+- Do not loop on CI failures — 2nd same failure means STOP
 
 ---
 
@@ -158,34 +109,8 @@ Before ending: `git status` clean, `pnpm verify` passes, summary of done/pending
 
 ```bash
 curl -s https://beta.villa.cash/api/health | jq .timestamp
-# Old timestamp = deploy issue, not code issue → delegate to @ops
+# Old timestamp = deploy issue, not code issue
 ```
-
-**Time-Box:** Max 10 min on CI debugging. Then delegate or move on.
-
----
-
-## Project Structure (Monorepo)
-
-```
-apps/
-└── web/           # Next.js app (@villa/web)
-    └── src/
-        ├── app/           # Pages
-        ├── components/    # UI + SDK components
-        ├── animations/    # Lottie JSON files
-        └── lib/           # Utilities (porto.ts, store.ts)
-
-packages/
-├── ui/            # Design system (@villa/ui)
-├── sdk/           # Identity SDK types (@villa/sdk)
-└── config/        # Shared configs
-
-contracts/         # Solidity contracts (@villa/contracts)
-specs/             # active/, reference/
-```
-
-**Workspace:** `pnpm --filter @villa/web dev`
 
 ---
 
@@ -219,12 +144,12 @@ specs/             # active/, reference/
 
 ## Troubleshooting
 
-| Problem       | Fix                                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Blank page    | Clear `.next/` cache: `rm -rf apps/web/.next && pnpm dev`                                                                             |
-| Port in use   | `pkill -f "next dev"`                                                                                                                 |
-| Passkeys fail | Use HTTPS: `pnpm docker:https && pnpm dev` then open https://local.villa.cash (see "Critical: Local Development with Passkeys" above) |
-| Tests fail    | Run `pnpm verify` locally first!                                                                                                      |
+| Problem       | Fix                                                                    |
+| ------------- | ---------------------------------------------------------------------- |
+| Blank page    | Clear `.next/` cache: `rm -rf apps/web/.next && bun dev`              |
+| Port in use   | `pkill -f "next dev"`                                                  |
+| Passkeys fail | Use HTTPS: `bun docker:https && bun dev` then https://local.villa.cash |
+| Tests fail    | Run `bun verify` locally first                                         |
 
 ---
 
@@ -232,29 +157,23 @@ specs/             # active/, reference/
 
 - [Porto SDK](https://porto.sh/sdk)
 - [LEARNINGS.md](LEARNINGS.md) — Patterns that saved time
-- [.claude/agents/](agents/) — Agent definitions
-- [knowledge/](knowledge/) — Platform-specific docs
 
 ---
 
-## Orchestration Model
+## Agent Orchestration (OpenCode)
 
-Human + Claude Code partnership:
+Agent routing is managed by OpenCode (see `.opencode/BOOT.md`). Five agents:
 
-1. **Human** — sets direction (specs, priorities)
-2. **Claude** — orchestrates agents in parallel terminals
-3. **Agents** — execute domains (@build, @design, @test)
-4. **Human** — reviews, approves, merges
+| Agent | Role |
+|-------|------|
+| @explore | Fast codebase search (read-only, cheapest) |
+| @fix | Quick fixes, 1-3 files |
+| @test | Run tests, report results |
+| @build | Full implementation |
+| @review | Code review, security audit |
 
-```bash
-bd ready                        # Find tasks with no blockers
-./scripts/bd-workflow.sh status # Full task overview
-```
-
-**Task Memory:** Beads (`.beads/`) — survives sessions, hash-based IDs, dependency tracking
-
-**Animation:** Lottie (vectors) + Framer Motion (interactions)
+**Routing principle:** Use the cheapest agent that can handle the task. Search before building.
 
 ---
 
-_Keep this file under 200 lines. Move details to specific docs._
+_Keep this file under 150 lines. Move details to specific docs._
