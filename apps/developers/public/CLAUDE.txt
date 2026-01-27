@@ -3,7 +3,7 @@
 > Privacy-first passkey authentication for Base network.
 > Use this context when helping developers integrate Villa authentication.
 
-**Auto-generated:** 2026-01-26 | **Version:** 0.2.0
+**Auto-generated:** 2026-01-27 | **Version:** 0.2.0
 
 ## Quick Reference
 
