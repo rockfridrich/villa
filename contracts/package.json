@@ -1,6 +1,6 @@
 {
   "name": "@villa/contracts",
-  "version": "0.1.0-alpha.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Villa Solidity contracts for Base network",
   "scripts": {
@@ -13,5 +13,10 @@
     "deploy:base-sepolia": "forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify",
     "deploy:base": "forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --verify"
   },
-  "keywords": ["solidity", "ethereum", "base", "biometric-recovery"]
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "base",
+    "biometric-recovery"
+  ]
 }
