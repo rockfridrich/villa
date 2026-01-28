@@ -17,7 +17,7 @@ export async function GET(
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "Villa-Hub/0.3.0-beta.2",
+        "User-Agent": "Villa-Hub/0.3.0-rc.1.1",
       },
     });
 
