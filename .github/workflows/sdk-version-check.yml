@@ -1,0 +1,46 @@
+name: SDK Version Consistency Check
+
+on:
+  push:
+    paths:
+      - "packages/sdk/package.json"
+      - "packages/sdk-react/package.json"
+      - "**/*.md"
+      - "examples/**"
+  pull_request:
+    paths:
+      - "packages/sdk/package.json"
+      - "packages/sdk-react/package.json"
+      - "**/*.md"
+      - "examples/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version-consistency:
+    name: Check SDK Version Consistency
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Make version sync script executable
+        run: chmod +x scripts/sync-sdk-versions.sh
+
+      - name: Check version consistency
+        run: ./scripts/sync-sdk-versions.sh check
+
+      - name: List all version references (for debugging)
+        if: failure()
+        run: ./scripts/sync-sdk-versions.sh list
