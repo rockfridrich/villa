@@ -32,9 +32,15 @@ export function AvatarPicker({
   onCancel,
 }: AvatarPickerProps) {
   const [selection, setSelection] = useState<AvatarStyleSelection>(
-    currentAvatar?.selection || "female",
+    (currentAvatar && "selection" in currentAvatar
+      ? currentAvatar.selection
+      : null) || "female",
   );
-  const [variant, setVariant] = useState(currentAvatar?.variant || 0);
+  const [variant, setVariant] = useState(
+    (currentAvatar && "variant" in currentAvatar
+      ? currentAvatar.variant
+      : null) || 0,
+  );
   const [isRolling, setIsRolling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 

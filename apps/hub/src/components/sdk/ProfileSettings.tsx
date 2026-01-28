@@ -5,13 +5,15 @@ import { X, Lock, Camera, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui";
-import { AvatarPreview } from "./AvatarPreview";
+import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarSelection } from "./AvatarSelection";
+import { AvatarPicker } from "./AvatarPicker";
 import { AvatarUpload } from "./AvatarUpload";
 import { ProfileSection, EditableField } from "./profile";
 import { nicknameSchema } from "@/lib/validation";
 import { avatarStorage, type CustomAvatar } from "@/lib/storage/tinycloud";
-import type { AvatarConfig } from "@/types";
+import type { AvatarConfig, NewAvatarConfig } from "@/types";
+import { isNewAvatarConfig } from "@/lib/avatar/utils";
 
 /** Profile data structure */
 export interface ProfileData {
@@ -45,7 +47,11 @@ export interface ProfileSettingsProps {
   asModal?: boolean;
 }
 
-type SettingsView = "overview" | "edit-avatar" | "upload-avatar";
+type SettingsView =
+  | "overview"
+  | "edit-avatar-legacy"
+  | "edit-avatar-new"
+  | "upload-avatar";
 
 /**
  * Profile settings component
@@ -66,16 +72,12 @@ export function ProfileSettings({
     "type" in profile.avatar &&
     profile.avatar.type === "custom";
   const customAvatar = isCustomAvatar ? (profile.avatar as CustomAvatar) : null;
-  const generatedAvatar = !isCustomAvatar
-    ? (profile.avatar as AvatarConfig)
-    : null;
 
   const handleNicknameSave = async (newNickname: string) => {
     await onUpdate({ nickname: newNickname });
   };
 
-  const handleAvatarSelect = async (config: AvatarConfig) => {
-    // Clear custom avatar if switching to generated
+  const handleAvatarSelect = async (config: AvatarConfig | NewAvatarConfig) => {
     await avatarStorage.delete();
     await onUpdate({ avatar: config });
     setView("overview");
@@ -94,8 +96,58 @@ export function ProfileSettings({
 
   // Content based on view
   const renderContent = () => {
-    // Avatar selection view
-    if (view === "edit-avatar") {
+    if (view === "edit-avatar-new") {
+      return (
+        <div className="space-y-4">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-ink-muted hover:text-ink transition-colors min-h-[44px]"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <AvatarPicker
+            onSelect={handleAvatarSelect}
+            initialStyle={
+              !customAvatar &&
+              profile.avatar &&
+              isNewAvatarConfig(profile.avatar as AvatarConfig)
+                ? (profile.avatar as NewAvatarConfig).style
+                : "lorelei"
+            }
+            initialSeed={
+              !customAvatar &&
+              profile.avatar &&
+              isNewAvatarConfig(profile.avatar as AvatarConfig)
+                ? (profile.avatar as NewAvatarConfig).seed
+                : undefined
+            }
+          />
+
+          {allowAvatarUpload && (
+            <>
+              <div className="relative flex items-center gap-4 py-2">
+                <div className="flex-1 h-px bg-cream-200" />
+                <span className="text-xs text-ink-muted">or</span>
+                <div className="flex-1 h-px bg-cream-200" />
+              </div>
+
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setView("upload-avatar")}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Upload Your Own Photo
+              </Button>
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (view === "edit-avatar-legacy") {
       return (
         <div className="space-y-4">
           <button
@@ -109,7 +161,7 @@ export function ProfileSettings({
           <AvatarSelection
             walletAddress={profile.address}
             onSelect={handleAvatarSelect}
-            timerDuration={0} // No timer in settings
+            timerDuration={0}
           />
 
           {allowAvatarUpload && (
@@ -157,31 +209,18 @@ export function ProfileSettings({
         {/* Avatar section */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            {customAvatar ? (
-              <img
-                src={customAvatar.dataUrl}
-                alt="Your avatar"
-                className="w-32 h-32 rounded-full object-cover border-4 border-cream-200"
-              />
-            ) : generatedAvatar ? (
-              <AvatarPreview
-                walletAddress={profile.address}
-                selection={generatedAvatar.selection}
-                variant={generatedAvatar.variant}
-                size={128}
-                className="border-4 border-cream-200"
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-cream-200 flex items-center justify-center">
-                <Camera className="w-8 h-8 text-ink-muted" />
-              </div>
-            )}
+            <AvatarDisplay
+              walletAddress={profile.address}
+              avatar={customAvatar || profile.avatar}
+              size={128}
+              className="border-4 border-cream-200"
+            />
           </div>
 
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setView("edit-avatar")}
+            onClick={() => setView("edit-avatar-new")}
           >
             <Camera className="w-4 h-4 mr-2" />
             Change Avatar
@@ -249,7 +288,8 @@ export function ProfileSettings({
                 <Dialog.Title className="text-lg font-serif text-ink">
                   {view === "overview"
                     ? "Profile Settings"
-                    : view === "edit-avatar"
+                    : view === "edit-avatar-new" ||
+                        view === "edit-avatar-legacy"
                       ? "Change Avatar"
                       : "Upload Photo"}
                 </Dialog.Title>
@@ -291,7 +331,7 @@ export function ProfileSettings({
         <h2 className="text-lg font-serif text-ink">
           {view === "overview"
             ? "Profile Settings"
-            : view === "edit-avatar"
+            : view === "edit-avatar-new" || view === "edit-avatar-legacy"
               ? "Change Avatar"
               : "Upload Photo"}
         </h2>

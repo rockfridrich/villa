@@ -651,8 +651,14 @@ export default function SDKDemoPage() {
                       <div className="flex items-center gap-4 p-4 bg-cream-100 rounded-xl">
                         <AvatarPreview
                           walletAddress={user.address}
-                          selection={user.avatar.selection}
-                          variant={user.avatar.variant}
+                          selection={
+                            "selection" in user.avatar
+                              ? user.avatar.selection
+                              : "other"
+                          }
+                          variant={
+                            "variant" in user.avatar ? user.avatar.variant : 0
+                          }
                           size={64}
                           className="rounded-full"
                         />
@@ -837,8 +843,16 @@ if (!user) redirect('/login')`}
                         <div className="flex items-center gap-3">
                           <AvatarPreview
                             walletAddress={queryResult.address}
-                            selection={queryResult.avatar.selection}
-                            variant={queryResult.avatar.variant}
+                            selection={
+                              "selection" in queryResult.avatar
+                                ? queryResult.avatar.selection
+                                : "other"
+                            }
+                            variant={
+                              "variant" in queryResult.avatar
+                                ? queryResult.avatar.variant
+                                : 0
+                            }
                             size={48}
                             className="rounded-full"
                           />

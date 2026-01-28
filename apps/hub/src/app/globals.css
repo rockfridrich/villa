@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* Google Fonts: DM Serif Display + Inter */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap");
 
 :root {
   /* Proof of Retreat colors */
@@ -16,9 +16,80 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'DM Serif Display', Georgia, serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "DM Serif Display", Georgia, serif;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+h2 {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+:root {
+  --glass-villa-light: rgba(255, 253, 248, 0.7);
+  --glass-villa-medium: rgba(255, 253, 248, 0.8);
+  --glass-villa-heavy: rgba(255, 253, 248, 0.9);
+  --glass-border-villa: rgba(255, 224, 71, 0.2);
+  --glass-shadow-villa: 0 8px 32px rgba(13, 13, 23, 0.04);
+  --glass-shadow-villa-elevated: 0 20px 40px rgba(13, 13, 23, 0.06);
+}
+
+.glass-overlay-villa {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: var(--glass-villa-medium);
+  border: 1px solid var(--glass-border-villa);
+  box-shadow: var(--glass-shadow-villa);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--glass-villa-heavy);
+  border: 1px solid var(--glass-border-villa);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow-villa-elevated);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-villa-light {
+  background: var(--glass-villa-light);
+}
+
+@media (max-width: 768px) {
+  .glass-overlay-villa,
+  .glass-card {
+    background: var(--glass-villa-heavy);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-overlay-villa,
+  .glass-card {
+    background: var(--glass-villa-heavy);
+  }
 }

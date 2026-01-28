@@ -7,6 +7,19 @@ export {
 } from "./generator";
 
 export {
+  generateAvatarSvgFromSeed,
+  generateAvatarDataUrlFromSeed,
+  generateRandomSeed,
+  isValidAvatarStyle,
+} from "./dicebear";
+
+export {
+  isNewAvatarConfig,
+  generateAvatarFromConfig,
+  generateAvatarDataUrlFromConfig,
+} from "./utils";
+
+export {
   type Avatar,
   type GeneratedAvatar,
   type AvatarFormat,

@@ -1,22 +1,26 @@
-'use client'
+"use client";
 
-import { useRef } from 'react'
-import { Check } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { useRef } from "react";
+import { Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Button } from "@villa/ui";
 
 interface Permission {
-  type: 'identity:read' | 'credentials:read' | 'storage:app' | 'storage:shared:read'
-  label: string
-  value?: string // e.g., nickname value to show
+  type:
+    | "identity:read"
+    | "credentials:read"
+    | "storage:app"
+    | "storage:shared:read";
+  label: string;
+  value?: string; // e.g., nickname value to show
 }
 
 interface ConsentRequestProps {
-  appName: string
-  appLogo?: string
-  permissions: Permission[]
-  onAllow: () => void
-  onDeny: () => void
+  appName: string;
+  appLogo?: string;
+  permissions: Permission[];
+  onAllow: () => void;
+  onDeny: () => void;
 }
 
 /**
@@ -32,10 +36,10 @@ export function ConsentRequest({
 }: ConsentRequestProps) {
   // Check for reduced motion preference
   const prefersReducedMotion = useRef(
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
-  ).current
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  ).current;
 
   return (
     <div className="space-y-6">
@@ -94,7 +98,9 @@ export function ConsentRequest({
               <p className="text-ink text-base">
                 {permission.label}
                 {permission.value && (
-                  <span className="text-ink-muted ml-1">({permission.value})</span>
+                  <span className="text-ink-muted ml-1">
+                    ({permission.value})
+                  </span>
                 )}
               </p>
             </div>
@@ -126,12 +132,7 @@ export function ConsentRequest({
           whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
           transition={{ duration: 0.1 }}
         >
-          <Button
-            size="lg"
-            variant="ghost"
-            className="w-full"
-            onClick={onDeny}
-          >
+          <Button size="lg" variant="ghost" className="w-full" onClick={onDeny}>
             Deny
           </Button>
         </motion.div>
@@ -147,5 +148,5 @@ export function ConsentRequest({
         You can revoke access at any time in your Villa settings
       </motion.p>
     </div>
-  )
+  );
 }

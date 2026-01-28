@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { VillaAuth, type VillaAuthResponse } from '@/components/sdk'
-import { Button } from '@/components/ui'
-import { AvatarPreview } from '@/components/sdk'
-import { LogOut, User, Home } from 'lucide-react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
+import { useState } from "react";
+import { VillaAuth, type VillaAuthResponse } from "@/components/sdk";
+import { Button } from "@/components/ui";
+import { AvatarPreview } from "@/components/sdk";
+import { LogOut, User, Home } from "lucide-react";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 /**
  * Residents App - Example integration of VillaAuth
@@ -22,26 +22,21 @@ import Link from 'next/link'
  * ```
  */
 export default function ResidentsPage() {
-  const [user, setUser] = useState<VillaAuthResponse | null>(null)
-  const [showAuth, setShowAuth] = useState(false)
+  const [user, setUser] = useState<VillaAuthResponse | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleAuthComplete = (result: VillaAuthResponse) => {
-    setUser(result)
-    setShowAuth(false)
-  }
+    setUser(result);
+    setShowAuth(false);
+  };
 
   const handleSignOut = () => {
-    setUser(null)
-  }
+    setUser(null);
+  };
 
   // Show auth flow
   if (showAuth) {
-    return (
-      <VillaAuth
-        onComplete={handleAuthComplete}
-        appName="Residents"
-      />
-    )
+    return <VillaAuth onComplete={handleAuthComplete} appName="Residents" />;
   }
 
   // Authenticated - show dashboard
@@ -53,15 +48,25 @@ export default function ResidentsPage() {
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Home className="w-6 h-6 text-emerald-600" />
-              <span className="font-serif text-xl text-emerald-900">Residents</span>
+              <span className="font-serif text-xl text-emerald-900">
+                Residents
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                   <AvatarPreview
                     walletAddress={user.identity.address}
-                    selection={user.identity.avatar.selection || 'other'}
-                    variant={user.identity.avatar.variant || 0}
+                    selection={
+                      "selection" in user.identity.avatar
+                        ? user.identity.avatar.selection
+                        : "other"
+                    }
+                    variant={
+                      "variant" in user.identity.avatar
+                        ? user.identity.avatar.variant
+                        : 0
+                    }
                     size={32}
                   />
                 </div>
@@ -94,8 +99,16 @@ export default function ResidentsPage() {
                 <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md">
                   <AvatarPreview
                     walletAddress={user.identity.address}
-                    selection={user.identity.avatar.selection || 'other'}
-                    variant={user.identity.avatar.variant || 0}
+                    selection={
+                      "selection" in user.identity.avatar
+                        ? user.identity.avatar.selection
+                        : "other"
+                    }
+                    variant={
+                      "variant" in user.identity.avatar
+                        ? user.identity.avatar.variant
+                        : 0
+                    }
                     size={80}
                   />
                 </div>
@@ -121,10 +134,26 @@ export default function ResidentsPage() {
             {/* Quick actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Schedule', icon: '📅', color: 'bg-blue-50 text-blue-600' },
-                { label: 'Directory', icon: '👥', color: 'bg-purple-50 text-purple-600' },
-                { label: 'Events', icon: '🎉', color: 'bg-pink-50 text-pink-600' },
-                { label: 'Resources', icon: '📚', color: 'bg-amber-50 text-amber-600' },
+                {
+                  label: "Schedule",
+                  icon: "📅",
+                  color: "bg-blue-50 text-blue-600",
+                },
+                {
+                  label: "Directory",
+                  icon: "👥",
+                  color: "bg-purple-50 text-purple-600",
+                },
+                {
+                  label: "Events",
+                  icon: "🎉",
+                  color: "bg-pink-50 text-pink-600",
+                },
+                {
+                  label: "Resources",
+                  icon: "📚",
+                  color: "bg-amber-50 text-amber-600",
+                },
               ].map((action) => (
                 <button
                   key={action.label}
@@ -138,15 +167,17 @@ export default function ResidentsPage() {
 
             {/* Identity debug */}
             <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-100">
-              <h3 className="font-mono text-sm text-emerald-700 mb-3">Villa Identity (Debug)</h3>
+              <h3 className="font-mono text-sm text-emerald-700 mb-3">
+                Villa Identity (Debug)
+              </h3>
               <pre className="text-xs bg-white p-4 rounded-lg overflow-x-auto border border-emerald-100">
-{JSON.stringify(user.identity, null, 2)}
+                {JSON.stringify(user.identity, null, 2)}
               </pre>
             </div>
           </motion.div>
         </main>
       </div>
-    )
+    );
   }
 
   // Not authenticated - show landing
@@ -201,5 +232,5 @@ export default function ResidentsPage() {
         </motion.div>
       </main>
     </div>
-  )
+  );
 }

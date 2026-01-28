@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Modal } from "@/components/ui/Modal";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet } from "@villa/ui";
 
 import { AuthenticatingState, SuccessState, ErrorState } from "./AuthStates";
 import { signInHeadless, createAccountHeadless } from "@/lib/porto";

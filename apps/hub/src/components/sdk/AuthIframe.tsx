@@ -1,33 +1,33 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Spinner } from '@/components/ui/spinner'
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Spinner } from "@villa/ui";
 
 /**
  * Trusted origins for postMessage validation
  * Keep in sync with @rockfridrich/villa-sdk/iframe/validation.ts
  */
 const TRUSTED_ORIGINS = [
-  'https://villa.cash',
-  'https://www.villa.cash',
-  'https://beta.villa.cash',
-  'https://dev-1.villa.cash',
-  'https://dev-2.villa.cash',
+  "https://villa.cash",
+  "https://www.villa.cash",
+  "https://beta.villa.cash",
+  "https://dev-1.villa.cash",
+  "https://dev-2.villa.cash",
   // Dev origins
-  'https://localhost:3000',
-  'https://localhost:3001',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-] as const
+  "https://localhost:3000",
+  "https://localhost:3001",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+] as const;
 
 /**
  * Validate origin against trusted list
  */
 function validateOrigin(origin: string): boolean {
-  return TRUSTED_ORIGINS.includes(origin as typeof TRUSTED_ORIGINS[number])
+  return TRUSTED_ORIGINS.includes(origin as (typeof TRUSTED_ORIGINS)[number]);
 }
 
 /**
@@ -35,38 +35,48 @@ function validateOrigin(origin: string): boolean {
  * Uses SDK types for consistency
  */
 export type AuthMessage =
-  | { type: 'VILLA_AUTH_READY' }
-  | { type: 'VILLA_AUTH_SUCCESS'; identity: { address: string; nickname: string; avatar: unknown } }
-  | { type: 'VILLA_AUTH_ERROR'; error: string; code?: string }
-  | { type: 'VILLA_AUTH_CANCEL' }
-  | { type: 'VILLA_CONSENT_GRANTED'; appId: string }
-  | { type: 'VILLA_CONSENT_DENIED'; appId: string }
+  | { type: "VILLA_AUTH_READY" }
+  | {
+      type: "VILLA_AUTH_SUCCESS";
+      identity: { address: string; nickname: string; avatar: unknown };
+    }
+  | { type: "VILLA_AUTH_ERROR"; error: string; code?: string }
+  | { type: "VILLA_AUTH_CANCEL" }
+  | { type: "VILLA_CONSENT_GRANTED"; appId: string }
+  | { type: "VILLA_CONSENT_DENIED"; appId: string }
   // Legacy support (deprecated - will be removed in v1.0)
-  | { type: 'AUTH_SUCCESS'; identity: { address: string; nickname: string; avatar: unknown } }
-  | { type: 'AUTH_ERROR'; error: string }
-  | { type: 'AUTH_CLOSE' }
+  | {
+      type: "AUTH_SUCCESS";
+      identity: { address: string; nickname: string; avatar: unknown };
+    }
+  | { type: "AUTH_ERROR"; error: string }
+  | { type: "AUTH_CLOSE" };
 
 export interface AuthIframeProps {
   /** Whether iframe is visible */
-  isOpen: boolean
+  isOpen: boolean;
   /** URL to load in iframe */
-  url: string
+  url: string;
   /** Called when iframe is ready */
-  onReady?: () => void
+  onReady?: () => void;
   /** Called on successful authentication */
-  onSuccess?: (message: Extract<AuthMessage, { type: 'VILLA_AUTH_SUCCESS' }>) => void
+  onSuccess?: (
+    message: Extract<AuthMessage, { type: "VILLA_AUTH_SUCCESS" }>,
+  ) => void;
   /** Called on authentication error */
-  onError?: (message: Extract<AuthMessage, { type: 'VILLA_AUTH_ERROR' }>) => void
+  onError?: (
+    message: Extract<AuthMessage, { type: "VILLA_AUTH_ERROR" }>,
+  ) => void;
   /** Called when user cancels */
-  onCancel?: () => void
+  onCancel?: () => void;
   /** Called when consent is granted */
-  onConsentGranted?: (appId: string) => void
+  onConsentGranted?: (appId: string) => void;
   /** Called when consent is denied */
-  onConsentDenied?: (appId: string) => void
+  onConsentDenied?: (appId: string) => void;
   /** Called when iframe should close */
-  onClose: () => void
+  onClose: () => void;
   /** Timeout in milliseconds (default: 30000) */
-  timeout?: number
+  timeout?: number;
 }
 
 /**
@@ -92,10 +102,10 @@ export function AuthIframe({
   onClose,
   timeout = 30000,
 }: AuthIframeProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   /**
    * Handle incoming messages from iframe
@@ -104,60 +114,72 @@ export function AuthIframe({
     (event: MessageEvent) => {
       // Validate origin using SDK's allowlist
       if (!validateOrigin(event.origin)) {
-        return
+        return;
       }
 
-      const message = event.data as AuthMessage
+      const message = event.data as AuthMessage;
 
       if (!message || !message.type) {
-        return
+        return;
       }
 
       // Clear timeout on any valid message
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = undefined
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = undefined;
       }
 
       // Handle message types
       switch (message.type) {
-        case 'VILLA_AUTH_READY':
-          setIsLoading(false)
-          onReady?.()
-          break
+        case "VILLA_AUTH_READY":
+          setIsLoading(false);
+          onReady?.();
+          break;
 
-        case 'VILLA_AUTH_SUCCESS':
-        case 'AUTH_SUCCESS': // Legacy support
-          setIsLoading(false)
-          onSuccess?.(message as Extract<AuthMessage, { type: 'VILLA_AUTH_SUCCESS' }>)
-          break
+        case "VILLA_AUTH_SUCCESS":
+        case "AUTH_SUCCESS": // Legacy support
+          setIsLoading(false);
+          onSuccess?.(
+            message as Extract<AuthMessage, { type: "VILLA_AUTH_SUCCESS" }>,
+          );
+          break;
 
-        case 'VILLA_AUTH_ERROR':
-        case 'AUTH_ERROR': // Legacy support
-          setIsLoading(false)
-          setError(message.error)
-          onError?.(message as Extract<AuthMessage, { type: 'VILLA_AUTH_ERROR' }>)
-          break
+        case "VILLA_AUTH_ERROR":
+        case "AUTH_ERROR": // Legacy support
+          setIsLoading(false);
+          setError(message.error);
+          onError?.(
+            message as Extract<AuthMessage, { type: "VILLA_AUTH_ERROR" }>,
+          );
+          break;
 
-        case 'VILLA_AUTH_CANCEL':
-        case 'AUTH_CLOSE': // Legacy support
-          setIsLoading(false)
-          onCancel?.()
-          onClose()
-          break
+        case "VILLA_AUTH_CANCEL":
+        case "AUTH_CLOSE": // Legacy support
+          setIsLoading(false);
+          onCancel?.();
+          onClose();
+          break;
 
-        case 'VILLA_CONSENT_GRANTED':
-          onConsentGranted?.(message.appId)
-          break
+        case "VILLA_CONSENT_GRANTED":
+          onConsentGranted?.(message.appId);
+          break;
 
-        case 'VILLA_CONSENT_DENIED':
-          onConsentDenied?.(message.appId)
-          onClose()
-          break
+        case "VILLA_CONSENT_DENIED":
+          onConsentDenied?.(message.appId);
+          onClose();
+          break;
       }
     },
-    [onReady, onSuccess, onError, onCancel, onConsentGranted, onConsentDenied, onClose]
-  )
+    [
+      onReady,
+      onSuccess,
+      onError,
+      onCancel,
+      onConsentGranted,
+      onConsentDenied,
+      onClose,
+    ],
+  );
 
   /**
    * Handle iframe load event
@@ -165,91 +187,91 @@ export function AuthIframe({
   const handleIframeLoad = useCallback(() => {
     // Note: VILLA_AUTH_READY message from iframe content is the real "ready" signal
     // This load event just means the HTML loaded, not that the app is interactive
-  }, [])
+  }, []);
 
   /**
    * Handle timeout
    */
   const handleTimeout = useCallback(() => {
-    setIsLoading(false)
-    setError('Authentication timed out. Please try again.')
+    setIsLoading(false);
+    setError("Authentication timed out. Please try again.");
     onError?.({
-      type: 'VILLA_AUTH_ERROR',
-      error: 'Timeout',
-      code: 'TIMEOUT',
-    })
-  }, [onError])
+      type: "VILLA_AUTH_ERROR",
+      error: "Timeout",
+      code: "TIMEOUT",
+    });
+  }, [onError]);
 
   /**
    * Handle retry after error
    */
   const handleRetry = useCallback(() => {
-    setError(null)
-    setIsLoading(true)
+    setError(null);
+    setIsLoading(true);
 
     // Reload iframe
     if (iframeRef.current) {
-      iframeRef.current.src = url
+      iframeRef.current.src = url;
     }
 
     // Reset timeout
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
+      clearTimeout(timeoutRef.current);
     }
-    timeoutRef.current = setTimeout(handleTimeout, timeout)
-  }, [url, timeout, handleTimeout])
+    timeoutRef.current = setTimeout(handleTimeout, timeout);
+  }, [url, timeout, handleTimeout]);
 
   /**
    * Setup message listener and timeout
    */
   useEffect(() => {
     if (!isOpen) {
-      return
+      return;
     }
 
     // Add message listener
-    window.addEventListener('message', handleMessage)
+    window.addEventListener("message", handleMessage);
 
     // Start timeout
-    timeoutRef.current = setTimeout(handleTimeout, timeout)
+    timeoutRef.current = setTimeout(handleTimeout, timeout);
 
     // Cleanup
     return () => {
-      window.removeEventListener('message', handleMessage)
+      window.removeEventListener("message", handleMessage);
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-    }
-  }, [isOpen, handleMessage, handleTimeout, timeout])
+    };
+  }, [isOpen, handleMessage, handleTimeout, timeout]);
 
   /**
    * Handle Escape key to close
    */
   useEffect(() => {
     if (!isOpen) {
-      return
+      return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel?.()
-        onClose()
+      if (event.key === "Escape") {
+        onCancel?.();
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel, onClose])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onCancel, onClose]);
 
   /**
    * Reset state when closed
    */
   useEffect(() => {
     if (!isOpen) {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -321,5 +343,5 @@ export function AuthIframe({
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

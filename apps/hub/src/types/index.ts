@@ -7,6 +7,8 @@
 export type {
   AvatarStyle,
   AvatarStyleSelection,
+  LegacyAvatarConfig,
+  NewAvatarConfig,
   AvatarConfig,
   VillaIdentity,
   PublicProfile,
@@ -14,9 +16,10 @@ export type {
   DeviceInfo,
   UserProfile,
   DataScope,
-} from './identity'
+} from "./identity";
 
 export {
-  AVATAR_STYLE_MAP,
+  LEGACY_AVATAR_STYLE_MAP,
+  LEGACY_DEFAULT_AVATAR,
   DEFAULT_AVATAR,
-} from './identity'
+} from "./identity";

@@ -1,57 +1,38 @@
-import { NextResponse } from 'next/server'
-import { getDb, ensureTables } from '@/lib/db'
-import type { ProfileRow } from '@/lib/db/schema'
-import { rowToProfile } from '@/lib/db/schema'
+import { NextResponse } from "next/server";
 
 // Disable caching - data can change
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-/**
- * GET /api/profile/:address
- * Get a user's profile by wallet address
- */
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.villa.cash";
+
 export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ address: string }> }
+  request: Request,
+  { params }: { params: Promise<{ address: string }> },
 ) {
-  const { address } = await params
-
-  // Validate address format
-  if (!address || !/^0x[a-fA-F0-9]{40}$/i.test(address)) {
-    return NextResponse.json(
-      { error: 'Invalid address format' },
-      { status: 400 }
-    )
-  }
-
-  // Normalize address to lowercase
-  const normalizedAddress = address.toLowerCase()
+  const { address } = await params;
 
   try {
-    await ensureTables()
-    const sql = getDb()
+    const response = await fetch(`${API_URL}/profiles/${address}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Villa-Hub/0.3.0-beta.2",
+      },
+    });
 
-    const rows = await sql<ProfileRow[]>`
-      SELECT *
-      FROM profiles
-      WHERE LOWER(address) = ${normalizedAddress}
-      LIMIT 1
-    `
+    const data = await response.json();
 
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      )
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(rowToProfile(rows[0]))
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching profile:', error)
+    console.error("Error proxying profile request:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
