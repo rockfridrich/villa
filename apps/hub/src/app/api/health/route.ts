@@ -24,11 +24,22 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    version: build.version,
-    buildHash: build.buildHash,
-    buildTime: build.buildTime,
-    sha: build.sha,
-    environment: getEnvironment(),
-    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    build: {
+      version: build.version,
+      hash: build.buildHash,
+      sha: build.sha,
+      time: build.buildTime,
+    },
+    runtime: {
+      uptime: Math.floor(process.uptime()),
+      memory: {
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      },
+      node: process.version,
+    },
+    env: getEnvironment(),
   });
 }
