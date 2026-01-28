@@ -1,45 +1,8 @@
 {
   "name": "@rockfridrich/villa-sdk-react",
-  "version": "0.2.0",
-  "description": "React bindings for Villa SDK - Privacy-first passkey authentication",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "sideEffects": false,
-  "keywords": [
-    "villa",
-    "passkey",
-    "authentication",
-    "react",
-    "hooks",
-    "web3",
-    "base"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/rockfridrich/villa.git",
-    "directory": "packages/sdk-react"
-  },
-  "homepage": "https://docs.villa.cash",
-  "license": "MIT",
-  "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
-  },
+  "version": "0.3.0-beta.1",
   "peerDependencies": {
-    "@rockfridrich/villa-sdk": "^0.2.0",
+    "@rockfridrich/villa-sdk": "^0.3.0-beta.1",
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {

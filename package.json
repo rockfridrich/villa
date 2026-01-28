@@ -1,6 +1,6 @@
 {
   "name": "villa",
-  "version": "0.2.0",
+  "version": "0.3.0-beta.1",
   "private": true,
   "description": "Privacy-first identity and community companion app",
   "repository": {
@@ -52,7 +52,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "git config core.hooksPath .githooks || true",
-    "verify": "turbo run typecheck lint build && bun run --cwd apps/hub test:e2e:chromium",
+    "verify:fast": "turbo run typecheck lint build",
+    "verify:full": "turbo run typecheck lint build && bun run --cwd apps/hub test:e2e:chromium",
+    "verify": "bun run verify:fast",
     "dev:share": "./scripts/ngrok-share.sh",
     "dev:debug": "./scripts/ngrok-debug.sh",
     "qa": "./scripts/qa-start.sh",
@@ -92,7 +94,6 @@
     "ci": "./scripts/ci-monitor.sh",
     "ci:watch": "./scripts/ci-monitor.sh --watch",
     "ci:log": "tail -f .claude/ci-status.log",
-    "verify:fast": "turbo run typecheck lint",
     "check:https": "./scripts/check-https.sh",
     "check:passkey": "./scripts/check-https.sh check",
     "docs:claude": "bun scripts/docs/generate-claude-txt.ts",
