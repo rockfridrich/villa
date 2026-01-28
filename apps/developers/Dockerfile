@@ -19,7 +19,9 @@ COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 
-RUN bun install --frozen-lockfile --ignore-scripts || echo "Continuing despite prepare script failure"
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    --mount=type=cache,target=/app/node_modules/.cache/bun \
+    bun install --frozen-lockfile --ignore-scripts || echo "Continuing despite prepare script failure"
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
