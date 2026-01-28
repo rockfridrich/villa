@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 # Production Dockerfile for Villa Developers Portal
 
-ARG CACHE_BUST=1
+ARG CACHE_BUST=2
 FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat git
 WORKDIR /app
@@ -34,6 +34,16 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ARG BUILD_TIME
+
+ARG NEXT_PUBLIC_ENV=production
+ARG RAILWAY_GIT_COMMIT_SHA
+ARG NEXT_PUBLIC_VERSION=0.1.0
+
+ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
+ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
+ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
+ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
 # Build developers app using turbo
 RUN bun turbo run build --filter=@villa/developers
