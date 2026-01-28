@@ -66,7 +66,7 @@ import { VillaProvider, VillaAuth, useIdentity, useAuth } from '@rockfridrich/vi
 
 function App() {
   return (
-    <VillaProvider config={{ appId: 'your-app', network: 'base' }}>
+    <VillaProvider config={{ target: 'production' }}>
       <AuthenticatedApp />
     </VillaProvider>
   )
@@ -90,8 +90,8 @@ function AuthenticatedApp() {
 import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
-  appId: 'your-app',           // Required
-  network: 'base',             // 'base' | 'base-sepolia'
+  appId: 'your-app',           // Optional - auto-derived from origin if not provided
+  target: 'production',        // 'production' | 'beta'
   apiUrl: 'https://...'        // Optional override
 })
 
@@ -191,8 +191,8 @@ type SignInErrorCode =
   | 'AUTH_ERROR'     // General error
 
 interface VillaConfig {
-  appId: string
-  network?: 'base' | 'base-sepolia'
+  appId?: string
+  target?: 'production' | 'beta'
   apiUrl?: string
 }
 ```
@@ -227,8 +227,8 @@ For custom auth flows with fine-grained control:
 import { VillaBridge } from '@rockfridrich/villa-sdk'
 
 const bridge = new VillaBridge({
-  appId: 'your-app',
-  network: 'base',
+  appId: 'your-app',           // Optional
+  target: 'production',
   timeout: 5 * 60 * 1000,
   debug: false,
   preferPopup: false
@@ -258,7 +258,7 @@ import { VillaProvider } from '@rockfridrich/villa-sdk-react'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <VillaProvider config={{ appId: 'my-nextjs-app' }}>
+    <VillaProvider config={{ target: 'production' }}>
       {children}
     </VillaProvider>
   )
@@ -338,7 +338,7 @@ const response = await fetch('https://api.villa.cash/verify', {
 | Passkeys not working | Use HTTPS (`pnpm dev:https`) or localhost |
 | Blank auth page | Clear cache: `pnpm dev:clean` |
 | Session not persisting | Check localStorage availability |
-| "Origin not in allowlist" | Use default network, don't override origin |
+| "Origin not in allowlist" | Use default target, don't override origin |
 
 ## What Villa Returns
 
@@ -446,7 +446,7 @@ After successful authentication:
 - `getTargetConfig`
 - `deriveAppId`
 - `getContracts` - } /
-- `getContractsForChain` - const contracts = getContractsForChain(baseSepolia) /
+- `getContractsForChain` - const contracts = getContractsForChain('baseSepoliaBeta') /
 - `getNicknameResolverAddress` - /
 - `getRecoverySignerAddress` - /
 - `isDeployed`
