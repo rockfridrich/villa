@@ -43,7 +43,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun
 
 RUN mkdir -p ./public
 

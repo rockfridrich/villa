@@ -68,7 +68,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bun /node_modules/.bun
 
 USER nextjs
 EXPOSE 3000
