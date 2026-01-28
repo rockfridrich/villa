@@ -58,10 +58,45 @@ vitest.config*
 .github
 .do
 
+# OpenCode development
+.opencode
+.1code
+
 # Claude development
 .claude
 .beads
 costs
 
+# Specs and documentation
+specs
+
 # Examples (not needed for tests)
 examples
+
+# Development scripts
+scripts
+
+# Test directories for production builds
+tests
+*.spec.ts
+*.test.ts
+
+# Additional dev configs
+.pre-commit-config.yaml
+.gitleaks.toml
+.gitmodules
+typedoc.json
+codecov.yml
+CONTRIBUTING.md
+SECURITY.md
+OPENCODE-PARTNERSHIP.md
+AGENT_COORDINATION.md
+AGENTS.md
+
+# Development Docker files
+docker-compose*.yml
+Dockerfile.dev
+Dockerfile.test
+
+# Development certificates
+certificates

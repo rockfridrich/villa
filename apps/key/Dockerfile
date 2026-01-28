@@ -22,8 +22,15 @@ RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules/
-COPY --from=deps /app/apps ./apps/
-COPY . .
+
+# Copy workspace files  
+COPY package.json bun.lock turbo.json ./
+
+# Copy key-specific files
+COPY apps/key ./apps/key/
+
+# Copy shared packages
+COPY packages ./packages/
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
