@@ -1,0 +1,47 @@
+# Railway configuration for PR preview environments
+# This file is used by the PR preview workflow to create isolated environments
+
+[environments.template]
+# Template configuration for PR preview environments
+# Railway will create new environments based on this template
+
+[build]
+builder = "dockerfile"
+buildCommand = "bun install --frozen-lockfile && bun run build"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
+startCommand = "node server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1
+
+# Service templates for each app
+[services.hub]
+dockerfile = "Dockerfile"
+healthcheckPath = "/api/health"
+domains = ["villa-shard-{{PR_NUMBER}}-{{DATE}}-hub.up.railway.app"]
+
+[services.key]
+dockerfile = "apps/key/Dockerfile"
+healthcheckPath = "/api/health"
+domains = ["villa-shard-{{PR_NUMBER}}-{{DATE}}-key.up.railway.app"]
+
+[services.docs]
+dockerfile = "apps/developers/Dockerfile" 
+healthcheckPath = "/api/health"
+domains = ["villa-shard-{{PR_NUMBER}}-{{DATE}}-docs.up.railway.app"]
+
+# Environment variables template
+[env.common]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+NEXT_PUBLIC_ENVIRONMENT = "preview"
+
+# Auto-cleanup settings
+[cleanup]
+# Environments older than 7 days will be automatically cleaned up
+maxAgeDays = 7
+# Maximum number of PR environments to keep
+maxEnvironments = 20

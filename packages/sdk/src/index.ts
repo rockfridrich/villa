@@ -21,7 +21,27 @@ export type {
   SimpleProfile,
   SimpleSignInOptions,
   SettingsResult,
+  ProfileUpdateData,
+  VillaInternalAPI,
 } from "./simple";
+
+// Web2 API (maximum abstraction)
+export {
+  auth,
+  createAuth,
+  signIn,
+  signOut,
+  getCurrentUser,
+  isSignedIn,
+  updateUserProfile,
+  onAuthChange,
+} from "./web2";
+export type {
+  User,
+  UserProfile,
+  AuthState,
+  AuthConfig as Web2AuthConfig,
+} from "./web2";
 
 // Main SDK client (advanced)
 export { Villa } from "./client";
@@ -38,7 +58,7 @@ export { resolveEns, reverseEns } from "./ens";
 export { getAvatarUrl, createAvatarConfig } from "./avatar";
 
 // Auth utilities
-export { signIn, signOut, isAuthenticated, getIdentity } from "./auth";
+export { isAuthenticated, getIdentity } from "./auth";
 export type { AuthOptions } from "./auth";
 
 // Session utilities

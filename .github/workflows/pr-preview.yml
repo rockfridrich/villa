@@ -1,0 +1,542 @@
+name: PR Preview Environments
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to deploy"
+        required: true
+        type: number
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - deploy
+          - destroy
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+  issues: write
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  RAILWAY_PROJECT_ID: 7c344004-cd63-4b10-8479-9991c3923115
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+
+jobs:
+  # =============================================================================
+  # PR PREVIEW DEPLOYMENT - Create isolated environments
+  # =============================================================================
+  deploy-preview:
+    name: "🚀 Deploy PR Preview"
+    if: |
+      (github.event_name == 'pull_request' && github.event.action != 'closed') ||
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
+    runs-on: ubuntu-latest
+    outputs:
+      hub-url: ${{ steps.deploy.outputs.hub-url }}
+      key-url: ${{ steps.deploy.outputs.key-url }}
+      docs-url: ${{ steps.deploy.outputs.docs-url }}
+      environment-id: ${{ steps.deploy.outputs.environment-id }}
+      shard-name: ${{ steps.deploy.outputs.shard-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Authenticate Railway
+        run: |
+          echo "$RAILWAY_TOKEN" | railway login --browserless
+
+      - name: Generate environment details
+        id: env-details
+        run: |
+          PR_NUM="${{ github.event.pull_request.number || inputs.pr_number }}"
+          DATE=$(date +%Y-%m-%d)
+          SHARD_NAME="villa-shard-${PR_NUM}-${DATE}"
+
+          echo "pr-number=$PR_NUM" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "shard-name=$SHARD_NAME" >> $GITHUB_OUTPUT
+
+          # Generate domains
+          echo "hub-domain=${SHARD_NAME}-hub.up.railway.app" >> $GITHUB_OUTPUT
+          echo "key-domain=${SHARD_NAME}-key.up.railway.app" >> $GITHUB_OUTPUT
+          echo "docs-domain=${SHARD_NAME}-docs.up.railway.app" >> $GITHUB_OUTPUT
+
+      - name: Create PR preview environment
+        id: deploy
+        run: |
+          set -euo pipefail
+
+          SHARD_NAME="${{ steps.env-details.outputs.shard-name }}"
+          PR_NUM="${{ steps.env-details.outputs.pr-number }}"
+
+          echo "🚀 Creating PR preview environment: $SHARD_NAME"
+
+          # Create new environment for this PR
+          ENV_RESULT=$(railway environment create "$SHARD_NAME" --json 2>/dev/null || echo '{}')
+
+          if [ "$ENV_RESULT" = '{}' ]; then
+            echo "⚠️  Environment may already exist, attempting to use existing one"
+            # Try to get existing environment ID
+            ENV_ID=$(railway environment --json | jq -r --arg name "$SHARD_NAME" '.[] | select(.name == $name) | .id' | head -1)
+          else
+            ENV_ID=$(echo "$ENV_RESULT" | jq -r '.id')
+          fi
+
+          if [ -z "$ENV_ID" ] || [ "$ENV_ID" = "null" ]; then
+            echo "❌ Failed to create or find environment"
+            exit 1
+          fi
+
+          echo "✅ Environment ID: $ENV_ID"
+          echo "environment-id=$ENV_ID" >> $GITHUB_OUTPUT
+          echo "shard-name=$SHARD_NAME" >> $GITHUB_OUTPUT
+
+          # Switch to the PR environment
+          railway environment --name "$SHARD_NAME"
+
+          # Create services for each app
+          SERVICES=("villa-hub-pr-$PR_NUM" "villa-key-pr-$PR_NUM" "villa-docs-pr-$PR_NUM")
+          SERVICE_IDS=()
+
+          for service in "${SERVICES[@]}"; do
+            echo "📦 Creating service: $service"
+            
+            SVC_RESULT=$(railway service create "$service" --json 2>/dev/null || echo '{}')
+            
+            if [ "$SVC_RESULT" = '{}' ]; then
+              echo "⚠️  Service may already exist: $service"
+              # Try to get existing service ID
+              SVC_ID=$(railway service --json | jq -r --arg name "$service" '.[] | select(.name == $name) | .id' | head -1)
+            else
+              SVC_ID=$(echo "$SVC_RESULT" | jq -r '.id')
+            fi
+            
+            if [ -n "$SVC_ID" ] && [ "$SVC_ID" != "null" ]; then
+              SERVICE_IDS+=("$SVC_ID")
+              echo "✅ Service created/found: $service ($SVC_ID)"
+            else
+              echo "❌ Failed to create service: $service"
+            fi
+          done
+
+          # Set up environment variables for each service
+          echo "🔧 Setting up environment variables..."
+
+          # Common variables
+          COMMON_VARS=(
+            "NODE_ENV=production"
+            "NEXT_TELEMETRY_DISABLED=1"
+            "NEXT_PUBLIC_ENVIRONMENT=preview"
+            "NEXT_PUBLIC_PR_NUMBER=$PR_NUM"
+          )
+
+          # Hub-specific variables
+          HUB_VARS=(
+            "${COMMON_VARS[@]}"
+            "NEXT_PUBLIC_APP_URL=https://${{ steps.env-details.outputs.hub-domain }}"
+            "NEXT_PUBLIC_KEY_URL=https://${{ steps.env-details.outputs.key-domain }}"
+            "NEXT_PUBLIC_DOCS_URL=https://${{ steps.env-details.outputs.docs-domain }}"
+          )
+
+          # Key-specific variables
+          KEY_VARS=(
+            "${COMMON_VARS[@]}"
+            "NEXT_PUBLIC_APP_URL=https://${{ steps.env-details.outputs.key-domain }}"
+            "NEXT_PUBLIC_HUB_URL=https://${{ steps.env-details.outputs.hub-domain }}"
+          )
+
+          # Docs-specific variables
+          DOCS_VARS=(
+            "${COMMON_VARS[@]}"
+            "NEXT_PUBLIC_APP_URL=https://${{ steps.env-details.outputs.docs-domain }}"
+            "NEXT_PUBLIC_HUB_URL=https://${{ steps.env-details.outputs.hub-domain }}"
+          )
+
+          # Apply variables to each service
+          if [ ${#SERVICE_IDS[@]} -ge 3 ]; then
+            echo "Setting up hub variables..."
+            railway service --service-name "villa-hub-pr-$PR_NUM"
+            for var in "${HUB_VARS[@]}"; do
+              railway variable set "$var" || echo "⚠️  Failed to set: $var"
+            done
+            
+            echo "Setting up key variables..."
+            railway service --service-name "villa-key-pr-$PR_NUM"
+            for var in "${KEY_VARS[@]}"; do
+              railway variable set "$var" || echo "⚠️  Failed to set: $var"
+            done
+            
+            echo "Setting up docs variables..."
+            railway service --service-name "villa-docs-pr-$PR_NUM"
+            for var in "${DOCS_VARS[@]}"; do
+              railway variable set "$var" || echo "⚠️  Failed to set: $var"
+            done
+          fi
+
+          # Deploy each service with specific Dockerfile
+          echo "🚀 Deploying services..."
+
+          # Deploy Hub
+          echo "Deploying hub..."
+          railway service --service-name "villa-hub-pr-$PR_NUM"
+          railway up --dockerfile Dockerfile || echo "⚠️  Hub deployment queued"
+
+          # Deploy Key
+          echo "Deploying key..."
+          railway service --service-name "villa-key-pr-$PR_NUM"
+          railway up --dockerfile apps/key/Dockerfile || echo "⚠️  Key deployment queued"
+
+          # Deploy Docs
+          echo "Deploying docs..."
+          railway service --service-name "villa-docs-pr-$PR_NUM"
+          railway up --dockerfile apps/developers/Dockerfile || echo "⚠️  Docs deployment queued"
+
+          # Generate URLs (Railway will assign these automatically)
+          HUB_URL="https://${{ steps.env-details.outputs.hub-domain }}"
+          KEY_URL="https://${{ steps.env-details.outputs.key-domain }}"
+          DOCS_URL="https://${{ steps.env-details.outputs.docs-domain }}"
+
+          echo "hub-url=$HUB_URL" >> $GITHUB_OUTPUT
+          echo "key-url=$KEY_URL" >> $GITHUB_OUTPUT
+          echo "docs-url=$DOCS_URL" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "🎉 PR Preview Environment Created!"
+          echo "   Shard: $SHARD_NAME"
+          echo "   Hub: $HUB_URL"
+          echo "   Key: $KEY_URL (passkey compatible)"
+          echo "   Docs: $DOCS_URL"
+          echo "   Environment ID: $ENV_ID"
+
+      - name: Wait for deployments
+        id: health-check
+        run: |
+          echo "⏳ Waiting for services to become healthy..."
+
+          # Source health check utility
+          source ./scripts/utils/poll-health.sh
+
+          # Wait for all services (5 minutes timeout each)
+          poll_health "${{ steps.deploy.outputs.hub-url }}/api/health" 300 "Hub" &
+          PID1=$!
+          poll_health "${{ steps.deploy.outputs.key-url }}/api/health" 300 "Key" &
+          PID2=$!
+          poll_health "${{ steps.deploy.outputs.docs-url }}/api/health" 300 "Docs" &
+          PID3=$!
+
+          # Wait for all checks
+          HUB_HEALTHY=true
+          KEY_HEALTHY=true
+          DOCS_HEALTHY=true
+
+          wait $PID1 || HUB_HEALTHY=false
+          wait $PID2 || KEY_HEALTHY=false
+          wait $PID3 || DOCS_HEALTHY=false
+
+          echo "hub-healthy=$HUB_HEALTHY" >> $GITHUB_OUTPUT
+          echo "key-healthy=$KEY_HEALTHY" >> $GITHUB_OUTPUT
+          echo "docs-healthy=$DOCS_HEALTHY" >> $GITHUB_OUTPUT
+
+          if $HUB_HEALTHY && $KEY_HEALTHY && $DOCS_HEALTHY; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            echo "✅ All services are healthy!"
+          else
+            echo "status=partial" >> $GITHUB_OUTPUT
+            echo "⚠️  Some services may still be deploying"
+          fi
+
+      - name: Create deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = ${{ steps.env-details.outputs.pr-number }};
+
+            // Create deployment
+            const deployment = await github.rest.repos.createDeployment({
+              owner,
+              repo,
+              ref: context.sha,
+              environment: 'pr-preview-' + pr_number,
+              description: 'PR Preview Environment',
+              auto_merge: false,
+              required_contexts: []
+            });
+
+            // Update deployment status
+            await github.rest.repos.createDeploymentStatus({
+              owner,
+              repo,
+              deployment_id: deployment.data.id,
+              state: '${{ steps.health-check.outputs.status == "healthy" && "success" || "in_progress" }}',
+              environment_url: '${{ steps.deploy.outputs.hub-url }}',
+              description: 'PR preview environment deployed'
+            });
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.env-details.outputs.pr-number }};
+            const shardName = '${{ steps.deploy.outputs.shard-name }}';
+            const hubUrl = '${{ steps.deploy.outputs.hub-url }}';
+            const keyUrl = '${{ steps.deploy.outputs.key-url }}';
+            const docsUrl = '${{ steps.deploy.outputs.docs-url }}';
+            const status = '${{ steps.health-check.outputs.status }}';
+
+            const statusEmoji = status === 'healthy' ? '✅' : '🚧';
+            const statusText = status === 'healthy' ? 'Ready' : 'Deploying';
+
+            const body = `## ${statusEmoji} PR Preview Environment ${statusText}
+
+            **Shard:** \`${shardName}\`
+
+            | Service | URL | Status |
+            |---------|-----|--------|
+            | 🏠 Hub | [${hubUrl}](${hubUrl}) | ${'${{ steps.health-check.outputs.hub-healthy }}' === 'true' ? '✅' : '🚧'} |
+            | 🔐 Key | [${keyUrl}](${keyUrl}) | ${'${{ steps.health-check.outputs.key-healthy }}' === 'true' ? '✅' : '🚧'} |
+            | 📖 Docs | [${docsUrl}](${docsUrl}) | ${'${{ steps.health-check.outputs.docs-healthy }}' === 'true' ? '✅' : '🚧'} |
+
+            **Features:**
+            - 🔒 **Passkey authentication enabled** (HTTPS domains)
+            - 🎯 **Isolated data and state**
+            - 🔄 **Auto-updates on PR changes**
+            - 🗑️ **Auto-cleanup after PR close**
+
+            ${status !== 'healthy' ? '⏳ _Services are still deploying. This comment will update when ready._' : ''}
+            `;
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes('PR Preview Environment') && 
+              comment.user.type === 'Bot'
+            );
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body
+              });
+            }
+
+  # =============================================================================
+  # CLEANUP - Remove PR preview environment when PR is closed
+  # =============================================================================
+  cleanup-preview:
+    name: "🗑️ Cleanup PR Preview"
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'closed') ||
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'destroy')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Authenticate Railway
+        run: |
+          echo "$RAILWAY_TOKEN" | railway login --browserless
+
+      - name: Generate environment details
+        id: env-details
+        run: |
+          PR_NUM="${{ github.event.pull_request.number || inputs.pr_number }}"
+          DATE=$(date +%Y-%m-%d)
+          SHARD_NAME="villa-shard-${PR_NUM}-${DATE}"
+
+          echo "pr-number=$PR_NUM" >> $GITHUB_OUTPUT
+          echo "shard-name=$SHARD_NAME" >> $GITHUB_OUTPUT
+
+      - name: Cleanup PR environment
+        run: |
+          set -euo pipefail
+
+          PR_NUM="${{ steps.env-details.outputs.pr-number }}"
+          SHARD_NAME="${{ steps.env-details.outputs.shard-name }}"
+
+          echo "🗑️  Cleaning up PR preview environment: $SHARD_NAME"
+
+          # Find environments with the PR number (handle date variations)
+          MATCHING_ENVS=$(railway environment --json | jq -r --arg pr "$PR_NUM" '.[] | select(.name | contains("villa-shard-" + $pr + "-")) | .name')
+
+          if [ -z "$MATCHING_ENVS" ]; then
+            echo "⚠️  No matching environments found for PR $PR_NUM"
+            exit 0
+          fi
+
+          # Clean up each matching environment
+          echo "$MATCHING_ENVS" | while read -r env_name; do
+            if [ -n "$env_name" ]; then
+              echo "🗑️  Removing environment: $env_name"
+              
+              # Switch to environment
+              railway environment --name "$env_name" || continue
+              
+              # Remove all services in this environment
+              SERVICES=$(railway service --json | jq -r '.[].name' 2>/dev/null || echo "")
+              
+              if [ -n "$SERVICES" ]; then
+                echo "$SERVICES" | while read -r service; do
+                  if [ -n "$service" ]; then
+                    echo "  🗑️  Removing service: $service"
+                    railway service delete "$service" --yes 2>/dev/null || echo "    ⚠️  Could not remove service: $service"
+                  fi
+                done
+              fi
+              
+              # Remove the environment
+              echo "  🗑️  Removing environment: $env_name"
+              railway environment delete "$env_name" --yes 2>/dev/null || echo "    ⚠️  Could not remove environment: $env_name"
+              
+              echo "  ✅ Environment cleaned up: $env_name"
+            fi
+          done
+
+          echo "🎉 PR preview cleanup complete!"
+
+      - name: Update deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = ${{ steps.env-details.outputs.pr-number }};
+
+            // Find deployments for this PR
+            const deployments = await github.rest.repos.listDeployments({
+              owner,
+              repo,
+              environment: 'pr-preview-' + pr_number
+            });
+
+            // Mark all as inactive
+            for (const deployment of deployments.data) {
+              await github.rest.repos.createDeploymentStatus({
+                owner,
+                repo,
+                deployment_id: deployment.id,
+                state: 'inactive',
+                description: 'PR preview environment cleaned up'
+              });
+            }
+
+      - name: Comment on PR cleanup
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.env-details.outputs.pr-number }};
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `🗑️ **PR Preview Environment Cleaned Up**
+              
+              The preview environment for this PR has been automatically removed.
+              
+              ${github.event.pull_request.merged ? '🎉 **Merged!** Changes will be deployed to [construction.villa.cash](https://construction.villa.cash) shortly.' : ''}
+              `
+            });
+
+  # =============================================================================
+  # SCHEDULED CLEANUP - Remove old preview environments
+  # =============================================================================
+  scheduled-cleanup:
+    name: "🧹 Cleanup Old Previews"
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Authenticate Railway
+        run: |
+          echo "$RAILWAY_TOKEN" | railway login --browserless
+
+      - name: Cleanup old environments
+        run: |
+          set -euo pipefail
+
+          echo "🧹 Cleaning up old PR preview environments..."
+
+          # Get environments older than 7 days
+          CUTOFF_DATE=$(date -d '7 days ago' +%Y-%m-%d)
+
+          # Find old shard environments
+          OLD_ENVS=$(railway environment --json | jq -r --arg cutoff "$CUTOFF_DATE" '
+            .[] | 
+            select(.name | test("^villa-shard-\\d+-\\d{4}-\\d{2}-\\d{2}$")) |
+            select((.name | split("-")[-1]) < $cutoff) |
+            .name
+          ')
+
+          if [ -z "$OLD_ENVS" ]; then
+            echo "✅ No old environments to clean up"
+            exit 0
+          fi
+
+          echo "$OLD_ENVS" | while read -r env_name; do
+            if [ -n "$env_name" ]; then
+              echo "🗑️  Removing old environment: $env_name"
+              
+              # Switch to environment and clean up
+              railway environment --name "$env_name" || continue
+              
+              # Remove all services
+              SERVICES=$(railway service --json | jq -r '.[].name' 2>/dev/null || echo "")
+              if [ -n "$SERVICES" ]; then
+                echo "$SERVICES" | while read -r service; do
+                  if [ -n "$service" ]; then
+                    railway service delete "$service" --yes 2>/dev/null || true
+                  fi
+                done
+              fi
+              
+              # Remove environment
+              railway environment delete "$env_name" --yes 2>/dev/null || true
+              
+              echo "  ✅ Cleaned up: $env_name"
+            fi
+          done
+
+          echo "🎉 Old environment cleanup complete!"

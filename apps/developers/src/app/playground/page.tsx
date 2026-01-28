@@ -439,7 +439,7 @@ export default function PlaygroundPage() {
   const outputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    return villa.onAuthChange((u: VillaUser | null) => {
+    villa.onAuthChange((u: VillaUser | null) => {
       setUser(u);
     });
   }, []);
@@ -784,7 +784,7 @@ export default function PlaygroundPage() {
                     <Terminal className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     <p>Console output will appear here</p>
                     <p className="text-xs mt-1">
-                      Click "Run" to execute your code
+                      Click &ldquo;Run&rdquo; to execute your code
                     </p>
                   </div>
                 ) : (

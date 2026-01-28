@@ -1,0 +1,126 @@
+name: PR Preview Cleanup
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      max_age_days:
+        description: "Maximum age in days for PR environments"
+        required: false
+        default: "7"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  RAILWAY_PROJECT_ID: 7c344004-cd63-4b10-8479-9991c3923115
+
+jobs:
+  cleanup:
+    name: "🧹 Cleanup Old PR Previews"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Authenticate Railway
+        run: |
+          echo "$RAILWAY_TOKEN" | railway login --browserless
+
+      - name: Cleanup old environments
+        run: |
+          set -euo pipefail
+
+          MAX_AGE_DAYS="${{ inputs.max_age_days || '7' }}"
+          echo "🧹 Cleaning up PR preview environments older than $MAX_AGE_DAYS days..."
+
+          CUTOFF_DATE=$(date -d "$MAX_AGE_DAYS days ago" +%Y-%m-%d)
+          echo "Cutoff date: $CUTOFF_DATE"
+
+          OLD_ENVS=$(railway environment --json | jq -r --arg cutoff "$CUTOFF_DATE" '
+            .[] | 
+            select(.name | test("^villa-shard-\\d+-\\d{4}-\\d{2}-\\d{2}$")) |
+            select((.name | split("-")[-1]) < $cutoff) |
+            .name
+          ')
+
+          if [ -z "$OLD_ENVS" ]; then
+            echo "✅ No old environments to clean up"
+            echo "environments_cleaned=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CLEANED_COUNT=0
+          echo "$OLD_ENVS" | while read -r env_name; do
+            if [ -n "$env_name" ]; then
+              echo "🗑️  Processing environment: $env_name"
+              
+              # Extract PR number for logging
+              PR_NUM=$(echo "$env_name" | sed -n 's/villa-shard-\([0-9]*\)-.*/\1/p')
+              
+              # Switch to environment and clean up
+              if railway environment --name "$env_name" >/dev/null 2>&1; then
+                # Remove all services first
+                SERVICES=$(railway service --json 2>/dev/null | jq -r '.[].name' || echo "")
+                
+                if [ -n "$SERVICES" ]; then
+                  echo "  🗑️  Removing services..."
+                  echo "$SERVICES" | while read -r service; do
+                    if [ -n "$service" ]; then
+                      echo "    - $service"
+                      railway service delete "$service" --yes 2>/dev/null || echo "    ⚠️  Could not remove service: $service"
+                    fi
+                  done
+                fi
+                
+                # Remove the environment
+                echo "  🗑️  Removing environment: $env_name"
+                if railway environment delete "$env_name" --yes 2>/dev/null; then
+                  echo "  ✅ Environment cleaned up: $env_name (PR #$PR_NUM)"
+                  CLEANED_COUNT=$((CLEANED_COUNT + 1))
+                else
+                  echo "  ⚠️  Could not remove environment: $env_name"
+                fi
+              else
+                echo "  ⚠️  Could not access environment: $env_name"
+              fi
+            fi
+          done
+
+          echo "environments_cleaned=$CLEANED_COUNT" >> $GITHUB_OUTPUT
+          echo "🎉 Cleanup complete! Removed $CLEANED_COUNT environments."
+
+      - name: Report cleanup results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const cleanedCount = parseInt('${{ steps.cleanup.outputs.environments_cleaned || 0 }}');
+            const maxAgeDays = '${{ inputs.max_age_days || "7" }}';
+
+            const summary = `## 🧹 PR Preview Cleanup Complete
+
+            **Results:**
+            - **Environments cleaned:** ${cleanedCount}
+            - **Max age:** ${maxAgeDays} days
+            - **Status:** ${cleanedCount > 0 ? 'Cleanup performed' : 'No cleanup needed'}
+
+            ${cleanedCount > 0 ? 
+              `✅ Successfully removed ${cleanedCount} old PR preview environment${cleanedCount > 1 ? 's' : ''}.` : 
+              '✅ No old environments found. All PR previews are within the retention period.'
+            }
+            `;
+
+            await core.summary.addRaw(summary).write();
+
+            if (cleanedCount > 0) {
+              console.log(`🎉 Cleanup successful: ${cleanedCount} environments removed`);
+            } else {
+              console.log('✅ No cleanup needed: all environments are recent');
+            }

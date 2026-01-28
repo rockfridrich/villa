@@ -11,7 +11,13 @@ import {
   Suspense,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ShieldCheck, Fingerprint, UserPlus } from "lucide-react";
+import {
+  Loader2,
+  ShieldCheck,
+  Fingerprint,
+  UserPlus,
+  AlertCircle,
+} from "lucide-react";
 import {
   createAccount,
   signIn,
@@ -228,7 +234,8 @@ type AuthState = "idle" | "passkey-prompt" | "processing" | "success" | "error";
 const DIALOG_WIDTH = 380;
 const DIALOG_HEIGHT = 520;
 
-function GlassLayout({
+// Porto-style Layout Components matching their exact structure
+function PortoLayout({
   children,
   className = "",
   isEmbedded = false,
@@ -237,11 +244,11 @@ function GlassLayout({
   className?: string;
   isEmbedded?: boolean;
 }) {
-  // When embedded (iframe/popup), use exact Porto dimensions
+  // When embedded (iframe/popup), use exact Porto dimensions with clean white background
   if (isEmbedded) {
     return (
       <div
-        className="w-full h-full relative flex flex-col items-center justify-center bg-[#FFFCF8] overflow-hidden font-sans"
+        className="w-full h-full relative bg-white overflow-hidden font-sans"
         style={{
           width: DIALOG_WIDTH,
           height: DIALOG_HEIGHT,
@@ -250,10 +257,10 @@ function GlassLayout({
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className={`w-full h-full flex flex-col items-center justify-center text-center p-6 ${className}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className={`w-full h-full flex flex-col ${className}`}
         >
           {children}
         </motion.div>
@@ -261,33 +268,145 @@ function GlassLayout({
     );
   }
 
-  // Standalone mode - full page with ambient effects
+  // Standalone mode - full page with Porto-inspired minimal design
   return (
-    <div className="min-h-screen w-full relative flex items-center justify-center p-4 bg-[#FFFDF8] overflow-hidden font-sans">
-      {/* Ambient Background Gradients */}
-      <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFE047]/15 blur-[120px] pointer-events-none mix-blend-multiply" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#E3DACE]/20 blur-[100px] pointer-events-none mix-blend-multiply" />
-
+    <div className="min-h-screen w-full relative flex items-center justify-center p-4 bg-gray-50 font-sans">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`glass-card glass-card-sdk glass-animate-in relative z-10 w-full max-w-[380px] p-6 flex flex-col items-center text-center ${className}`}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className={`relative w-full max-w-[380px] h-[520px] bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden ${className}`}
       >
         {children}
       </motion.div>
 
-      {/* Footer Credit - Outside card for depth */}
-      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1 opacity-60">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-accent-green" />
-          <span className="text-xs text-ink-muted font-medium tracking-wide">
-            Secured by passkeys on Base
-          </span>
+      {/* Simple footer credit */}
+      <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <ShieldCheck className="w-3 h-3" />
+          <span>Secured by passkeys</span>
         </div>
-        <span className="text-[10px] text-ink-muted/60 font-mono">v0.2.0</span>
       </div>
     </div>
+  );
+}
+
+// Porto-style Layout Header Component
+function LayoutHeader({
+  children,
+  className = "",
+  icon,
+  title,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  icon?: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center px-6 py-4 border-b border-gray-100 ${className}`}
+    >
+      <div className="flex items-center gap-3 w-full">
+        {icon && <div className="flex-shrink-0">{icon}</div>}
+        {title && (
+          <div className="flex-1 text-lg font-semibold text-gray-900">
+            {title}
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Porto-style Layout Content Component
+function LayoutContent({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={`flex-1 px-6 py-6 ${className}`}>{children}</div>;
+}
+
+// Porto-style Layout Footer Component
+function LayoutFooter({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`px-6 py-4 border-t border-gray-100 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// Porto-style Actions Component (for buttons)
+function LayoutActions({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={`flex flex-col gap-3 ${className}`}>{children}</div>;
+}
+
+// Porto-style Button Component matching their design
+function PortoButton({
+  children,
+  variant = "primary",
+  size = "large",
+  disabled = false,
+  loading = false,
+  onClick,
+  className = "",
+}: {
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "outline";
+  size?: "large" | "medium";
+  disabled?: boolean;
+  loading?: boolean;
+  onClick?: () => void;
+  className?: string;
+}) {
+  const baseClasses =
+    "w-full flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+
+  const sizeClasses =
+    size === "large"
+      ? "min-h-[56px] px-6 py-4 text-base"
+      : "min-h-[44px] px-4 py-3 text-sm";
+
+  const variantClasses = {
+    primary: "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white",
+    secondary: "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-900",
+    outline:
+      "border border-gray-300 hover:border-gray-400 active:border-gray-500 bg-white hover:bg-gray-50 text-gray-700",
+  };
+
+  return (
+    <motion.button
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      transition={{ type: "spring", stiffness: 300, damping: 40 }}
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`${baseClasses} ${sizeClasses} ${variantClasses[variant]} ${className}`}
+    >
+      {loading ? (
+        <>
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Loading...</span>
+        </>
+      ) : (
+        children
+      )}
+    </motion.button>
   );
 }
 
@@ -482,186 +601,178 @@ function AuthPageContent() {
 
   if (!isPortoSupported()) {
     return (
-      <GlassLayout isEmbedded={isEmbedded}>
-        <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-          <span className="text-2xl">⚠️</span>
-        </div>
-        <h1 className="text-xl font-serif text-ink mb-2">
-          Passkeys Not Supported
-        </h1>
-        <p className="text-sm text-ink-muted">
-          Your browser doesn&apos;t support passkeys. Please use a modern
-          browser like Chrome, Safari, or Firefox.
-        </p>
-      </GlassLayout>
+      <PortoLayout isEmbedded={isEmbedded}>
+        <LayoutHeader
+          icon={<AlertCircle className="w-6 h-6 text-red-500" />}
+          title="Passkeys Not Supported"
+        />
+        <LayoutContent className="text-center">
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Your browser doesn&apos;t support passkeys. Please use a modern
+            browser like Chrome, Safari, or Firefox.
+          </p>
+        </LayoutContent>
+        <LayoutFooter>
+          <PortoButton variant="outline" onClick={handleCancel}>
+            Cancel
+          </PortoButton>
+        </LayoutFooter>
+      </PortoLayout>
     );
   }
 
   if (authState === "passkey-prompt") {
     return (
-      <GlassLayout isEmbedded={isEmbedded}>
-        <motion.div
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="w-20 h-20 mx-auto bg-accent-yellow/20 rounded-2xl flex items-center justify-center mb-6"
-        >
-          <Fingerprint className="w-10 h-10 text-accent-brown" />
-        </motion.div>
-
-        <div className="space-y-2 mb-8">
-          <h2 className="text-2xl font-serif text-ink">
-            {isCreating ? "Create your passkey" : "Use your passkey"}
-          </h2>
-          <p className="text-sm text-ink-muted">
+      <PortoLayout isEmbedded={isEmbedded}>
+        <LayoutHeader
+          icon={
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"
+            >
+              <Fingerprint className="w-5 h-5 text-blue-600" />
+            </motion.div>
+          }
+          title={isCreating ? "Create Passkey" : "Use Passkey"}
+        />
+        <LayoutContent className="text-center">
+          <p className="text-gray-600 text-sm leading-relaxed">
             {isCreating
               ? "Follow the prompt to create a new passkey for Villa"
               : "Use Face ID, Touch ID, or your security key"}
           </p>
-        </div>
-
-        <button
-          onClick={handleCancel}
-          className="text-sm text-ink-muted hover:text-ink transition-colors px-4 py-2 rounded-lg hover:bg-black/5"
-        >
-          Cancel
-        </button>
-      </GlassLayout>
+        </LayoutContent>
+        <LayoutFooter>
+          <PortoButton variant="outline" onClick={handleCancel}>
+            Cancel
+          </PortoButton>
+        </LayoutFooter>
+      </PortoLayout>
     );
   }
 
   if (authState === "processing" || authState === "success") {
     return (
-      <GlassLayout isEmbedded={isEmbedded}>
-        {authState === "success" ? (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="w-20 h-20 mx-auto bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6"
-          >
-            <ShieldCheck className="w-10 h-10 text-accent-green" />
-          </motion.div>
-        ) : (
-          <div className="w-20 h-20 mx-auto bg-white/50 rounded-2xl flex items-center justify-center mb-6">
-            <Loader2 className="w-10 h-10 text-accent-brown animate-spin" />
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <h2 className="text-2xl font-serif text-ink">
-            {authState === "success" ? "Welcome!" : "Setting up..."}
-          </h2>
-          <p className="text-sm text-ink-muted">
+      <PortoLayout isEmbedded={isEmbedded}>
+        <LayoutHeader
+          icon={
+            authState === "success" ? (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"
+              >
+                <ShieldCheck className="w-5 h-5 text-green-600" />
+              </motion.div>
+            ) : (
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />
+              </div>
+            )
+          }
+          title={authState === "success" ? "Welcome!" : "Setting up..."}
+        />
+        <LayoutContent className="text-center">
+          <p className="text-gray-600 text-sm">
             {authState === "success"
-              ? "You're signed in"
+              ? "            You&apos;re signed in"
               : "Setting up your Villa ID profile..."}
           </p>
-        </div>
-      </GlassLayout>
+        </LayoutContent>
+      </PortoLayout>
     );
   }
 
   if (authState === "error") {
     return (
-      <GlassLayout isEmbedded={isEmbedded}>
-        <div className="w-20 h-20 mx-auto bg-red-100/50 rounded-2xl flex items-center justify-center mb-6">
-          <span className="text-3xl">😕</span>
-        </div>
-
-        <div className="space-y-2 mb-8">
-          <h2 className="text-2xl font-serif text-ink">Something went wrong</h2>
-          <p className="text-sm text-ink-muted max-w-[260px] mx-auto">
-            {error ||
-              "Something didn't work as expected. Please try again or contact support if the issue persists."}
-          </p>
-        </div>
-
-        <div className="w-full space-y-3">
-          <button
-            onClick={handleRetry}
-            className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-[#FDD835]
-                       text-accent-brown font-medium rounded-2xl
-                       shadow-[0_4px_12px_rgba(255,224,71,0.3)]
-                       transition-all active:scale-[0.98]"
-          >
-            Try Signing In Again
-          </button>
-          <button
-            onClick={handleCancel}
-            className="w-full py-3 text-sm text-ink-muted hover:text-ink transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </GlassLayout>
+      <PortoLayout isEmbedded={isEmbedded}>
+        <LayoutHeader
+          icon={<AlertCircle className="w-6 h-6 text-red-500" />}
+          title="Something went wrong"
+        />
+        <LayoutContent>
+          <div className="p-4 bg-red-50 border border-red-100 rounded-lg mb-4">
+            <p className="text-red-700 text-sm">
+              {error ||
+                "Something didn&apos;t work as expected. Please try again or contact support if the issue persists."}
+            </p>
+          </div>
+        </LayoutContent>
+        <LayoutFooter>
+          <LayoutActions>
+            <PortoButton onClick={handleRetry}>Try Again</PortoButton>
+            <PortoButton variant="outline" onClick={handleCancel}>
+              Cancel
+            </PortoButton>
+          </LayoutActions>
+        </LayoutFooter>
+      </PortoLayout>
     );
   }
 
+  // Main auth screen - Porto-style layout
   return (
-    <GlassLayout isEmbedded={isEmbedded}>
-      <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent-yellow to-villa-500 rounded-3xl flex items-center justify-center shadow-lg shadow-accent-yellow/20 mb-6 rotate-3">
-        <span className="text-3xl font-serif text-accent-brown">V</span>
-      </div>
+    <PortoLayout isEmbedded={isEmbedded}>
+      <LayoutHeader
+        icon={
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">V</span>
+          </div>
+        }
+        title="Villa"
+      />
+      <LayoutContent>
+        <div className="text-center mb-6">
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Sign in with your passkey or create a new Villa ID
+          </p>
+        </div>
 
-      <div className="space-y-2 mb-8">
-        <h1 className="text-3xl font-serif text-ink">Villa</h1>
-        <p className="text-sm text-ink-muted">Passkey authentication</p>
-      </div>
-
-      <AnimatePresence>
         {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-            animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
-            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-            className="w-full"
-          >
-            <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-error-text">
-              {error}
-            </div>
-          </motion.div>
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4"
+            >
+              <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         )}
-      </AnimatePresence>
-
-      <div className="w-full space-y-3">
-        <button
-          onClick={handleSignIn}
-          disabled={authState !== "idle"}
-          className="w-full min-h-14 py-4 px-6 bg-accent-yellow hover:bg-[#FDD835]
-                     text-accent-brown font-medium rounded-2xl
-                     shadow-[0_4px_12px_rgba(255,224,71,0.3)] hover:shadow-[0_6px_16px_rgba(255,224,71,0.4)]
-                     focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
-                     disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          <Fingerprint className="w-5 h-5" />
-          Sign In
-        </button>
-
-        {hasAccounts === false && (
-          <button
-            onClick={handleCreateAccount}
+      </LayoutContent>
+      <LayoutFooter>
+        <LayoutActions>
+          <PortoButton
+            onClick={handleSignIn}
             disabled={authState !== "idle"}
-            className="w-full min-h-14 py-4 px-6 bg-white/50 border border-white/60
-                       text-ink font-medium rounded-2xl hover:bg-white/80
-                       focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            loading={authState !== "idle" && !isCreating}
           >
-            <UserPlus className="w-5 h-5" />
-            Create Villa ID
-          </button>
-        )}
+            <Fingerprint className="w-5 h-5" />
+            Sign In
+          </PortoButton>
 
-        <button
-          onClick={handleCancel}
-          className="w-full min-h-11 py-3 text-sm text-ink-muted hover:text-ink
-                     focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:ring-offset-2 focus:ring-offset-[#FFFDF8]
-                     rounded-lg transition-colors mt-2"
-        >
-          Cancel
-        </button>
-      </div>
-    </GlassLayout>
+          {hasAccounts === false && (
+            <PortoButton
+              variant="secondary"
+              onClick={handleCreateAccount}
+              disabled={authState !== "idle"}
+              loading={authState !== "idle" && isCreating}
+            >
+              <UserPlus className="w-5 h-5" />
+              Create Villa ID
+            </PortoButton>
+          )}
+
+          <PortoButton variant="outline" size="medium" onClick={handleCancel}>
+            Cancel
+          </PortoButton>
+        </LayoutActions>
+      </LayoutFooter>
+    </PortoLayout>
   );
 }
 
@@ -669,10 +780,10 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-4 border-accent-yellow border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="mt-4 text-ink-muted">Loading...</p>
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>
       }

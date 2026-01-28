@@ -45,20 +45,21 @@ Works with Claude Code, Cursor, Windsurf, Lovable.
 
 ## Links
 
-| Resource | URL |
-|----------|-----|
-| Docs | [docs.villa.cash](https://docs.villa.cash) |
-| AI Context | [CLAUDE.txt](https://docs.villa.cash/CLAUDE.txt) |
-| SDK | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk) |
-| React | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk-react) |
+| Resource   | URL                                                                |
+| ---------- | ------------------------------------------------------------------ |
+| Docs       | [docs.villa.cash](https://docs.villa.cash)                         |
+| AI Context | [CLAUDE.txt](https://docs.villa.cash/CLAUDE.txt)                   |
+| SDK        | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk)       |
+| React      | [npm](https://www.npmjs.com/package/@rockfridrich/villa-sdk-react) |
 
 ## Environments
 
-| Name | URL | Purpose |
-|------|-----|---------|
-| Production | [villa.cash](https://villa.cash) | Stable |
-| Construction | [construction.villa.cash](https://construction.villa.cash) | Preview |
-| Docs | [docs.villa.cash](https://docs.villa.cash) | Documentation |
+| Name         | URL                                                        | Purpose                                                      |
+| ------------ | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| Production   | [villa.cash](https://villa.cash)                           | Stable                                                       |
+| Construction | [construction.villa.cash](https://construction.villa.cash) | Preview                                                      |
+| Docs         | [docs.villa.cash](https://docs.villa.cash)                 | Documentation                                                |
+| PR Preview   | `villa-shard-{pr}-{date}.up.railway.app`                   | [Automatic PR environments](docs/PR_PREVIEW_ENVIRONMENTS.md) |
 
 ## Development
 

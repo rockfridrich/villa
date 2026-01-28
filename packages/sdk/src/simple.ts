@@ -21,7 +21,13 @@
  * ```
  */
 
-import type { Identity, VillaConfig, VillaSession } from "./types";
+import type {
+  Identity,
+  VillaConfig,
+  VillaSession,
+  AvatarConfig,
+  AvatarStyle,
+} from "./types";
 import { VillaBridge } from "./iframe/bridge";
 import { createVillaConfigFromManifest } from "./config/runtime";
 import {
@@ -69,7 +75,16 @@ export interface SimpleProfile {
 export interface ProfileUpdateData {
   nickname?: string;
   bio?: string;
-  avatar?: { style: string; seed: string };
+  avatar?: { style: AvatarStyle; seed: string };
+}
+
+export interface VillaInternalAPI {
+  getWallet: () => any;
+  getAddress: () => `0x${string}` | null;
+  getPrivateKey: () => string | null;
+  getSession: () => any;
+  getClient: () => any;
+  getRawIdentity: () => Identity | null;
 }
 
 interface VillaInstance {
@@ -78,9 +93,11 @@ interface VillaInstance {
   signOut: () => void;
   settings: () => Promise<SettingsResult>;
   getProfile: (address?: string) => Promise<SimpleProfile | null>;
+  updateProfile: (updates: ProfileUpdateData) => Promise<SimpleProfile>;
   uploadAvatar: (file: File) => Promise<string>;
   onAuthChange: (callback: (user: VillaUser | null) => void) => () => void;
   config: (options: Partial<VillaConfig>) => void;
+  internal: VillaInternalAPI;
 }
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -419,7 +436,7 @@ const createInternalAPI = (): VillaInternalAPI => ({
   },
   getRawIdentity: () => {
     init();
-    return _currentSession?.identity || null;
+    return _currentSession ? (_currentSession as any).identity : null;
   },
 });
 

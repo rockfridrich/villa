@@ -425,9 +425,9 @@ function App() {
                 ))}
               </div>
               <p className="text-lg leading-relaxed">
-                "Villa made adding auth to our AI app incredibly simple. The
-                passkey integration just works, and our users love not having to
-                remember another password."
+                &ldquo;Villa made adding auth to our AI app incredibly simple.
+                The passkey integration just works, and our users love not
+                having to remember another password.&rdquo;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-accent-yellow/20 flex items-center justify-center">
@@ -450,9 +450,9 @@ function App() {
                 ))}
               </div>
               <p className="text-lg leading-relaxed">
-                "The developer experience is outstanding. TypeScript support,
-                great docs, and it works perfectly with our Lovable workflow.
-                Shipped auth in 30 minutes."
+                &ldquo;The developer experience is outstanding. TypeScript
+                support, great docs, and it works perfectly with our Lovable
+                workflow. Shipped auth in 30 minutes.&rdquo;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-accent-yellow/20 flex items-center justify-center">
