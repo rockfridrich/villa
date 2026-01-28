@@ -61,7 +61,7 @@ import { Villa } from "@rockfridrich/villa-sdk";
 
 const client = new Villa({
   appId: "your-app-id", // Optional - for analytics
-  network: "base-sepolia", // Use testnet
+  target: "beta", // Use beta/testing environment
 });
 
 const result = await client.signIn();
@@ -102,7 +102,7 @@ const client = new Villa(config);
 **Parameters:**
 
 - `config.appId` (string, optional) - Application identifier for analytics
-- `config.network` (string, optional) - 'base' (default) or 'base-sepolia'
+- `config.target` (string, optional) - 'production' or 'beta'
 - `config.apiUrl` (string, optional) - Override API endpoint
 
 #### Methods
@@ -231,7 +231,7 @@ Get configured network.
 
 ```typescript
 const network = villa.getNetwork();
-// => 'base' | 'base-sepolia'
+// => 'production' | 'beta'
 ```
 
 ##### `getApiUrl()`
@@ -312,8 +312,8 @@ interface VillaConfig {
   /** Your application ID */
   appId: string;
 
-  /** Network: 'base' (production) or 'base-sepolia' (testnet) */
-  network?: "base" | "base-sepolia";
+  /** Target: 'production' or 'beta' */
+  target?: "production" | "beta";
 
   /** Override API URL */
   apiUrl?: string;
@@ -331,7 +331,7 @@ import { VillaBridge } from "@rockfridrich/villa-sdk";
 
 const bridge = new VillaBridge({
   appId: "your-app",
-  network: "base",
+  target: "production",
   timeout: 5 * 60 * 1000,
   debug: false,
 });
@@ -441,8 +441,8 @@ interface BridgeConfig {
   /** Override Villa auth origin (defaults to production) */
   origin?: string;
 
-  /** Network: 'base' or 'base-sepolia' (default: 'base') */
-  network?: "base" | "base-sepolia";
+  /** Target: 'production' or 'beta' (default: 'production') */
+  target?: "production" | "beta";
 
   /** Timeout in milliseconds (default: 5 minutes) */
   timeout?: number;
@@ -586,7 +586,8 @@ bridge.postMessage({ type: "CUSTOM_MESSAGE", payload: {} });
 
 ```typescript
 const bridge = new VillaBridge({
-  appId: "your-app",
+  appId: "your-app", // Optional
+  target: "beta", // Optional: 'production' or 'beta'
   preferPopup: true, // Skip iframe, go straight to popup
 });
 ```
@@ -605,13 +606,13 @@ bridge.on("error", (error, code) => {
 
 ### Common Errors & Solutions
 
-| Error                | Cause                | Solution                                |
-| -------------------- | -------------------- | --------------------------------------- |
-| `appId is required`  | Missing config.appId | Pass appId to constructor               |
-| `Connection timeout` | User taking too long | Increase timeout option                 |
-| `NETWORK_ERROR`      | Failed to load auth  | Check network, try again                |
-| `CANCELLED`          | User closed auth     | Handled by app (expected)               |
-| `INVALID_CONFIG`     | Bad scopes           | Use valid scopes: ['profile', 'wallet'] |
+| Error                | Cause                     | Solution                                |
+| -------------------- | ------------------------- | --------------------------------------- |
+| `appId is optional`  | Optional analytics config | Provide if needed for tracking          |
+| `Connection timeout` | User taking too long      | Increase timeout option                 |
+| `NETWORK_ERROR`      | Failed to load auth       | Check network, try again                |
+| `CANCELLED`          | User closed auth          | Handled by app (expected)               |
+| `INVALID_CONFIG`     | Bad scopes                | Use valid scopes: ['profile', 'wallet'] |
 
 ### Development Tips
 
@@ -701,7 +702,7 @@ import { VillaProvider, VillaAuth, useIdentity } from '@rockfridrich/villa-sdk-r
 
 function App() {
   return (
-    <VillaProvider config={{ appId: 'your-app' }}>
+    <VillaProvider config={{ appId: 'your-app', target: 'production' }}>
       <LoginPage />
     </VillaProvider>
   )
@@ -800,7 +801,7 @@ pnpm dev:clean
 pnpm dev:https
 
 # Or test with Base Sepolia testnet
-const villa = new Villa({ appId: 'test', network: 'base-sepolia' })
+const villa = new Villa({ appId: 'test', target: 'beta' })
 ```
 
 ### Origin Validation Error

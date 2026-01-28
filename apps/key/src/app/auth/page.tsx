@@ -113,8 +113,6 @@ const DEV_ORIGINS = [
   "http://localhost:3001",
 ] as const;
 
-
-
 /**
  * Check if an origin is a LAN IP address (for mobile LAN testing)
  * Supports RFC 1918 private address ranges:
@@ -126,7 +124,9 @@ function isLanOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
     const hostname = url.hostname;
-    return /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/.test(hostname);
+    return /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/.test(
+      hostname,
+    );
   } catch {
     return false;
   }
@@ -136,11 +136,13 @@ function isLanOrigin(origin: string): boolean {
  * Check if we're in a development environment
  */
 function isDevelopment(): boolean {
-  return process.env.NODE_ENV === "development" || 
-         (typeof window !== "undefined" && 
-          (window.location.hostname === "localhost" || 
-           window.location.hostname === "127.0.0.1" ||
-           isLanOrigin(window.location.origin)));
+  return (
+    process.env.NODE_ENV === "development" ||
+    (typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        isLanOrigin(window.location.origin)))
+  );
 }
 
 function isInIframe(): boolean {
@@ -164,14 +166,15 @@ function isInPopup(): boolean {
 function isValidHttpsOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
-    return url.protocol === 'https:';
+    return url.protocol === "https:";
   } catch {
     return false;
   }
 }
 
 function isAllowedOrigin(origin: string): boolean {
-  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number])) return true;
+  if (VILLA_ORIGINS.includes(origin as (typeof VILLA_ORIGINS)[number]))
+    return true;
   if (DEV_ORIGINS.includes(origin as (typeof DEV_ORIGINS)[number])) return true;
   if (isDevelopment() && isLanOrigin(origin)) return true;
   return isValidHttpsOrigin(origin);
@@ -220,25 +223,32 @@ function getValidatedParentOrigin(queryOrigin: string | null): string | null {
 
 type AuthState = "idle" | "passkey-prompt" | "processing" | "success" | "error";
 
-
 // Porto dialog dimensions (exact match)
 const DIALOG_WIDTH = 380;
 const DIALOG_HEIGHT = 520;
 
-function GlassLayout({ children, className = "", isEmbedded = false }: { children: React.ReactNode; className?: string; isEmbedded?: boolean }) {
+function GlassLayout({
+  children,
+  className = "",
+  isEmbedded = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  isEmbedded?: boolean;
+}) {
   // When embedded (iframe/popup), use exact Porto dimensions
   if (isEmbedded) {
     return (
-      <div 
+      <div
         className="w-full h-full relative flex flex-col items-center justify-center bg-[#FFFCF8] overflow-hidden font-sans"
-        style={{ 
-          width: DIALOG_WIDTH, 
+        style={{
+          width: DIALOG_WIDTH,
           height: DIALOG_HEIGHT,
-          maxWidth: '100vw',
-          maxHeight: '100vh',
+          maxWidth: "100vw",
+          maxHeight: "100vh",
         }}
       >
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -256,9 +266,9 @@ function GlassLayout({ children, className = "", isEmbedded = false }: { childre
       {/* Ambient Background Gradients */}
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFE047]/15 blur-[120px] pointer-events-none mix-blend-multiply" />
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#E3DACE]/20 blur-[100px] pointer-events-none mix-blend-multiply" />
-      
+
       {/* Glass Card */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -474,7 +484,7 @@ function AuthPageContent() {
     return (
       <GlassLayout isEmbedded={isEmbedded}>
         <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-           <span className="text-2xl">⚠️</span>
+          <span className="text-2xl">⚠️</span>
         </div>
         <h1 className="text-xl font-serif text-ink mb-2">
           Passkeys Not Supported
@@ -497,7 +507,7 @@ function AuthPageContent() {
         >
           <Fingerprint className="w-10 h-10 text-accent-brown" />
         </motion.div>
-        
+
         <div className="space-y-2 mb-8">
           <h2 className="text-2xl font-serif text-ink">
             {isCreating ? "Create your passkey" : "Use your passkey"}
@@ -535,7 +545,7 @@ function AuthPageContent() {
             <Loader2 className="w-10 h-10 text-accent-brown animate-spin" />
           </div>
         )}
-        
+
         <div className="space-y-2">
           <h2 className="text-2xl font-serif text-ink">
             {authState === "success" ? "Welcome!" : "Setting up..."}
@@ -543,7 +553,7 @@ function AuthPageContent() {
           <p className="text-sm text-ink-muted">
             {authState === "success"
               ? "You're signed in"
-              : "Getting your profile ready"}
+              : "Setting up your Villa ID profile..."}
           </p>
         </div>
       </GlassLayout>
@@ -556,13 +566,12 @@ function AuthPageContent() {
         <div className="w-20 h-20 mx-auto bg-red-100/50 rounded-2xl flex items-center justify-center mb-6">
           <span className="text-3xl">😕</span>
         </div>
-        
+
         <div className="space-y-2 mb-8">
-          <h2 className="text-2xl font-serif text-ink">
-            Something went wrong
-          </h2>
+          <h2 className="text-2xl font-serif text-ink">Something went wrong</h2>
           <p className="text-sm text-ink-muted max-w-[260px] mx-auto">
-            {error || "Please try again"}
+            {error ||
+              "Something didn't work as expected. Please try again or contact support if the issue persists."}
           </p>
         </div>
 
@@ -574,7 +583,7 @@ function AuthPageContent() {
                        shadow-[0_4px_12px_rgba(255,224,71,0.3)]
                        transition-all active:scale-[0.98]"
           >
-            Try Again
+            Try Signing In Again
           </button>
           <button
             onClick={handleCancel}
@@ -592,12 +601,10 @@ function AuthPageContent() {
       <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent-yellow to-villa-500 rounded-3xl flex items-center justify-center shadow-lg shadow-accent-yellow/20 mb-6 rotate-3">
         <span className="text-3xl font-serif text-accent-brown">V</span>
       </div>
-      
+
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-serif text-ink">Villa</h1>
-        <p className="text-sm text-ink-muted">
-          Passkey authentication
-        </p>
+        <p className="text-sm text-ink-muted">Passkey authentication</p>
       </div>
 
       <AnimatePresence>

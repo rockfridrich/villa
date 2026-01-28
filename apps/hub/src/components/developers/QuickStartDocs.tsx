@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Copy, Check, ExternalLink } from 'lucide-react'
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { Copy, Check, ExternalLink } from "lucide-react";
 
-type CodeTab = 'react' | 'vanilla'
+type CodeTab = "react" | "vanilla";
 
 /**
  * Quick start documentation with code examples
  * Tabbed code snippets with copy functionality
  */
 export function QuickStartDocs() {
-  const [activeTab, setActiveTab] = useState<CodeTab>('react')
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<CodeTab>("react");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const prefersReducedMotion = useRef(
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
-  ).current
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  ).current;
 
   const containerVariants = prefersReducedMotion
     ? undefined
@@ -31,7 +31,7 @@ export function QuickStartDocs() {
             staggerChildren: 0.1,
           },
         },
-      }
+      };
 
   const itemVariants = prefersReducedMotion
     ? undefined
@@ -42,15 +42,15 @@ export function QuickStartDocs() {
           y: 0,
           transition: { duration: 0.3 },
         },
-      }
+      };
 
   const handleCopy = async (id: string, text: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
-  const installCode = 'npm install @rockfridrich/villa-sdk'
+  const installCode = "npm install @rockfridrich/villa-sdk";
 
   const reactCode = `import { Villa } from '@rockfridrich/villa-sdk'
 
@@ -67,14 +67,14 @@ function App() {
       const identity = await villa.signIn()
 
       console.log('Signed in:', identity.nickname)
-      console.log('Wallet:', identity.walletAddress)
+      console.log('Address:', identity.walletAddress)
     } catch (error) {
       console.error('Auth failed:', error)
     }
   }
 
   return <button onClick={handleSignIn}>Sign In with Villa</button>
-}`
+}`;
 
   const vanillaCode = `import { Villa } from '@rockfridrich/villa-sdk'
 
@@ -90,34 +90,34 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
     const identity = await villa.signIn()
 
     console.log('Signed in:', identity.nickname)
-    console.log('Wallet:', identity.walletAddress)
+    console.log('Address:', identity.walletAddress)
   } catch (error) {
     console.error('Auth failed:', error)
   }
-})`
+})`;
 
   const steps = [
     {
       number: 1,
-      title: 'Register your app',
-      description: 'Connect your wallet and register to get credentials',
+      title: "Register your app",
+      description: "Connect your Villa ID and register to get credentials",
     },
     {
       number: 2,
-      title: 'Install the SDK',
-      description: 'Add the Villa Identity SDK to your project',
+      title: "Install the SDK",
+      description: "Add the Villa Identity SDK to your project",
     },
     {
       number: 3,
-      title: 'Initialize & authenticate',
-      description: 'Set up the SDK with your credentials and call signIn()',
+      title: "Initialize & authenticate",
+      description: "Set up the SDK with your credentials and call signIn()",
     },
     {
       number: 4,
-      title: 'Access user data',
-      description: 'Request user profile data with consent',
+      title: "Access user data",
+      description: "Request user profile data with consent",
     },
-  ]
+  ];
 
   return (
     <motion.div
@@ -157,11 +157,11 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
         <div className="relative bg-ink rounded-lg p-6">
           <pre className="text-sm text-cream-50 font-mono">{installCode}</pre>
           <button
-            onClick={() => handleCopy('install', installCode)}
+            onClick={() => handleCopy("install", installCode)}
             className="absolute top-4 right-4 p-2 hover:bg-ink-light rounded transition-colors duration-150 flex items-center gap-2"
             aria-label="Copy code"
           >
-            {copiedId === 'install' ? (
+            {copiedId === "install" ? (
               <>
                 <Check className="w-5 h-5 text-accent-yellow" />
                 <span className="text-sm text-accent-yellow">Copied</span>
@@ -178,27 +178,30 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
         <h2 className="text-xl font-serif text-ink mb-4">Usage</h2>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4 border-b border-neutral-100" role="tablist">
+        <div
+          className="flex gap-2 mb-4 border-b border-neutral-100"
+          role="tablist"
+        >
           <button
             role="tab"
-            aria-selected={activeTab === 'react'}
-            onClick={() => setActiveTab('react')}
+            aria-selected={activeTab === "react"}
+            onClick={() => setActiveTab("react")}
             className={`px-4 py-2 text-base font-medium transition-colors duration-150 border-b-2 ${
-              activeTab === 'react'
-                ? 'border-accent-yellow text-ink'
-                : 'border-transparent text-ink-muted hover:text-ink'
+              activeTab === "react"
+                ? "border-accent-yellow text-ink"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             React
           </button>
           <button
             role="tab"
-            aria-selected={activeTab === 'vanilla'}
-            onClick={() => setActiveTab('vanilla')}
+            aria-selected={activeTab === "vanilla"}
+            onClick={() => setActiveTab("vanilla")}
             className={`px-4 py-2 text-base font-medium transition-colors duration-150 border-b-2 ${
-              activeTab === 'vanilla'
-                ? 'border-accent-yellow text-ink'
-                : 'border-transparent text-ink-muted hover:text-ink'
+              activeTab === "vanilla"
+                ? "border-accent-yellow text-ink"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             Vanilla JS
@@ -208,13 +211,13 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
         {/* Code Block */}
         <div className="relative bg-ink rounded-lg p-6">
           <pre className="text-sm text-cream-50 font-mono overflow-x-auto">
-            {activeTab === 'react' ? reactCode : vanillaCode}
+            {activeTab === "react" ? reactCode : vanillaCode}
           </pre>
           <button
             onClick={() =>
               handleCopy(
                 activeTab,
-                activeTab === 'react' ? reactCode : vanillaCode
+                activeTab === "react" ? reactCode : vanillaCode,
               )
             }
             className="absolute top-4 right-4 p-2 hover:bg-ink-light rounded transition-colors duration-150 flex items-center gap-2"
@@ -303,5 +306,5 @@ document.getElementById('signin-btn').addEventListener('click', async () => {
         </div>
       </motion.div>
     </motion.div>
-  )
+  );
 }

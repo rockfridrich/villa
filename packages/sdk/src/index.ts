@@ -16,7 +16,12 @@ export {
   syncProfileToTinyCloud,
   loadProfileFromTinyCloud,
 } from "./simple";
-export type { VillaUser, SimpleProfile, SimpleSignInOptions, SettingsResult } from "./simple";
+export type {
+  VillaUser,
+  SimpleProfile,
+  SimpleSignInOptions,
+  SettingsResult,
+} from "./simple";
 
 // Main SDK client (advanced)
 export { Villa } from "./client";
@@ -95,6 +100,25 @@ export type { ContractDeployment, ChainContracts } from "./contracts";
 export { TARGETS, getTargetConfig, deriveAppId } from "./config";
 export type { Target } from "./config";
 
+// Runtime configuration manifest system
+export {
+  runtimeConfigManager,
+  createVillaConfigFromManifest,
+} from "./config/runtime";
+export { manifestLoader } from "./config/manifest-loader";
+export {
+  VillaManifestSchema,
+  DEFAULT_CONFIG,
+  ENV_VAR_MAP,
+  validators,
+  ConfigPrecedence,
+} from "./config/manifest-schema";
+export type {
+  VillaManifest,
+  RuntimeConfig,
+  ConfigMergeResult,
+} from "./config/manifest-schema";
+
 // Auth utilities - WebAuthn error handling & browser capabilities
 export {
   PasskeyManagerType,
@@ -129,10 +153,7 @@ export type {
 } from "./types";
 
 // Domain types - Villa-native language hiding Web3 complexity
-export {
-  createAmount,
-  defineConfig,
-} from "./domain";
+export { createAmount, defineConfig } from "./domain";
 export type {
   Account,
   Amount,

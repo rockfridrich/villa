@@ -28,6 +28,17 @@ url="$2"
 
 # Read stdin for refs being pushed
 while read local_ref local_sha remote_ref remote_sha; do
+    # Block direct pushes to main (force PR workflow)
+    if echo "$remote_ref" | grep -q "refs/heads/main"; then
+        echo ""
+        echo "Direct push to main is blocked. Create a PR instead:"
+        echo "  git push -u origin \$(git rev-parse --abbrev-ref HEAD)"
+        echo "  gh pr create"
+        echo ""
+        echo "To bypass (not recommended): git push --no-verify"
+        exit 1
+    fi
+
     # Skip if deleting a branch
     if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
         continue
@@ -78,7 +89,7 @@ for file in $CHANGED_FILES; do
         apps/developers/*) add_package "@villa/developers" ;;
         apps/key/*) add_package "@villa/key" ;;
         apps/api/*) add_package "@villa/api" ;;
-        apps/relay/*) add_package "@villa/relay" ;;
+
         apps/web/*) add_package "@villa/web" ;;
         packages/sdk/*) add_package "@rockfridrich/villa-sdk" ;;
         packages/sdk-react/*) add_package "@rockfridrich/villa-sdk-react" ;;

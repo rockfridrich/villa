@@ -1,33 +1,37 @@
-'use client'
+"use client";
 
-import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { AlertCircle } from 'lucide-react'
-import { Button, Input, Card } from '@/components/ui'
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { AlertCircle } from "lucide-react";
+import { Button, Input, Card } from "@/components/ui";
 
 interface AppRegistrationProps {
-  developerAddress: string
-  onSuccess: (app: { id: string; name: string; apiKey: string }) => void
-  onCancel: () => void
+  developerAddress: string;
+  onSuccess: (app: { id: string; name: string; apiKey: string }) => void;
+  onCancel: () => void;
 }
 
 /**
  * App registration form
- * Collects app details and triggers wallet signature
+ * Collects app details and triggers Villa ID signature
  */
-export function AppRegistration({ developerAddress: _developerAddress, onSuccess, onCancel }: AppRegistrationProps) {
-  const [appId, setAppId] = useState('')
-  const [appName, setAppName] = useState('')
-  const [origins, setOrigins] = useState('')
-  const [description, setDescription] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function AppRegistration({
+  developerAddress: _developerAddress,
+  onSuccess,
+  onCancel,
+}: AppRegistrationProps) {
+  const [appId, setAppId] = useState("");
+  const [appName, setAppName] = useState("");
+  const [origins, setOrigins] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const prefersReducedMotion = useRef(
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
-  ).current
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  ).current;
 
   const containerVariants = prefersReducedMotion
     ? undefined
@@ -40,7 +44,7 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
             staggerChildren: 0.1,
           },
         },
-      }
+      };
 
   const itemVariants = prefersReducedMotion
     ? undefined
@@ -51,39 +55,41 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
           y: 0,
           transition: { duration: 0.3 },
         },
-      }
+      };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     // Validate app ID
     if (!/^[a-z0-9-]+$/.test(appId)) {
-      setError('App ID must contain only lowercase letters, numbers, and hyphens')
-      return
+      setError(
+        "App ID must contain only lowercase letters, numbers, and hyphens",
+      );
+      return;
     }
 
     if (appId.length < 3 || appId.length > 64) {
-      setError('App ID must be 3-64 characters')
-      return
+      setError("App ID must be 3-64 characters");
+      return;
     }
 
     // Parse origins
     const allowedOrigins = origins
-      .split('\n')
-      .map(o => o.trim())
-      .filter(o => o.length > 0)
+      .split("\n")
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
 
     if (allowedOrigins.length === 0) {
-      setError('At least one allowed origin is required')
-      return
+      setError("At least one allowed origin is required");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
       // App registration flow:
-      // 1. Sign message with wallet to prove ownership
+      // 1. Sign message with Villa ID to prove ownership
       // 2. POST to /api/developers/apps with signed payload
       // 3. API validates signature and creates app record
       // 4. Return API key (shown once, user must save it)
@@ -93,23 +99,23 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
       // Response: { id, apiKey } (apiKey only returned on creation)
       //
       // For now, mock the registration for development
-      const mockApiKey = `vk_live_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`
-      const mockAppId = `app_${Math.random().toString(36).slice(2, 10)}`
+      const mockApiKey = `vk_live_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+      const mockAppId = `app_${Math.random().toString(36).slice(2, 10)}`;
 
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       onSuccess({
         id: mockAppId,
         name: appName || appId,
         apiKey: mockApiKey,
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <motion.div
@@ -125,11 +131,18 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
         </p>
       </motion.div>
 
-      <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-6">
+      <motion.form
+        variants={itemVariants}
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
         <Card className="p-6 space-y-6">
           {/* App ID */}
           <div>
-            <label htmlFor="appId" className="block text-sm font-medium text-ink mb-2">
+            <label
+              htmlFor="appId"
+              className="block text-sm font-medium text-ink mb-2"
+            >
               App ID <span className="text-red-500">*</span>
             </label>
             <Input
@@ -146,7 +159,10 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
 
           {/* App Name */}
           <div>
-            <label htmlFor="appName" className="block text-sm font-medium text-ink mb-2">
+            <label
+              htmlFor="appName"
+              className="block text-sm font-medium text-ink mb-2"
+            >
               App Name
             </label>
             <Input
@@ -162,7 +178,10 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
 
           {/* Allowed Origins */}
           <div>
-            <label htmlFor="origins" className="block text-sm font-medium text-ink mb-2">
+            <label
+              htmlFor="origins"
+              className="block text-sm font-medium text-ink mb-2"
+            >
               Allowed Origins <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -175,13 +194,17 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
               className="w-full min-h-11 px-4 py-2 rounded-lg border border-neutral-100 bg-cream-50 text-ink text-base focus:outline-none focus:ring-2 focus:ring-accent-yellow focus:ring-offset-2 focus:ring-offset-cream-50 placeholder:text-ink-muted"
             />
             <p className="text-xs text-ink-muted mt-1">
-              One origin per line. Must be valid URLs (https required for production).
+              One origin per line. Must be valid URLs (https required for
+              production).
             </p>
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-ink mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-ink mb-2"
+            >
               Description
             </label>
             <textarea
@@ -212,7 +235,7 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
             disabled={isSubmitting}
             className="flex-1"
           >
-            {isSubmitting ? 'Registering...' : 'Register & Sign'}
+            {isSubmitting ? "Registering..." : "Register & Sign"}
           </Button>
           <Button
             type="button"
@@ -226,9 +249,9 @@ export function AppRegistration({ developerAddress: _developerAddress, onSuccess
         </div>
 
         <p className="text-sm text-ink-muted text-center">
-          You&apos;ll be prompted to sign a message with your connected wallet
+          You&apos;ll be prompted to sign a message with your Villa ID
         </p>
       </motion.form>
     </motion.div>
-  )
+  );
 }

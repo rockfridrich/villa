@@ -55,24 +55,24 @@ interface AvatarConfig {
     name: "VillaConfig",
     description: "Configuration for Villa SDK instance",
     code: `interface VillaConfig {
+  /** Target environment: 'production' (Base mainnet) | 'beta' (Base Sepolia) */
+  target?: 'production' | 'beta'
+
   /** Application ID (optional - auto-derived from origin) */
   appId?: string
-
-  /** Target environment: 'beta' | 'production' */
-  target?: 'beta' | 'production'
-
-  /** 
-   * @deprecated Use 'target' instead. 
-   * This will be removed in a future version. 
-   * Use 'target: "production"' (Base mainnet) or 'target: "beta"' (Base Sepolia).
-   */
-  network?: 'base' | 'base-sepolia'
 
   /** Override API URL (advanced) */
   apiUrl?: string
 
   /** Enable debug logging */
   debug?: boolean
+  
+  /** 
+   * @deprecated Use 'target' instead. 
+   * This will be removed in a future version. 
+   * Use 'target: "production"' (Base mainnet) or 'target: "beta"' (Base Sepolia).
+   */
+  network?: 'base' | 'base-sepolia'
 }`,
   },
 ];
@@ -128,7 +128,7 @@ function LoginPage() {
       {
         name: "walletAddress",
         type: "string",
-        description: "User's wallet address",
+        description: "User's address",
       },
       {
         name: "selection",
@@ -339,14 +339,14 @@ const villa = new Villa()
 
 // Or with explicit config
 const villa = new Villa({
-  // Optional: Will be auto-derived from origin
-  appId: 'your-app',
-
-  // Optional: 'beta' or 'production'
+  // Optional: 'production' (default) or 'beta'
   target: 'production',
 
   // Optional: Enable debug logs
-  debug: false
+  debug: false,
+  
+  // Optional: Will be auto-derived from origin if not provided
+  appId: 'your-app'
 })`}
                 language="typescript"
               />
@@ -517,11 +517,11 @@ await villa.reverseEns(addr)  // address -> name`}
                 code={`import { VillaBridge } from '@rockfridrich/villa-sdk'
 
 const bridge = new VillaBridge({
+  // Optional: 'production' (default) or 'beta'
+  target: 'production',
+
   // Optional: Will be auto-derived from origin
   appId: 'your-app',
-
-  // Optional: 'beta' or 'production'
-  target: 'production',
 
   timeout: 5 * 60 * 1000,
   debug: false

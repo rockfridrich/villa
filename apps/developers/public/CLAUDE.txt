@@ -90,8 +90,8 @@ function AuthenticatedApp() {
 import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
+  target: 'production',        // 'production' | 'beta' (default: 'production')
   appId: 'your-app',           // Optional - auto-derived from origin if not provided
-  target: 'production',        // 'production' | 'beta'
   apiUrl: 'https://...'        // Optional override
 })
 

@@ -38,7 +38,7 @@ import {
   type RecentApp,
 } from "@/lib/storage/tinycloud-client";
 import type { CustomAvatar } from "@/lib/storage/tinycloud";
-import { AddFundsButton } from "@/components/funding";
+
 import type { AvatarConfig } from "@/types";
 
 // Featured ecosystem apps
@@ -488,9 +488,6 @@ export default function HomePage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Add Funds - Cross-chain deposits via Glide */}
-        <AddFundsButton recipientAddress={identity.address} variant="primary" />
 
         {/* Ecosystem Apps */}
         <Card>

@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "target": "beta",
+  "network": "base-sepolia",
+  "features": {
+    "debug": false,
+    "experimental": false,
+    "analytics": true,
+    "persistence": true,
+    "autoDiscovery": true
+  },
+  "performance": {
+    "cacheTtl": 300000,
+    "authTimeout": 300000,
+    "retryAttempts": 3,
+    "requestTimeout": 30000
+  },
+  "security": {
+    "requireHttps": true,
+    "strictCsp": false,
+    "maxSessionDuration": 604800000
+  },
+  "integration": {
+    "appId": "my-app",
+    "defaultAvatarStyle": "lorelei",
+    "defaultScopes": ["profile"]
+  },
+  "environments": {
+    "development": {
+      "target": "beta",
+      "features": {
+        "debug": true,
+        "experimental": true
+      },
+      "security": {
+        "requireHttps": false
+      }
+    },
+    "staging": {
+      "target": "beta",
+      "features": {
+        "debug": false,
+        "experimental": true
+      }
+    },
+    "production": {
+      "target": "production",
+      "network": "base",
+      "features": {
+        "debug": false,
+        "experimental": false
+      }
+    }
+  },
+  "metadata": {
+    "description": "Villa SDK configuration for my app",
+    "maintainer": "your-team@example.com",
+    "version": "1.0.0"
+  }
+}

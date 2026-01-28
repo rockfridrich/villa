@@ -3,10 +3,11 @@
 ## Problem Statement
 
 The current SDK architecture has several issues that force unnecessary version bumps:
+
 1. **Hardcoded URLs** - API URLs baked into build (simple.ts, bridge.ts)
 2. **Version coupling** - SDK and SDK-React always bump together
 3. **No runtime config** - Critical settings can't be changed without rebuild
-4. **Manual publish process** - Workflow failed due to pnpm/bun mismatch
+4. **Manual publish process** - Workflow failed due to bun/npm mismatch
 
 ## Architectural Principles
 
@@ -31,12 +32,14 @@ The current SDK architecture has several issues that force unnecessary version b
 ### 2. Runtime Configuration Strategy
 
 **Current Problem:**
+
 ```typescript
 // simple.ts - HARDCODED, requires SDK version bump to change
 const API_URL = "https://villa.cash";
 ```
 
 **Proposed Solution - Config Manifest:**
+
 ```typescript
 // SDK fetches config from well-known URL at runtime
 const CONFIG_MANIFEST_URL = "https://villa.cash/.well-known/villa-config.json";
@@ -61,12 +64,14 @@ const CONFIG_MANIFEST_URL = "https://villa.cash/.well-known/villa-config.json";
 ### 3. Package Split Strategy
 
 **Current Structure (Tightly Coupled):**
+
 ```
 @rockfridrich/villa-sdk        # Everything
 @rockfridrich/villa-sdk-react  # Depends on villa-sdk
 ```
 
 **Proposed Structure (Layered Independence):**
+
 ```
 @rockfridrich/villa-core       # Types, schemas, crypto (STABLE)
   └── Never changes unless protocol changes
@@ -85,6 +90,7 @@ const CONFIG_MANIFEST_URL = "https://villa.cash/.well-known/villa-config.json";
 ```
 
 **Benefits:**
+
 - Breaking type change = bump villa-core (rare)
 - Auth flow change = bump villa-sdk (occasional)
 - React hook change = bump villa-sdk-react (independent)
@@ -167,6 +173,7 @@ export async function loadConfig(): Promise<VillaConfig> {
 ```
 
 **Files to modify:**
+
 - `apps/hub/public/.well-known/villa-config.json` (CREATE)
 - `packages/sdk/src/config-loader.ts` (CREATE)
 - `packages/sdk/src/simple.ts` (MODIFY - use config loader)
@@ -183,9 +190,9 @@ name: SDK Publish
 on:
   push:
     tags:
-      - 'sdk-v*'           # Main SDK: sdk-v0.2.1
-      - 'sdk-react-v*'     # React only: sdk-react-v0.2.1
-      - 'sdk-core-v*'      # Core only: sdk-core-v0.2.1
+      - "sdk-v*" # Main SDK: sdk-v0.2.1
+      - "sdk-react-v*" # React only: sdk-react-v0.2.1
+      - "sdk-core-v*" # Core only: sdk-core-v0.2.1
 
 jobs:
   detect-package:
@@ -208,7 +215,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Build only changed package
         run: |
@@ -227,8 +234,9 @@ jobs:
 
 **Solution: Dynamic version badges + auto-sync:**
 
-```markdown
+````markdown
 <!-- packages/sdk/README.md -->
+
 # @rockfridrich/villa-sdk
 
 [![npm version](https://img.shields.io/npm/v/@rockfridrich/villa-sdk.svg)](https://www.npmjs.com/package/@rockfridrich/villa-sdk)
@@ -240,19 +248,23 @@ jobs:
 npm install @rockfridrich/villa-sdk
 # Version: <!-- AUTO_VERSION -->
 ```
+````
 
 ## Quick Start
 
 <!-- SDK_QUICKSTART_BEGIN -->
+
 ```typescript
-import { villa } from '@rockfridrich/villa-sdk';
+import { villa } from "@rockfridrich/villa-sdk";
 
 // Zero config - just works!
 const user = await villa.signIn();
 console.log(user.nickname);
 ```
+
 <!-- SDK_QUICKSTART_END -->
-```
+
+````
 
 **Auto-sync script:**
 
@@ -267,7 +279,7 @@ const updated = readme
            `npm install @rockfridrich/villa-sdk@${pkg.version}`);
 
 fs.writeFileSync('packages/sdk/README.md', updated);
-```
+````
 
 **CI integration:**
 
@@ -313,7 +325,9 @@ async function checkCompatibility(): Promise<boolean> {
   const minRequired = config.sdk.minVersion;
 
   if (semver.lt(SDK_VERSION, minRequired)) {
-    console.warn(`[Villa] SDK v${SDK_VERSION} is outdated. Minimum: v${minRequired}`);
+    console.warn(
+      `[Villa] SDK v${SDK_VERSION} is outdated. Minimum: v${minRequired}`,
+    );
     return false;
   }
   return true;
@@ -329,13 +343,13 @@ const DEFAULT_CONFIG = {
     production: {
       hub: "https://villa.cash",
       key: "https://key.villa.cash",
-    }
+    },
   },
   features: {
     // Conservative defaults - disable experimental features
     claimNickname: false,
     socialLookup: false,
-  }
+  },
 };
 ```
 
@@ -349,7 +363,7 @@ bd create --title="SDK: Add runtime config manifest system" --type=task --priori
   --description="Create villa-config.json on server, SDK fetches at runtime. Eliminates hardcoded URLs."
 
 bd create --title="SDK: Decouple package publishing" --type=task --priority=2 \
-  --description="Allow independent version bumps for sdk, sdk-react, sdk-core. Fix bun/pnpm workflow."
+  --description="Allow independent version bumps for sdk, sdk-react, sdk-core. Fix bun workflow."
 
 bd create --title="SDK: Auto-sync README versions" --type=task --priority=2 \
   --description="Script to update version references in README. Run on CI after publish."
@@ -368,11 +382,11 @@ bd create --title="SDK: Extract villa-core types package" --type=task --priority
 
 ```typescript
 // v0.2.0 (current) - still works
-import { villa } from '@rockfridrich/villa-sdk';
+import { villa } from "@rockfridrich/villa-sdk";
 await villa.signIn();
 
 // v0.3.0 (new) - same API, but config fetched at runtime
-import { villa } from '@rockfridrich/villa-sdk';
+import { villa } from "@rockfridrich/villa-sdk";
 await villa.signIn(); // Internally fetches config
 ```
 
@@ -380,14 +394,14 @@ await villa.signIn(); // Internally fetches config
 
 ```typescript
 // For self-hosted Villa deployments
-import { Villa } from '@rockfridrich/villa-sdk';
+import { Villa } from "@rockfridrich/villa-sdk";
 
 const villa = new Villa({
-  configUrl: 'https://my-villa.example.com/.well-known/villa-config.json',
+  configUrl: "https://my-villa.example.com/.well-known/villa-config.json",
   // OR inline config
   config: {
-    endpoints: { production: { hub: 'https://my-villa.example.com' } }
-  }
+    endpoints: { production: { hub: "https://my-villa.example.com" } },
+  },
 });
 ```
 
@@ -395,16 +409,16 @@ const villa = new Villa({
 
 ## File Summary
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `apps/hub/public/.well-known/villa-config.json` | CREATE | Server-side config manifest |
-| `packages/sdk/src/config-loader.ts` | CREATE | Runtime config fetching |
-| `packages/sdk/src/config-schema.ts` | CREATE | Zod validation for config |
-| `packages/sdk/src/simple.ts` | MODIFY | Use config loader |
-| `packages/sdk/src/iframe/bridge.ts` | MODIFY | Use config loader |
-| `.github/workflows/sdk-publish.yml` | MODIFY | Independent package publishing |
-| `scripts/sync-readme-version.ts` | CREATE | Auto-update README versions |
-| `packages/sdk/README.md` | MODIFY | Add auto-version markers |
+| File                                            | Action | Purpose                        |
+| ----------------------------------------------- | ------ | ------------------------------ |
+| `apps/hub/public/.well-known/villa-config.json` | CREATE | Server-side config manifest    |
+| `packages/sdk/src/config-loader.ts`             | CREATE | Runtime config fetching        |
+| `packages/sdk/src/config-schema.ts`             | CREATE | Zod validation for config      |
+| `packages/sdk/src/simple.ts`                    | MODIFY | Use config loader              |
+| `packages/sdk/src/iframe/bridge.ts`             | MODIFY | Use config loader              |
+| `.github/workflows/sdk-publish.yml`             | MODIFY | Independent package publishing |
+| `scripts/sync-readme-version.ts`                | CREATE | Auto-update README versions    |
+| `packages/sdk/README.md`                        | MODIFY | Add auto-version markers       |
 
 ---
 
@@ -460,7 +474,7 @@ IMPLEMENTATION:
 
 6. Fix publish workflow:
    File: .github/workflows/sdk-publish.yml
-   - Change pnpm to bun
+   - Use bun consistently throughout
    - Add independent tag support
 
 AFTER EACH:

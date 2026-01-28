@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, Fingerprint, Shield, Heart, User, Zap } from "lucide-react";
+import {
+  ChevronRight,
+  Fingerprint,
+  Shield,
+  Heart,
+  User,
+  Zap,
+} from "lucide-react";
 import { CodeBlock } from "../components/code";
 import { villa, type VillaUser } from "@rockfridrich/villa-sdk";
 
@@ -49,14 +56,22 @@ export default function DevelopersPage() {
 
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#0D0D17]/10 bg-white p-8">
             <div className="text-center space-y-6">
-              <div className="text-sm font-medium text-[#0D0D17]/40 uppercase tracking-wider">Live Demo</div>
-              
+              <div className="text-sm font-medium text-[#0D0D17]/40 uppercase tracking-wider">
+                Live Demo
+              </div>
+
               {user ? (
                 <div className="space-y-4">
-                  <img src={user.avatar} alt={user.nickname} className="w-20 h-20 rounded-full mx-auto border-4 border-[#FFE047]/20" />
+                  <img
+                    src={user.avatar}
+                    alt={user.nickname}
+                    className="w-20 h-20 rounded-full mx-auto border-4 border-[#FFE047]/20"
+                  />
                   <div>
                     <p className="text-2xl font-serif">@{user.nickname}</p>
-                    <p className="text-sm text-[#0D0D17]/40 font-mono truncate max-w-[200px] mx-auto">{user.address}</p>
+                    <p className="text-sm text-[#0D0D17]/40 font-mono truncate max-w-[200px] mx-auto">
+                      {user.address}
+                    </p>
                   </div>
                   <div className="flex gap-2 justify-center">
                     <button
@@ -86,7 +101,9 @@ export default function DevelopersPage() {
                     <Fingerprint className="w-5 h-5" />
                     {isLoading ? "Signing in..." : "Try Sign In"}
                   </button>
-                  <p className="text-sm text-[#0D0D17]/40">Uses real passkeys on Base</p>
+                  <p className="text-sm text-[#0D0D17]/40">
+                    Uses real passkeys on Base
+                  </p>
                 </div>
               )}
             </div>
@@ -94,14 +111,20 @@ export default function DevelopersPage() {
         </div>
       </section>
 
-      <section id="quickstart" className="py-20 px-6 bg-white border-y border-[#0D0D17]/5">
+      <section
+        id="quickstart"
+        className="py-20 px-6 bg-white border-y border-[#0D0D17]/5"
+      >
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <h2 className="font-serif text-4xl">3 Lines of Code</h2>
             <p className="text-[#0D0D17]/60">That&apos;s all you need.</p>
           </div>
 
-          <CodeBlock code="npm install @rockfridrich/villa-sdk-react" language="bash" />
+          <CodeBlock
+            code="npm install @rockfridrich/villa-sdk-react"
+            language="bash"
+          />
 
           <CodeBlock
             code={`import { VillaButton } from '@rockfridrich/villa-sdk-react'
@@ -122,7 +145,9 @@ function Header() {
                 <Shield className="w-6 h-6 text-[#0D0D17]" />
               </div>
               <h3 className="font-medium text-xl">Passkeys, not passwords</h3>
-              <p className="text-[#0D0D17]/60">Face ID, Touch ID, or security key. No credentials stored.</p>
+              <p className="text-[#0D0D17]/60">
+                Face ID, Touch ID, or security key. No credentials stored.
+              </p>
             </div>
 
             <div className="p-8 rounded-2xl border border-[#0D0D17]/5 bg-white space-y-4">
@@ -130,7 +155,9 @@ function Header() {
                 <Heart className="w-6 h-6 text-[#0D0D17]" />
               </div>
               <h3 className="font-medium text-xl">Works with Lovable</h3>
-              <p className="text-[#0D0D17]/60">Just paste the prompt. AI builds the rest.</p>
+              <p className="text-[#0D0D17]/60">
+                Just paste the prompt. AI builds the rest.
+              </p>
             </div>
 
             <div className="p-8 rounded-2xl border border-[#0D0D17]/5 bg-white space-y-4">
@@ -138,7 +165,9 @@ function Header() {
                 <User className="w-6 h-6 text-[#0D0D17]" />
               </div>
               <h3 className="font-medium text-xl">Profile UI included</h3>
-              <p className="text-[#0D0D17]/60">Avatar, nickname, wallet address. All built-in.</p>
+              <p className="text-[#0D0D17]/60">
+                Avatar, nickname, address. All built-in.
+              </p>
             </div>
 
             <div className="p-8 rounded-2xl border border-[#0D0D17]/5 bg-white space-y-4">
@@ -146,7 +175,9 @@ function Header() {
                 <Zap className="w-6 h-6 text-[#0D0D17]" />
               </div>
               <h3 className="font-medium text-xl">Built on Base</h3>
-              <p className="text-[#0D0D17]/60">Real blockchain identity with gasless transactions.</p>
+              <p className="text-[#0D0D17]/60">
+                Real blockchain identity with gasless transactions.
+              </p>
             </div>
           </div>
         </div>

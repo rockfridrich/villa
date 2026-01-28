@@ -1,0 +1,32 @@
+#!/bin/bash
+# Post-merge hook: Auto-prune local branches whose remote was deleted
+# Runs after `git pull` or `git merge` on main
+
+set -e
+
+# Skip if SKIP_HOOKS is set
+if [ -n "$SKIP_HOOKS" ]; then
+    exit 0
+fi
+
+# Only prune when on main
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [ "$BRANCH" != "main" ]; then
+    exit 0
+fi
+
+# Prune remote tracking refs
+git fetch --prune 2>/dev/null || true
+
+# Find local branches whose upstream is gone
+DEAD=$(git branch -vv 2>/dev/null | grep ': gone]' | awk '{print $1}' || true)
+
+if [ -n "$DEAD" ]; then
+    COUNT=$(echo "$DEAD" | wc -l | tr -d ' ')
+    echo ""
+    echo "$DEAD" | xargs git branch -D 2>/dev/null || true
+    echo "Pruned $COUNT dead local branch(es)"
+    echo ""
+fi
+
+exit 0

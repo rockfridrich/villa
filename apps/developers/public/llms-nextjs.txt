@@ -20,7 +20,7 @@ import { VillaProvider } from '@rockfridrich/villa-sdk-react'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <VillaProvider config={{ appId: 'my-nextjs-app', network: 'base' }}>
+    <VillaProvider config={{ target: 'production' }}>
       {children}
     </VillaProvider>
   )
@@ -267,7 +267,7 @@ export default function ProfilePage() {
 ```bash
 # .env.local
 NEXT_PUBLIC_VILLA_APP_ID=my-nextjs-app
-NEXT_PUBLIC_VILLA_NETWORK=base  # or base-sepolia for testing
+NEXT_PUBLIC_VILLA_TARGET=production  # or beta for testing
 ```
 
 ```tsx
@@ -279,8 +279,8 @@ import { VillaProvider } from '@rockfridrich/villa-sdk-react'
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <VillaProvider config={{ 
-      appId: process.env.NEXT_PUBLIC_VILLA_APP_ID!,
-      network: process.env.NEXT_PUBLIC_VILLA_NETWORK as 'base' | 'base-sepolia'
+      appId: process.env.NEXT_PUBLIC_VILLA_APP_ID,  // Optional
+      target: process.env.NEXT_PUBLIC_VILLA_TARGET as 'production' | 'beta'
     }}>
       {children}
     </VillaProvider>

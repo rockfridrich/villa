@@ -30,7 +30,7 @@ git tag v1.x.x && git push --tags # Triggers villa.cash deploy
 ./scripts/doctor.sh
 
 # 2. Run full verification
-pnpm verify  # typecheck + lint + build + E2E
+bun verify  # typecheck + lint + build + E2E
 
 # 3. Check CI status
 ./scripts/ci-monitor.sh
@@ -65,7 +65,7 @@ doctl auth list
 After deploy, cache is auto-purged via CI. Manual purge:
 
 ```bash
-pnpm infra:cache:purge
+bun infra:cache:purge
 ```
 
 Requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` in env.

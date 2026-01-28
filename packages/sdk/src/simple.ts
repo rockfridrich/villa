@@ -23,6 +23,7 @@
 
 import type { Identity, VillaConfig } from "./types";
 import { VillaBridge } from "./iframe/bridge";
+import { createVillaConfigFromManifest } from "./config/runtime";
 import {
   saveSession,
   loadSession,
@@ -77,7 +78,6 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 const API_URL = "https://villa.cash";
 
 let _config: VillaConfig = {
-  appId: "villa-app",
   network: "base-sepolia",
 };
 
@@ -120,6 +120,14 @@ function configure(options: Partial<VillaConfig>) {
   _config = { ..._config, ...options };
 }
 
+async function getResolvedConfig(): Promise<VillaConfig> {
+  try {
+    return await createVillaConfigFromManifest(_config);
+  } catch {
+    return _config;
+  }
+}
+
 async function signIn(options?: SimpleSignInOptions): Promise<VillaUser> {
   init();
 
@@ -127,36 +135,41 @@ async function signIn(options?: SimpleSignInOptions): Promise<VillaUser> {
     return _user;
   }
 
-  return new Promise((resolve, reject) => {
-    const bridge = new VillaBridge({
-      appId: _config.appId,
-      network: _config.network,
-      timeout: options?.timeout || 5 * 60 * 1000,
-    });
-
-    bridge.on("success", (identity) => {
-      const user = identityToUser(identity);
-      _user = user;
-
-      saveSession({
-        identity,
-        expiresAt: Date.now() + SESSION_DURATION_MS,
-        isValid: true,
+  return new Promise(async (resolve, reject) => {
+    try {
+      const resolvedConfig = await getResolvedConfig();
+      const bridge = new VillaBridge({
+        appId: resolvedConfig.appId,
+        network: resolvedConfig.network,
+        timeout: options?.timeout || 5 * 60 * 1000,
       });
 
-      notifyListeners();
-      resolve(user);
-    });
+      bridge.on("success", (identity) => {
+        const user = identityToUser(identity);
+        _user = user;
 
-    bridge.on("cancel", () => {
-      reject(new Error("User cancelled authentication"));
-    });
+        saveSession({
+          identity,
+          expiresAt: Date.now() + SESSION_DURATION_MS,
+          isValid: true,
+        });
 
-    bridge.on("error", (error) => {
-      reject(new Error(error));
-    });
+        notifyListeners();
+        resolve(user);
+      });
 
-    bridge.open(["profile"]).catch(reject);
+      bridge.on("cancel", () => {
+        reject(new Error("User cancelled authentication"));
+      });
+
+      bridge.on("error", (error) => {
+        reject(new Error(error));
+      });
+
+      bridge.open(["profile"]).catch(reject);
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -173,44 +186,49 @@ async function openSettings(): Promise<SettingsResult> {
     throw new Error("Must be signed in to open settings");
   }
 
-  return new Promise((resolve, reject) => {
-    const bridge = new VillaBridge({
-      appId: _config.appId,
-      network: _config.network,
-      timeout: 10 * 60 * 1000,
-    });
-
-    bridge.on("success", (identity) => {
-      const user = identityToUser(identity);
-      _user = user;
-
-      saveSession({
-        identity,
-        expiresAt: Date.now() + SESSION_DURATION_MS,
-        isValid: true,
+  return new Promise(async (resolve, reject) => {
+    try {
+      const resolvedConfig = await getResolvedConfig();
+      const bridge = new VillaBridge({
+        appId: resolvedConfig.appId,
+        network: resolvedConfig.network,
+        timeout: 10 * 60 * 1000,
       });
 
-      notifyListeners();
-      resolve({
-        avatar: identity.avatar,
-        nickname: identity.nickname,
+      bridge.on("success", (identity) => {
+        const user = identityToUser(identity);
+        _user = user;
+
+        saveSession({
+          identity,
+          expiresAt: Date.now() + SESSION_DURATION_MS,
+          isValid: true,
+        });
+
+        notifyListeners();
+        resolve({
+          avatar: identity.avatar,
+          nickname: identity.nickname,
+        });
       });
-    });
 
-    bridge.on("cancel", () => {
-      resolve({});
-    });
+      bridge.on("cancel", () => {
+        resolve({});
+      });
 
-    bridge.on("error", (error, code) => {
-      if (code === "LOGOUT") {
-        signOut();
-        resolve({ loggedOut: true });
-      } else {
-        reject(new Error(error));
-      }
-    });
+      bridge.on("error", (error, code) => {
+        if (code === "LOGOUT") {
+          signOut();
+          resolve({ loggedOut: true });
+        } else {
+          reject(new Error(error));
+        }
+      });
 
-    bridge.open(["settings"], { address: _user!.address }).catch(reject);
+      bridge.open(["settings"], { address: _user!.address }).catch(reject);
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 

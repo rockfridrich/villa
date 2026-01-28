@@ -160,7 +160,7 @@ Before creating PR:
 
 ```bash
 # 1. Run verification
-pnpm verify
+bun verify
 
 # 2. Check for conflicts
 git fetch origin main
@@ -258,9 +258,22 @@ git reset --soft HEAD~1
 ### Pre-commit Hook
 
 Located in `.githooks/pre-commit`:
-- Runs linting
-- Checks types
-- Prevents commits to main
+- Blocks direct commits to `main`
+- Verifies `bun.lock` stays in sync with `package.json`
+
+### Pre-push Hook
+
+Located in `.githooks/pre-push`:
+- Blocks direct pushes to `main` (forces PR workflow)
+- Runs typecheck + lint in parallel on affected packages only
+- Bypassed with `--no-verify` or `SKIP_HOOKS=1`
+
+### Post-merge Hook
+
+Located in `.githooks/post-merge`:
+- Runs `git fetch --prune` to sync remote refs
+- Auto-deletes local branches whose remote was deleted
+- Only activates when on `main`
 
 ### CI/CD
 
@@ -276,3 +289,49 @@ On merge to main:
 On tag (v*):
 - Deploy to villa.cash
 - Create release
+
+## Branch Lifecycle
+
+Only `main` is permanent. All other branches are ephemeral.
+
+### Rules
+
+1. **Create** — branch from `main` with a prefix: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`, `hotfix/`
+2. **Work** — commit to feature branch, push to remote
+3. **PR** — squash-merge into `main` via PR
+4. **Delete** — remote branch deleted after merge; local cleaned by `post-merge` hook
+
+### Banned Patterns
+
+- Auto-generated branch names (`clever-golick`, `happy-mestorf`, etc.)
+- `feature/` prefix (use `feat/` instead)
+- `bugfix/` prefix (use `fix/` instead)
+- `improvement/` prefix (use `feat/` or `refactor/`)
+- Personal forks as branches (`username/main`)
+
+## Cleanup Protocol
+
+### Automatic (hooks)
+
+The `post-merge` hook handles routine cleanup. Every `git pull` on `main` prunes dead branches.
+
+### Manual (bulk cleanup)
+
+For periodic bulk cleanup of stale remote branches:
+
+```bash
+# Dry run — see what would be deleted
+./scripts/git-cleanup.sh --dry-run
+
+# Delete branches older than 14 days (default)
+./scripts/git-cleanup.sh
+
+# Custom age threshold
+./scripts/git-cleanup.sh --days=7
+```
+
+### Tracking cleanup as work
+
+```bash
+bd create --title="Git branch cleanup" --type=chore --priority=3
+```
