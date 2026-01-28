@@ -1,58 +1,57 @@
-import { Hono } from 'hono'
-import { checkDbHealth, isUsingFallback, getLastError } from '../db/client'
-import { detectEnvironment } from '../config/database'
+import { Hono } from "hono";
+import { checkDbHealth, isUsingFallback, getLastError } from "../db/client";
+import { detectEnvironment } from "../config/database";
+import {
+  createHealthResponse,
+  createDetailedHealthResponse,
+  getMemoryUsage,
+} from "../lib/health";
 
-const health = new Hono()
+const health = new Hono();
 
 /**
  * Health check endpoint
  * Returns service status, version, and database health
  */
-health.get('/', async (c) => {
-  const dbHealth = await checkDbHealth()
-  const environment = detectEnvironment()
+health.get("/", async (c) => {
+  const dbHealth = await checkDbHealth();
 
-  // Status is 'ok' if DB healthy or in fallback mode
-  // Status is 'degraded' if DB configured but unhealthy
-  let status: 'ok' | 'degraded' | 'unhealthy' = 'ok'
+  let status: "ok" | "degraded" | "unhealthy" = "ok";
   if (!dbHealth.healthy && !dbHealth.usingFallback) {
-    status = 'degraded'
+    status = "degraded";
   }
 
-  return c.json({
+  const healthResponse = createHealthResponse({
     status,
-    service: 'villa-api',
-    version: '0.1.0',
-    environment,
-    timestamp: new Date().toISOString(),
-    database: {
-      healthy: dbHealth.healthy,
-      usingFallback: dbHealth.usingFallback,
-      latencyMs: dbHealth.latencyMs,
-      error: dbHealth.error,
-    },
-  })
-})
+    environment: detectEnvironment(),
+  });
+
+  return c.json(healthResponse);
+});
 
 /**
  * Detailed health check - includes more diagnostics
  */
-health.get('/details', async (c) => {
-  const dbHealth = await checkDbHealth()
-  const lastError = getLastError()
+health.get("/details", async (c) => {
+  const dbHealth = await checkDbHealth();
+  const lastError = getLastError();
 
-  return c.json({
-    service: 'villa-api',
-    version: '0.1.0',
+  let status: "ok" | "degraded" | "unhealthy" = "ok";
+  if (!dbHealth.healthy && !dbHealth.usingFallback) {
+    status = "degraded";
+  }
+
+  const detailedHealth = createDetailedHealthResponse("villa-api", {
+    status,
     environment: detectEnvironment(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
     database: {
       ...dbHealth,
       lastError: lastError?.message,
     },
-  })
-})
+  });
+
+  return c.json(detailedHealth);
+});
 
 /**
  * Readiness check - for Kubernetes/DO App Platform
@@ -61,21 +60,21 @@ health.get('/details', async (c) => {
  * In production/staging: requires database
  * In development/local: fallback mode is acceptable
  */
-health.get('/ready', async (c) => {
-  const dbHealth = await checkDbHealth()
-  const environment = detectEnvironment()
+health.get("/ready", async (c) => {
+  const dbHealth = await checkDbHealth();
+  const environment = detectEnvironment();
 
   // In production/staging, we require a healthy database
-  if (environment === 'production' || environment === 'staging') {
+  if (environment === "production" || environment === "staging") {
     if (!dbHealth.healthy) {
       return c.json(
         {
           ready: false,
-          reason: 'database_unhealthy',
+          reason: "database_unhealthy",
           error: dbHealth.error,
         },
-        503
-      )
+        503,
+      );
     }
   } else {
     // In dev/local, fallback mode is okay
@@ -83,30 +82,30 @@ health.get('/ready', async (c) => {
       return c.json(
         {
           ready: false,
-          reason: 'database_unhealthy',
+          reason: "database_unhealthy",
           error: dbHealth.error,
         },
-        503
-      )
+        503,
+      );
     }
   }
 
   return c.json({
     ready: true,
     usingFallback: dbHealth.usingFallback,
-  })
-})
+  });
+});
 
 /**
  * Liveness check - for Kubernetes/DO App Platform
  * Returns 200 if service is alive (even if dependencies are down)
  */
-health.get('/live', (c) => {
+health.get("/live", (c) => {
   return c.json({
     alive: true,
     timestamp: new Date().toISOString(),
     usingFallback: isUsingFallback(),
-  })
-})
+  });
+});
 
-export default health
+export default health;

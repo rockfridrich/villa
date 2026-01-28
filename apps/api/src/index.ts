@@ -1,53 +1,59 @@
-import { Hono } from 'hono'
-import { cors } from './middleware/cors'
-import { rateLimit } from './middleware/rateLimit'
-import health from './routes/health'
-import nicknames from './routes/nicknames'
-import avatars from './routes/avatars'
-import ens from './routes/ens'
-import developers from './routes/developers'
+import { Hono } from "hono";
+import { cors } from "./middleware/cors";
+import { rateLimit } from "./middleware/rateLimit";
+import health from "./routes/health";
+import nicknames from "./routes/nicknames";
+import profiles from "./routes/profiles";
+import avatars from "./routes/avatars";
+import ens from "./routes/ens";
+import developers from "./routes/developers";
 
 /**
  * Villa API
  * Hono-based API service for Villa identity and storage
  */
 
-const app = new Hono()
+const app = new Hono();
 
 // Middleware
-app.use('*', cors)
-app.use('*', rateLimit)
+app.use("*", cors);
+app.use("*", rateLimit);
 
 // Error handling
 app.onError((err, c) => {
-  console.error('Unhandled error:', err)
+  console.error("Unhandled error:", err);
 
-  return c.json({
-    error: 'Internal server error',
-    message: err.message,
-  }, 500)
-})
+  return c.json(
+    {
+      error: "Internal server error",
+      message: err.message,
+    },
+    500,
+  );
+});
 
 // Routes
-app.route('/health', health)
-app.route('/nicknames', nicknames)
-app.route('/avatars', avatars)
-app.route('/ens', ens)
-app.route('/developers', developers)
+app.route("/health", health);
+app.route("/nicknames", nicknames);
+app.route("/profiles", profiles);
+app.route("/avatars", avatars);
+app.route("/ens", ens);
+app.route("/developers", developers);
 
 // Root endpoint
-app.get('/', (c) => {
+app.get("/", (c) => {
   return c.json({
-    name: 'Villa API',
-    version: '0.1.0',
+    name: "Villa API",
+    version: "0.1.0",
     endpoints: {
-      health: '/health',
-      nicknames: '/nicknames',
-      avatars: '/avatars',
-      ens: '/ens',
-      developers: '/developers',
+      health: "/health",
+      nicknames: "/nicknames",
+      profiles: "/profiles",
+      avatars: "/avatars",
+      ens: "/ens",
+      developers: "/developers",
     },
-  })
-})
+  });
+});
 
-export default app
+export default app;
