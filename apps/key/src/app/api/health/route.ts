@@ -1,9 +1,34 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function getBuildInfo() {
+  const version = process.env.NEXT_PUBLIC_VERSION || "0.3.0-rc.1.1";
+  const sha = process.env.NEXT_PUBLIC_GIT_SHA || "unknown";
+  const buildHash =
+    process.env.NEXT_PUBLIC_BUILD_HASH ||
+    (sha !== "unknown" ? sha.slice(0, 8) : "unknown");
+  const buildTime =
+    process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
+
+  return { version, buildHash, buildTime, sha };
+}
+
+function getEnvironment() {
+  return process.env.NEXT_PUBLIC_ENV || process.env.NODE_ENV || "development";
+}
+
 export async function GET() {
+  const build = getBuildInfo();
+
   return NextResponse.json({
-    status: "healthy",
-    service: "villa-key",
-    timestamp: new Date().toISOString(),
+    status: "ok",
+    version: build.version,
+    buildHash: build.buildHash,
+    buildTime: build.buildTime,
+    sha: build.sha,
+    environment: getEnvironment(),
+    uptime: Math.floor(process.uptime()),
   });
 }

@@ -62,7 +62,41 @@ const nextConfig = {
         ],
       },
       {
-        source: "/:path((?!auth|api|_next).*)",
+        source: "/settings",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              "publickey-credentials-get=*, publickey-credentials-create=*",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://construction.villa.cash",
+              `frame-ancestors ${authFrameAncestors}`,
+            ].join("; "),
+          },
+        ],
+      },
+      {
+        source: "/:path((?!auth|settings|api|_next).*)",
         headers: [
           {
             key: "Cache-Control",
