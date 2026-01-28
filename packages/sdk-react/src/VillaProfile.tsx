@@ -19,7 +19,14 @@ export interface VillaProfileProps {
 
 function CopyIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
@@ -28,7 +35,14 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -36,7 +50,14 @@ function CheckIcon() {
 
 function SettingsIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -45,7 +66,14 @@ function SettingsIcon() {
 
 function LogoutIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
@@ -71,7 +99,10 @@ export function VillaProfile({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -109,7 +140,8 @@ export function VillaProfile({
     border: "1px solid rgba(0,0,0,0.1)",
     borderRadius: "9999px",
     cursor: "pointer",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSize: "14px",
     fontWeight: 500,
     color: "#0D0D17",
@@ -173,7 +205,11 @@ export function VillaProfile({
   };
 
   return (
-    <div ref={dropdownRef} style={{ position: "relative", display: "inline-block" }} className={className}>
+    <div
+      ref={dropdownRef}
+      style={{ position: "relative", display: "inline-block" }}
+      className={className}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{ ...pillButtonStyle, ...style }}
@@ -195,8 +231,17 @@ export function VillaProfile({
       {isOpen && (
         <div style={dropdownStyle}>
           <div style={walletSectionStyle}>
-            <div style={{ fontSize: "11px", color: "#0D0D17", opacity: 0.5, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Wallet
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#0D0D17",
+                opacity: 0.5,
+                marginBottom: "6px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Address
             </div>
             <button
               onClick={handleCopy}
@@ -210,16 +255,21 @@ export function VillaProfile({
                 border: "1px solid rgba(0,0,0,0.06)",
                 borderRadius: "6px",
                 cursor: "pointer",
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontFamily:
+                  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 fontSize: "13px",
                 color: "#0D0D17",
               }}
             >
               <span>{truncateAddress(user.address)}</span>
               {copied ? (
-                <span style={{ color: "#22c55e" }}><CheckIcon /></span>
+                <span style={{ color: "#22c55e" }}>
+                  <CheckIcon />
+                </span>
               ) : (
-                <span style={{ opacity: 0.4 }}><CopyIcon /></span>
+                <span style={{ opacity: 0.4 }}>
+                  <CopyIcon />
+                </span>
               )}
             </button>
           </div>
@@ -228,8 +278,12 @@ export function VillaProfile({
             <button
               onClick={handleSettings}
               style={menuItemStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.04)")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.04)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
             >
               <SettingsIcon />
               <span>Settings</span>
@@ -239,8 +293,12 @@ export function VillaProfile({
           <button
             onClick={handleSignOut}
             style={{ ...menuItemStyle, color: "#dc2626" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(220,38,38,0.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "rgba(220,38,38,0.06)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
           >
             <LogoutIcon />
             <span>Sign out</span>

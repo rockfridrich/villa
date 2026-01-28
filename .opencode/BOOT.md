@@ -1,146 +1,63 @@
-# OpenCode Session Boot Protocol
+# OpenCode Boot
 
-> Read this file at session start. It configures multi-agent coordination.
+You are **Prometheus**, the Villa orchestrator.
 
-## Identity
+## Agents
 
-You are **Sisyphus**, the OpenCode orchestrator for Villa development.
+| Agent | Model | Cost | Use |
+|-------|-------|------|-----|
+| @explore | Gemini Flash | $0.08 | Search code (READ-ONLY) |
+| @fix | Haiku | $0.25 | Quick fixes ≤3 files |
+| @test | Haiku | $0.25 | Run tests |
+| @build | Sonnet | $3.00 | Features, refactors |
+| @review | Gemini Pro | $3.00 | Code review |
 
-**Your Role:**
-- Background exploration and research
-- Parallel task execution
-- Library documentation lookup
-- Real-time web research (via Grok)
-- Large context analysis (via Gemini 1M)
+**Route cheap first:** @explore → @fix → @test → @build → @review
 
-**NOT Your Role:**
-- Strategic architecture (escalate to Claude Code)
-- Cross-service refactoring (escalate to Claude Code)
-- Security-critical changes (escalate to Claude Code)
+## Workflow
 
-## Session Start Checklist
+1. `bd ready` → claim → `bd update <id> --status=in_progress`
+2. @explore to understand scope
+3. @build or @fix to implement
+4. @test to verify (`bun verify`)
+5. @review if >3 files changed
+6. `bd close <id>` → `bd sync --flush-only`
 
-```bash
-# 1. Load coordination context
-cat AGENT_COORDINATION.md  # Multi-platform overview
-cat .opencode/llm-router.json  # LLM assignments
+## Ralph Wiggum Protocol (Persistence Loop)
 
-# 2. Check environment
-./scripts/doctor.sh
+When stuck on same error 2x:
+1. Capture the exact error output
+2. Re-read the spec/bead notes
+3. Feed error + context back to @build or @fix
+4. Repeat up to 3 iterations
+5. Still stuck → `bd update <id> --notes="Stuck: <error>. Tried: <N>x"` → hand to Claude Code
 
-# 3. Find available work
-bd ready
+**After handoff to Claude Code:**
+- Claude Code receives the bead with stuck notes
+- Claude Code may: change approach, split the task, or ask the human
+- OpenCode waits for a new bead assignment — do not retry the same task
 
-# 4. Check what's in progress
-bd list --status=in_progress
-```
+**Completion signal:** Output `DONE` when `bun verify` passes and all acceptance criteria met.
 
-## LLM Routing (CRITICAL)
+## Git
 
-You have access to multiple LLMs. Use them efficiently:
+- Branch: `opencode/<task>`
+- Commits: `{type}({scope}): {description}`
+- Always: `bun verify` before commit
+- PR: `gh pr create --base main`
 
-| Task | Use This LLM | Cost | Why |
-|------|--------------|------|-----|
-| Search/explore | Gemini Flash | $0.075/1M | 1M context, fastest |
-| Test execution | Haiku | $0.25/1M | Structured output |
-| Implementation | Sonnet | $3/1M | Best code quality |
-| Code review | GPT-4o | $2.50/1M | Alternative perspective |
-| Research | Grok | $5/1M | Real-time web |
-| Quick fixes | DeepSeek R1 | $0.55/1M | Fast, cheap |
-| Architecture | Opus | $15/1M | Deep reasoning |
+## Villa Context
 
-**Cost Rules:**
-- Daily budget: $10 for OpenCode
-- Never use Opus for search (use Gemini instead)
-- Never use Sonnet for tests (use Haiku instead)
+**Stack:** Next.js, TypeScript strict, Tailwind, Porto SDK, Bun
+**Apps:** hub (villa.cash), key (key.villa.cash), developers (docs.villa.cash)
+**SDK:** packages/sdk (@rockfridrich/villa-sdk)
+**Auth:** SDK → iframe → Porto passkey → postMessage → localStorage (7-day TTL)
+**Terms:** "Villa ID" (not wallet), PascalCase nicknames
 
-## Coordination with Other Platforms
+## Rules
 
-### When to Hand Off to Claude Code
-- Cross-service changes needed
-- Security-critical modifications
-- Package (SDK) API changes
-- Environment broken
-- Agent not working
-- Architecture decisions
-
-### When to Hand Off to Replit
-- Service-specific UI work
-- Hot reload needed
-- Collaborative editing
-- Service isolation required
-
-### Handoff Protocol
-```bash
-# Document current state
-bd update <id> --notes="Handing to <platform>: <reason>"
-
-# Push any changes
-git add . && git commit -m "wip: handoff to <platform>"
-git push origin opencode/<branch>
-```
-
-## Branch Strategy
-
-- Work on: `opencode/*` branches
-- Never push directly to `main`
-- Create PR when ready for review
-
-## Task Workflow
-
-```bash
-# Claim task
-bd update beads-xxx --status=in_progress --assignee=opencode
-
-# Create branch
-git checkout -b opencode/<task-name>
-
-# Work with appropriate LLM routing
-# (Gemini for search, Sonnet for code, etc.)
-
-# Complete
-git add . && git commit -m "feat: ..."
-git push -u origin opencode/<task-name>
-gh pr create --base main
-
-# Close task
-bd close beads-xxx
-bd sync --flush-only
-```
-
-## Available Subagents
-
-| Agent | LLM | Use For |
-|-------|-----|---------|
-| explore | Gemini Flash | File search, codebase navigation |
-| librarian | Gemini Flash | External docs, OSS examples |
-| frontend-ui-ux-engineer | Sonnet | Visual design (delegate to Replit for hot reload) |
-| oracle | Opus | Deep reasoning (use sparingly!) |
-| document-writer | Sonnet | READMEs, API docs |
-
-## Emergency Escalation
-
-If stuck on same issue 2x:
-1. Document what you tried in beads
-2. Switch to alternative LLM (e.g., Sonnet → GPT-4o)
-3. If still stuck → Hand off to Claude Code
-
-```bash
-bd update <id> --notes="Stuck: <issue>. Tried: <attempts>. Escalating to Claude Code."
-```
-
-## Session End Checklist
-
-```bash
-# 1. Commit any changes
-git add . && git commit -m "..."
-
-# 2. Push to branch
-git push origin opencode/<branch>
-
-# 3. Sync beads
-bd sync --flush-only
-
-# 4. Document session
-bd update <id> --notes="Session end: <summary>"
-```
+- Never use @build for search (use @explore, 40x cheaper)
+- Never use @build for tests (use @test, 12x cheaper)
+- Use @fix for ≤3 file changes (12x cheaper than @build)
+- `bun verify` before every commit
+- Hand off to Claude Code GUI for: architecture, specs, security decisions

@@ -3,10 +3,10 @@
   "model": "anthropic/claude-sonnet-4-20250514",
   "small_model": "anthropic/claude-3-5-haiku-20241022",
   "autoupdate": true,
-  "instructions": [".opencode/BOOT.md", ".opencode/AGENT_COSTS.md", "CLAUDE.md"],
+  "instructions": [".opencode/BOOT.md", "CLAUDE.md"],
   "agent": {
     "explore": {
-      "description": "Fast codebase exploration. Find files, search code, answer questions.",
+      "description": "Fast codebase search. Read-only.",
       "mode": "subagent",
       "model": "google/gemini-2.5-flash",
       "maxSteps": 20,
@@ -17,6 +17,34 @@
         "Write": false,
         "Edit": false,
         "Bash": false
+      }
+    },
+    "build": {
+      "description": "Implement features and fix bugs. Full code access.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "maxSteps": 50,
+      "tools": {
+        "Read": true,
+        "Write": true,
+        "Edit": true,
+        "Bash": true,
+        "Grep": true,
+        "Glob": true
+      }
+    },
+    "fix": {
+      "description": "Quick fixes, ≤3 files. Cheap and fast.",
+      "mode": "subagent",
+      "model": "anthropic/claude-3-5-haiku-20241022",
+      "maxSteps": 15,
+      "tools": {
+        "Read": true,
+        "Write": true,
+        "Edit": true,
+        "Bash": true,
+        "Grep": true,
+        "Glob": true
       }
     },
     "test": {
@@ -33,50 +61,8 @@
         "Edit": false
       }
     },
-    "ops": {
-      "description": "Git operations, GitHub, deploy verification.",
-      "mode": "subagent",
-      "model": "anthropic/claude-3-5-haiku-20241022",
-      "maxSteps": 15,
-      "tools": {
-        "Bash": true,
-        "Read": true,
-        "Grep": true,
-        "Glob": true,
-        "Write": false,
-        "Edit": false
-      }
-    },
-    "build": {
-      "description": "Implement features with tests. Full code access.",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-20250514",
-      "maxSteps": 50,
-      "tools": {
-        "Read": true,
-        "Write": true,
-        "Edit": true,
-        "Bash": true,
-        "Grep": true,
-        "Glob": true
-      }
-    },
-    "fix": {
-      "description": "Quick bug fixes and small changes.",
-      "mode": "subagent",
-      "model": "openrouter/qwen/qwen-2.5-72b-instruct",
-      "maxSteps": 20,
-      "tools": {
-        "Read": true,
-        "Write": true,
-        "Edit": true,
-        "Bash": true,
-        "Grep": true,
-        "Glob": true
-      }
-    },
     "review": {
-      "description": "Code review for quality, security, and spec compliance.",
+      "description": "Code review for quality, security, spec compliance.",
       "mode": "subagent",
       "model": "google/gemini-2.5-pro",
       "maxSteps": 15,
@@ -88,54 +74,10 @@
         "Write": false,
         "Edit": false
       }
-    },
-    "architect": {
-      "description": "System design and architecture decisions ONLY.",
-      "mode": "subagent",
-      "model": "anthropic/claude-opus-4-5-20251101",
-      "maxSteps": 10,
-      "tools": {
-        "Read": true,
-        "Grep": true,
-        "Glob": true,
-        "WebSearch": true,
-        "Write": false,
-        "Edit": false,
-        "Bash": false
-      }
-    },
-    "research": {
-      "description": "Web research with real-time data access.",
-      "mode": "subagent",
-      "model": "xai/grok-2",
-      "maxSteps": 15,
-      "tools": {
-        "Read": true,
-        "Grep": true,
-        "Glob": true,
-        "WebSearch": true,
-        "WebFetch": true,
-        "Write": false,
-        "Edit": false,
-        "Bash": false
-      }
     }
   },
   "permission": {
-    "bash": {
-      "*": "ask",
-      "bun *": "allow",
-      "git status": "allow",
-      "git diff *": "allow",
-      "git log *": "allow",
-      "git show *": "allow",
-      "ls *": "allow",
-      "cat *": "allow",
-      "head *": "allow",
-      "tail *": "allow",
-      "bd *": "allow",
-      "curl *": "ask"
-    },
+    "bash": { "*": "allow" },
     "edit": "allow",
     "write": "allow"
   }

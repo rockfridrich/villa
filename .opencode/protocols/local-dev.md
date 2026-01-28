@@ -4,7 +4,7 @@
 
 ```bash
 ./scripts/preflight.sh   # Verify Docker ready
-pnpm dev:local           # Start hybrid mode (HTTPS + passkeys)
+bun dev:local           # Start hybrid mode (HTTPS + passkeys)
 ```
 
 ---
@@ -27,7 +27,7 @@ Passkeys (WebAuthn) require a secure context. HTTP will silently fail:
 Native Next.js + Docker HTTPS proxy. Fast HMR, passkeys work.
 
 ```bash
-pnpm dev:local
+bun dev:local
 # Opens https://local.villa.cash (if /etc/hosts configured)
 # Or https://localhost:443
 ```
@@ -43,7 +43,7 @@ pnpm dev:local
 Just Next.js on HTTP. Fastest startup, no passkey support.
 
 ```bash
-pnpm dev
+bun dev
 # Opens http://localhost:3000
 ```
 
@@ -58,8 +58,8 @@ Use for: API-only testing, static page development.
 | Port 443 in use      | `docker-compose -f docker-compose.local.yml down` |
 | Colima not running   | `colima start`                                    |
 | Docker not connected | `colima status`, then `colima start`              |
-| Passkeys fail        | Use `pnpm dev:local` not `pnpm dev`               |
-| Blank page           | Clear cache: `rm -rf apps/web/.next && pnpm dev`  |
+| Passkeys fail        | Use `bun dev:local` not `bun dev`                 |
+| Blank page           | Clear cache: `rm -rf apps/web/.next && bun dev`   |
 
 ---
 

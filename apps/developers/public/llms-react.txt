@@ -75,7 +75,7 @@ import {
 
 function App() {
   return (
-    <VillaProvider config={{ appId: 'my-app', network: 'base' }}>
+    <VillaProvider config={{ target: 'production' }}>
       <AuthenticatedApp />
     </VillaProvider>
   )

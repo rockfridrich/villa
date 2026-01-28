@@ -12,7 +12,7 @@ If a task can be scripted, it should be. Don't regenerate the same code patterns
 
 | Script                     | Purpose                            | Usage                           |
 | -------------------------- | ---------------------------------- | ------------------------------- |
-| `./scripts/dev.sh`         | Start local dev                    | `pnpm dev:local`                |
+| `./scripts/dev.sh`         | Start local dev                    | `bun dev:local`                 |
 | `./scripts/doctor.sh`      | Environment health check           | `./scripts/doctor.sh`           |
 | `./scripts/preflight.sh`   | Docker readiness                   | `./scripts/preflight.sh`        |
 | `./scripts/setup-hosts.sh` | Add local.villa.cash to /etc/hosts | `sudo ./scripts/setup-hosts.sh` |
@@ -21,40 +21,40 @@ If a task can be scripted, it should be. Don't regenerate the same code patterns
 
 | Script                            | Purpose                | Usage                          |
 | --------------------------------- | ---------------------- | ------------------------------ |
-| `./scripts/ci-monitor.sh`         | Check CI status        | `pnpm ci`                      |
-| `./scripts/ci-monitor.sh --watch` | Watch until completion | `pnpm ci:watch`                |
+| `./scripts/ci-monitor.sh`         | Check CI status        | `bun ci`                       |
+| `./scripts/ci-monitor.sh --watch` | Watch until completion | `bun ci:watch`                 |
 | `./scripts/deploy.sh`             | Deploy to DigitalOcean | `./scripts/deploy.sh --update` |
 
 ### Testing
 
-| Script                          | Purpose             | Usage              |
-| ------------------------------- | ------------------- | ------------------ |
-| `./scripts/verify-tests.sh`     | Run full test suite | `pnpm verify`      |
-| `./scripts/test.sh`             | Run unit tests      | `pnpm test`        |
-| `./scripts/run-tests-docker.sh` | Run tests in Docker | `pnpm test:docker` |
+| Script                          | Purpose             | Usage             |
+| ------------------------------- | ------------------- | ----------------- |
+| `./scripts/verify-tests.sh`     | Run full test suite | `bun verify`      |
+| `./scripts/test.sh`             | Run unit tests      | `bun test`        |
+| `./scripts/run-tests-docker.sh` | Run tests in Docker | `bun test:docker` |
 
 ### Database
 
-| Script                   | Purpose               | Usage            |
-| ------------------------ | --------------------- | ---------------- |
-| `./scripts/db-setup.sh`  | Initialize local DB   | `pnpm db:setup`  |
-| `./scripts/db-tunnel.sh` | SSH tunnel to prod DB | `pnpm db:tunnel` |
+| Script                   | Purpose               | Usage           |
+| ------------------------ | --------------------- | --------------- |
+| `./scripts/db-setup.sh`  | Initialize local DB   | `bun db:setup`  |
+| `./scripts/db-tunnel.sh` | SSH tunnel to prod DB | `bun db:tunnel` |
 
 ### Task Management (Beads)
 
-| Script                                | Purpose               | Usage               |
-| ------------------------------------- | --------------------- | ------------------- |
-| `./scripts/bd-workflow.sh ready`      | Show available tasks  | `pnpm beads:ready`  |
-| `./scripts/bd-workflow.sh start <id>` | Claim a task          | Direct              |
-| `./scripts/bd-workflow.sh done <id>`  | Complete a task       | Direct              |
-| `./scripts/bd-workflow.sh status`     | Overview of all tasks | `pnpm beads:status` |
+| Script                                | Purpose               | Usage              |
+| ------------------------------------- | --------------------- | ------------------ |
+| `./scripts/bd-workflow.sh ready`      | Show available tasks  | `bun beads:ready`  |
+| `./scripts/bd-workflow.sh start <id>` | Claim a task          | Direct             |
+| `./scripts/bd-workflow.sh done <id>`  | Complete a task       | Direct             |
+| `./scripts/bd-workflow.sh status`     | Overview of all tasks | `bun beads:status` |
 
 ### Environment
 
-| Script                           | Purpose             | Usage               |
-| -------------------------------- | ------------------- | ------------------- |
-| `./scripts/env-sync.sh`          | Sync env vars       | `pnpm env`          |
-| `./scripts/env-sync.sh validate` | Check required vars | `pnpm env:validate` |
+| Script                           | Purpose             | Usage              |
+| -------------------------------- | ------------------- | ------------------ |
+| `./scripts/env-sync.sh`          | Sync env vars       | `bun env`          |
+| `./scripts/env-sync.sh validate` | Check required vars | `bun env:validate` |
 
 ---
 
@@ -63,38 +63,38 @@ If a task can be scripted, it should be. Don't regenerate the same code patterns
 ### Most Used
 
 ```bash
-pnpm dev              # Start Next.js (HTTP)
-pnpm dev:local        # Start with HTTPS (passkeys work)
-pnpm verify           # Full verification (typecheck + build + E2E)
-pnpm typecheck        # Fast type check only
-pnpm build            # Production build
+bun dev              # Start Next.js (HTTP)
+bun dev:local        # Start with HTTPS (passkeys work)
+bun verify           # Full verification (typecheck + build + E2E)
+bun typecheck        # Fast type check only
+bun build            # Production build
 ```
 
 ### Docker
 
 ```bash
-pnpm docker:dev       # Start dev profile
-pnpm docker:https     # Start HTTPS proxy only
-pnpm docker:full      # Start all services
-pnpm docker:down      # Stop all
-pnpm docker:clean     # Stop and remove volumes
+bun docker:dev       # Start dev profile
+bun docker:https     # Start HTTPS proxy only
+bun docker:full      # Start all services
+bun docker:down      # Stop all
+bun docker:clean     # Stop and remove volumes
 ```
 
 ### Database
 
 ```bash
-pnpm db:start         # Start postgres container
-pnpm db:setup         # Full DB setup
-pnpm db:migrate       # Run migrations
-pnpm db:studio        # Open Drizzle Studio
+bun db:start         # Start postgres container
+bun db:setup         # Full DB setup
+bun db:migrate       # Run migrations
+bun db:studio        # Open Drizzle Studio
 ```
 
 ### Testing
 
 ```bash
-pnpm test             # Unit tests
-pnpm test:e2e         # E2E tests (all browsers)
-pnpm test:e2e:chromium # E2E tests (chromium only - faster)
+bun test             # Unit tests
+bun test:e2e         # E2E tests (all browsers)
+bun test:e2e:chromium # E2E tests (chromium only - faster)
 ```
 
 ---

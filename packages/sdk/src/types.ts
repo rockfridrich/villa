@@ -55,8 +55,8 @@ export interface NicknameCheckResult {
 export interface VillaConfig {
   /** Application identifier for consent tracking (optional - auto-derived from origin if not provided) */
   appId?: string;
-  /** Target environment: "beta" (construction.villa.cash) or "production" (villa.cash) */
-  target?: "beta" | "production";
+  /** Target environment: "beta" (construction.villa.cash), "production" (villa.cash), or "local" */
+  target?: "beta" | "production" | "local";
   /** Enable debug logging */
   debug?: boolean;
   /** Network: "base" (mainnet) or "base-sepolia" (testnet, default for alpha) */

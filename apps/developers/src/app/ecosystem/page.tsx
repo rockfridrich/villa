@@ -1,41 +1,43 @@
-'use client'
+"use client";
 
-import { ExternalLink, Code2, FileText, Rocket, Check } from 'lucide-react'
+import { ExternalLink, Code2, FileText, Rocket, Check } from "lucide-react";
 
 interface App {
-  name: string
-  url: string
-  description: string
-  icon: string
-  features: string[]
+  name: string;
+  url: string;
+  description: string;
+  icon: string;
+  features: string[];
 }
 
 const featuredApps: App[] = [
   {
-    name: 'Residents',
-    url: 'https://residents.proofofretreat.me/',
-    description: 'Community directory for Villa ID holders. Discover other residents, view profiles, and connect with the village.',
-    icon: '👥',
+    name: "Residents",
+    url: "https://residents.proofofretreat.me/",
+    description:
+      "Community directory for Villa ID holders. Discover other residents, view profiles, and connect with the village.",
+    icon: "👥",
     features: [
-      'Browse all Villa residents',
-      'View member profiles and avatars',
-      'Search by nickname',
-      'Real-time community updates',
+      "Browse all Villa residents",
+      "View member profiles and avatars",
+      "Search by nickname",
+      "Real-time community updates",
     ],
   },
   {
-    name: 'Map',
-    url: 'https://map.proofofretreat.me/',
-    description: 'Interactive village explorer. Navigate the pop-up village space and discover locations tied to Villa IDs.',
-    icon: '🗺️',
+    name: "Map",
+    url: "https://map.proofofretreat.me/",
+    description:
+      "Interactive village explorer. Navigate the pop-up village space and discover locations tied to Villa IDs.",
+    icon: "🗺️",
     features: [
-      'Interactive village map',
-      'Location discovery',
-      'Villa ID integration',
-      'Community landmarks',
+      "Interactive village map",
+      "Location discovery",
+      "Villa ID integration",
+      "Community landmarks",
     ],
   },
-]
+];
 
 function AppCard({ app }: { app: App }) {
   return (
@@ -51,7 +53,7 @@ function AppCard({ app }: { app: App }) {
               rel="noopener noreferrer"
               className="text-sm text-accent-yellow hover:underline inline-flex items-center gap-1"
             >
-              {app.url.replace('https://', '')}
+              {app.url.replace("https://", "")}
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -64,7 +66,10 @@ function AppCard({ app }: { app: App }) {
         <h4 className="font-medium text-sm">Features</h4>
         <ul className="space-y-1">
           {app.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2 text-sm text-ink-muted">
+            <li
+              key={feature}
+              className="flex items-start gap-2 text-sm text-ink-muted"
+            >
               <Check className="w-4 h-4 text-accent-green flex-shrink-0 mt-0.5" />
               <span>{feature}</span>
             </li>
@@ -82,16 +87,22 @@ function AppCard({ app }: { app: App }) {
         <ExternalLink className="w-4 h-4" />
       </a>
     </div>
-  )
+  );
 }
 
-function IntegrationRequirement({ title, description }: { title: string; description: string }) {
+function IntegrationRequirement({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="bg-cream-50 border border-ink/5 rounded-lg p-4 space-y-2">
       <h4 className="font-medium">{title}</h4>
       <p className="text-sm text-ink-muted">{description}</p>
     </div>
-  )
+  );
 }
 
 export default function EcosystemPage() {
@@ -102,7 +113,8 @@ export default function EcosystemPage() {
         <div className="text-center space-y-4">
           <h1 className="font-serif text-5xl tracking-tight">Ecosystem</h1>
           <p className="text-xl text-ink-muted max-w-xl mx-auto">
-            Apps and services built with Villa authentication. One identity, everywhere.
+            Apps and services built with Villa authentication. One identity,
+            everywhere.
           </p>
         </div>
 
@@ -128,7 +140,8 @@ export default function EcosystemPage() {
             <Rocket className="w-12 h-12 mx-auto text-accent-yellow" />
             <h2 className="font-serif text-3xl">Build with Villa</h2>
             <p className="text-ink-muted max-w-xl mx-auto">
-              Join the ecosystem. Build apps that share a common identity layer and reach the entire pop-up village network.
+              Join the ecosystem. Build apps that share a common identity layer
+              and reach the entire pop-up village network.
             </p>
           </div>
 
@@ -155,7 +168,8 @@ export default function EcosystemPage() {
           <div className="border-t border-accent-yellow/20 pt-6">
             <h3 className="font-medium text-center mb-4">Submit Your App</h3>
             <p className="text-sm text-ink-muted text-center max-w-md mx-auto">
-              Built something with Villa? We&apos;d love to feature it! Open a PR to add your app to this page.
+              Built something with Villa? We&apos;d love to feature it! Open a
+              PR to add your app to this page.
             </p>
             <div className="text-center mt-4">
               <a
@@ -195,7 +209,7 @@ export default function EcosystemPage() {
             />
             <IntegrationRequirement
               title="Identity Scopes"
-              description="Request only the scopes you need: profile (nickname, avatar) and/or wallet (address). Users consent during authentication."
+              description="Request only the scopes you need: profile (nickname, avatar) and/or address. Users consent during authentication."
             />
           </div>
 
@@ -215,10 +229,10 @@ import { VillaAuth } from '@rockfridrich/villa-sdk-react'
 />`}</code>
             </pre>
             <p className="text-sm text-ink-muted">
-              See the{' '}
+              See the{" "}
               <a href="/" className="text-accent-yellow hover:underline">
                 full documentation
-              </a>{' '}
+              </a>{" "}
               for advanced usage and configuration.
             </p>
           </div>
@@ -226,27 +240,42 @@ import { VillaAuth } from '@rockfridrich/villa-sdk-react'
 
         {/* Privacy & Security */}
         <section className="bg-cream-50 border border-ink/5 rounded-xl p-8 space-y-4">
-          <h2 className="font-serif text-2xl text-center">Privacy & Security</h2>
+          <h2 className="font-serif text-2xl text-center">
+            Privacy & Security
+          </h2>
           <div className="space-y-3 text-ink-muted max-w-2xl mx-auto">
             <p>
-              All apps in the Villa ecosystem follow the same privacy-first principles:
+              All apps in the Villa ecosystem follow the same privacy-first
+              principles:
             </p>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-accent-green flex-shrink-0 mt-0.5" />
-                <span><strong>Passkeys never leave devices.</strong> Private keys stay in hardware-backed storage.</span>
+                <span>
+                  <strong>Passkeys never leave devices.</strong> Private keys
+                  stay in hardware-backed storage.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-accent-green flex-shrink-0 mt-0.5" />
-                <span><strong>User consent required.</strong> Apps must request and receive permission for data access.</span>
+                <span>
+                  <strong>User consent required.</strong> Apps must request and
+                  receive permission for data access.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-accent-green flex-shrink-0 mt-0.5" />
-                <span><strong>No passwords, ever.</strong> Biometric authentication via WebAuthn standard.</span>
+                <span>
+                  <strong>No passwords, ever.</strong> Biometric authentication
+                  via WebAuthn standard.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-accent-green flex-shrink-0 mt-0.5" />
-                <span><strong>ENS-compatible.</strong> Nicknames resolve like ENS names, enabling portable identity.</span>
+                <span>
+                  <strong>ENS-compatible.</strong> Nicknames resolve like ENS
+                  names, enabling portable identity.
+                </span>
               </li>
             </ul>
           </div>
@@ -279,5 +308,5 @@ import { VillaAuth } from '@rockfridrich/villa-sdk-react'
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -12,7 +12,6 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/developers/package.json ./apps/developers/
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
-COPY apps/relay/package.json ./apps/relay/
 COPY apps/telemetry/package.json ./apps/telemetry/
 COPY contracts/package.json ./contracts/
 COPY packages/config/package.json ./packages/config/

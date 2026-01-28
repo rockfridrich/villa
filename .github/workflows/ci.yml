@@ -140,7 +140,7 @@ jobs:
   e2e-smoke:
     name: "🧪 E2E Smoke Tests"
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, determine-tests]
     if: needs.determine-tests.outputs.e2e == 'true'
     timeout-minutes: 5
     steps:
@@ -163,23 +163,49 @@ jobs:
           key: deps-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: deps-${{ runner.os }}-
 
-      - name: Cache Playwright
+      - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
-          restore-keys: playwright-${{ runner.os }}-
+          key: playwright-${{ runner.os }}-${{ hashFiles('apps/hub/package.json', '**/bun.lock') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ hashFiles('apps/hub/package.json') }}-
+            playwright-${{ runner.os }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Chromium
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: apps/hub/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/hub/src/**') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            nextjs-${{ runner.os }}-
+
+      - name: Install Playwright browsers
         run: bunx playwright install chromium --with-deps
 
       - name: Run smoke tests
-        run: cd apps/hub && bun test:e2e:chromium --grep="@smoke"
+        run: |
+          cd apps/hub
+          echo "🧪 Running smoke tests..." >> $GITHUB_STEP_SUMMARY
+          bun test:e2e:chromium --grep="@smoke" --max-failures=5
+          echo "✅ Smoke tests completed successfully" >> $GITHUB_STEP_SUMMARY
         env:
           CI: true
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-smoke-test-results
+          path: |
+            apps/hub/test-results/
+            apps/hub/playwright-report/
+          retention-days: 7
 
   unit-tests:
     name: Unit Tests

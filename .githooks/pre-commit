@@ -1,7 +1,23 @@
 #!/bin/bash
-# Pre-commit hook: Verify bun.lock is in sync
+# Pre-commit hook: Branch protection + lock file sync
 
 set -e
+
+# Skip if SKIP_HOOKS is set
+if [ -n "$SKIP_HOOKS" ]; then
+    exit 0
+fi
+
+# Block direct commits to main
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [ "$BRANCH" = "main" ]; then
+    echo ""
+    echo "Direct commits to main are blocked. Use a feature branch:"
+    echo "  git checkout -b feat/my-feature"
+    echo ""
+    echo "To bypass (not recommended): git commit --no-verify"
+    exit 1
+fi
 
 # Skip if no package.json files are staged
 if ! git diff --cached --name-only | grep -qE 'package\.json$'; then

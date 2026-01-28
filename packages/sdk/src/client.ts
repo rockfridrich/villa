@@ -28,6 +28,7 @@ import {
   isSessionValid,
 } from "./session";
 import { getTargetConfig, deriveAppId, type Target } from "./config";
+import { createVillaConfigFromManifest } from "./config/runtime";
 
 /**
  * Data scopes that apps can request
@@ -100,32 +101,80 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
  * ```
  */
 export class Villa {
-  private config: VillaConfig & { appId: string; network: "base" | "base-sepolia"; apiUrl: string; target: Target };
+  private config: VillaConfig & {
+    appId: string;
+    network: "base" | "base-sepolia";
+    apiUrl: string;
+    target: Target;
+  };
   private currentSession: VillaSession | null = null;
-  private authUrl: string;
+  private authUrl: string = "";
   private debug: boolean;
+  private configReady: Promise<void>;
 
   constructor(config: VillaConfig = {}) {
+    this.debug = config.debug || false;
+    this.currentSession = loadSession();
+    this.config = this.createDefaultConfig(config);
+    this.configReady = this.initializeConfig(config);
+  }
+
+  private createDefaultConfig(config: VillaConfig) {
     const target: Target = config.target || "beta";
     const targetConfig = getTargetConfig(target);
     const appId = config.appId?.trim() || deriveAppId();
 
-    this.debug = config.debug || false;
-    this.config = {
+    return {
       appId,
       target,
-      network: config.network || (target === "production" ? "base" : "base-sepolia"),
+      network:
+        config.network || (target === "production" ? "base" : "base-sepolia"),
       apiUrl: config.apiUrl || "https://api.villa.cash",
       rpcUrl: config.rpcUrl,
+      debug: config.debug || false,
     };
+  }
 
-    this.authUrl = `${targetConfig.key}/auth`;
+  private async initializeConfig(explicitConfig: VillaConfig): Promise<void> {
+    try {
+      const runtimeConfig = await createVillaConfigFromManifest(explicitConfig);
 
-    if (this.debug) {
-      console.log("[Villa SDK] Initialized", { target, appId, authUrl: this.authUrl });
+      const target: Target = runtimeConfig.target || "beta";
+      const targetConfig = getTargetConfig(target);
+      const appId = runtimeConfig.appId?.trim() || deriveAppId();
+
+      this.config = {
+        appId,
+        target,
+        network:
+          runtimeConfig.network ||
+          (target === "production" ? "base" : "base-sepolia"),
+        apiUrl: runtimeConfig.apiUrl || "https://api.villa.cash",
+        rpcUrl: runtimeConfig.rpcUrl,
+        debug: Boolean(runtimeConfig.debug),
+      };
+
+      this.authUrl = `${targetConfig.key}/auth`;
+      this.debug = Boolean(this.config.debug);
+
+      if (this.debug) {
+        console.log("[Villa SDK] Loaded runtime config", {
+          target,
+          appId,
+          authUrl: this.authUrl,
+          source: "manifest",
+        });
+      }
+    } catch (error) {
+      const target: Target = explicitConfig.target || "beta";
+      const targetConfig = getTargetConfig(target);
+
+      this.authUrl = `${targetConfig.key}/auth`;
+
+      if (this.debug) {
+        console.warn("[Villa SDK] Using fallback config", error);
+      }
     }
-
-    this.currentSession = loadSession();
   }
 
   /**
@@ -200,6 +249,8 @@ export class Villa {
    * ```
    */
   async signIn(options?: SignInOptions): Promise<SignInResult> {
+    await this.configReady;
+
     const {
       scopes = ["profile"],
       onProgress,

@@ -7,6 +7,12 @@ const nextConfig = {
   generateEtags: true,
   poweredByHeader: false,
 
+  // Transpile workspace SDK packages
+  transpilePackages: [
+    "@rockfridrich/villa-sdk",
+    "@rockfridrich/villa-sdk-react",
+  ],
+
   async headers() {
     return [
       // AI context files - aggressive caching

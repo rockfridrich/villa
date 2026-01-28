@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { ExternalLink, Code2 } from 'lucide-react'
-import { CodeBlock } from '../../components/code'
+import { ExternalLink, Code2 } from "lucide-react";
+import { CodeBlock } from "../../components/code";
 
 interface ExampleCard {
-  title: string
-  description: string
-  icon: string
-  code: string
-  language?: string
-  githubUrl?: string
+  title: string;
+  description: string;
+  icon: string;
+  code: string;
+  language?: string;
+  githubUrl?: string;
 }
 
 const examples: ExampleCard[] = [
   {
-    title: 'Basic Authentication',
-    description: 'Complete sign in/out flow with session management',
-    icon: '🔐',
+    title: "Basic Authentication",
+    description: "Complete sign in/out flow with session management",
+    icon: "🔐",
     code: `'use client'
 
 import { useState } from 'react'
@@ -49,12 +49,13 @@ export default function BasicAuthExample() {
     </div>
   )
 }`,
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/basic-auth',
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/basic-auth",
   },
   {
-    title: 'Profile Management',
-    description: 'Read and update user profile information',
-    icon: '👤',
+    title: "Profile Management",
+    description: "Read and update user profile information",
+    icon: "👤",
     code: `'use client'
 
 import { useState, useEffect } from 'react'
@@ -62,7 +63,7 @@ import { Villa } from '@rockfridrich/villa-sdk'
 
 export default function ProfileExample() {
   const [identity, setIdentity] = useState(null)
-  const villa = new Villa({ appId: 'my-app', network: 'base' })
+  const villa = new Villa({ target: 'production' })
 
   useEffect(() => {
     // Get current identity
@@ -95,17 +96,18 @@ export default function ProfileExample() {
     </div>
   )
 }`,
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/profile-management',
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/profile-management",
   },
   {
-    title: 'React Hook Integration',
-    description: 'Custom useVilla hook for managing auth state',
-    icon: '⚛️',
+    title: "React Hook Integration",
+    description: "Custom useVilla hook for managing auth state",
+    icon: "⚛️",
     code: `// hooks/useVilla.ts
 import { useState, useEffect } from 'react'
 import { Villa, type Identity } from '@rockfridrich/villa-sdk'
 
-export function useVilla(config: { appId: string; network?: 'base' | 'base-sepolia' }) {
+export function useVilla(config: { target?: 'production' | 'beta'; appId?: string }) {
   const [villa] = useState(() => new Villa(config))
   const [identity, setIdentity] = useState<Identity | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -147,8 +149,7 @@ export function useVilla(config: { appId: string; network?: 'base' | 'base-sepol
 // Usage in component
 export default function App() {
   const { identity, isAuthenticated, signIn, signOut } = useVilla({
-    appId: 'my-app',
-    network: 'base'
+    target: 'production'
   })
 
   return (
@@ -164,13 +165,14 @@ export default function App() {
     </div>
   )
 }`,
-    language: 'typescript',
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/react-hook',
+    language: "typescript",
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/react-hook",
   },
   {
-    title: 'Iframe Embed',
-    description: 'Embed Villa authentication in an iframe',
-    icon: '🖼️',
+    title: "Iframe Embed",
+    description: "Embed Villa authentication in an iframe",
+    icon: "🖼️",
     code: `'use client'
 
 import { VillaBridge } from '@rockfridrich/villa-sdk'
@@ -181,9 +183,8 @@ export default function IframeEmbedExample() {
 
   useEffect(() => {
     // Initialize bridge
-    const bridge = new VillaBridge({
-      appId: 'my-app',
-      network: 'base',
+     const bridge = new VillaBridge({
+      target: 'production',
       debug: true,
     })
 
@@ -222,17 +223,17 @@ export default function IframeEmbedExample() {
     </div>
   )
 }`,
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/iframe-embed',
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/iframe-embed",
   },
   {
-    title: 'ENS Resolution',
-    description: 'Resolve Villa nicknames to addresses',
-    icon: '🔍',
+    title: "ENS Resolution",
+    description: "Resolve Villa nicknames to addresses",
+    icon: "🔍",
     code: `import { Villa } from '@rockfridrich/villa-sdk'
 
 const villa = new Villa({
-  appId: 'my-app',
-  network: 'base-sepolia'
+  target: 'beta'
 })
 
 // Resolve nickname to address
@@ -255,18 +256,19 @@ await resolveNickname('alice')
 
 await reverseResolve('0x1234...')
 // Returns: alice.villa.cash`,
-    language: 'typescript',
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/ens-resolution',
+    language: "typescript",
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/ens-resolution",
   },
   {
-    title: 'Avatar Display',
-    description: 'Display user avatars with customization',
-    icon: '🎨',
+    title: "Avatar Display",
+    description: "Display user avatars with customization",
+    icon: "🎨",
     code: `import { AvatarPreview } from '@rockfridrich/villa-sdk-react'
 import { Villa } from '@rockfridrich/villa-sdk'
 
 export default function AvatarExample() {
-  const villa = new Villa({ appId: 'my-app' })
+  const villa = new Villa()
   const identity = villa.getIdentity()
 
   if (!identity) return null
@@ -304,9 +306,10 @@ export default function AvatarExample() {
     </div>
   )
 }`,
-    githubUrl: 'https://github.com/rockfridrich/villa/tree/main/examples/avatar-display',
+    githubUrl:
+      "https://github.com/rockfridrich/villa/tree/main/examples/avatar-display",
   },
-]
+];
 
 export default function ExamplesPage() {
   return (
@@ -316,7 +319,8 @@ export default function ExamplesPage() {
         <div className="text-center space-y-4">
           <h1 className="font-serif text-5xl tracking-tight">Examples</h1>
           <p className="text-xl text-ink-muted max-w-xl mx-auto">
-            Code snippets and integration patterns to help you build with Villa SDK.
+            Code snippets and integration patterns to help you build with Villa
+            SDK.
           </p>
         </div>
 
@@ -364,7 +368,8 @@ export default function ExamplesPage() {
         <div className="bg-accent-yellow/5 border border-accent-yellow/20 rounded-xl p-8 text-center space-y-4">
           <h2 className="font-serif text-2xl">Need More Help?</h2>
           <p className="text-ink-muted max-w-xl mx-auto">
-            Check out the complete SDK documentation for detailed API reference, component guides, and troubleshooting.
+            Check out the complete SDK documentation for detailed API reference,
+            component guides, and troubleshooting.
           </p>
           <a
             href="/"
@@ -378,7 +383,8 @@ export default function ExamplesPage() {
         <div className="bg-cream-50 border border-ink/5 rounded-xl p-6 space-y-4">
           <h2 className="font-serif text-xl">Submit Your Example</h2>
           <p className="text-ink-muted text-sm">
-            Have a useful Villa SDK integration pattern? Share it with the community by contributing an example.
+            Have a useful Villa SDK integration pattern? Share it with the
+            community by contributing an example.
           </p>
           <a
             href="https://github.com/rockfridrich/villa/pulls"
@@ -392,5 +398,5 @@ export default function ExamplesPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

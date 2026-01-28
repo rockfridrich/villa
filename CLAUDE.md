@@ -19,8 +19,7 @@ villa/
 │   ├── key/         # Passkey service (key.villa.cash) - WebAuthn isolation
 │   ├── developers/  # Docs site (docs.villa.cash) - SDK docs, playground
 │   ├── telemetry/   # Local monitoring dashboard (not deployed)
-│   ├── api/         # Standalone API service (unused - APIs in hub)
-│   └── relay/       # Transaction relay (unused)
+│   └── api/         # Standalone API service (unused - APIs in hub)
 ├── packages/
 │   ├── sdk/         # @rockfridrich/villa-sdk - core auth library
 │   ├── sdk-react/   # @rockfridrich/villa-sdk-react - React bindings
@@ -32,6 +31,7 @@ villa/
 ## Apps
 
 ### Hub (`apps/hub`) - villa.cash
+
 Main application and API gateway.
 
 ```bash
@@ -39,6 +39,7 @@ bun dev                    # http://localhost:3000
 ```
 
 **Routes:**
+
 - `/` - Landing page
 - `/auth` - SDK iframe target for authentication
 - `/home` - Authenticated dashboard
@@ -46,12 +47,14 @@ bun dev                    # http://localhost:3000
 - `/onboarding` - New user flow
 
 **APIs:**
+
 - `POST /api/profile` - Create/update profile
 - `GET /api/profile/[address]` - Get profile
 - `GET /api/ens/resolve?name=...` - Resolve nickname to address
 - `GET /api/health` - Health check
 
 ### Key (`apps/key`) - key.villa.cash
+
 Isolated passkey authentication domain.
 
 ```bash
@@ -61,10 +64,12 @@ cd apps/key && bun dev     # http://localhost:3001
 **Purpose:** WebAuthn operations require stable origin. Key app isolates passkey logic so hardware-bound keys are tied to `key.villa.cash`.
 
 **Routes:**
+
 - `/auth` - Passkey authentication UI (Porto SDK)
 - `/settings` - Passkey management
 
 ### Developers (`apps/developers`) - docs.villa.cash
+
 Documentation and SDK playground.
 
 ```bash
@@ -72,6 +77,7 @@ bun dev:developers         # http://localhost:3002
 ```
 
 **Routes:**
+
 - `/` - Landing with quick start
 - `/sdk` - Full SDK documentation
 - `/playground` - Interactive SDK demo
@@ -79,6 +85,7 @@ bun dev:developers         # http://localhost:3002
 - `/CLAUDE.txt` - AI assistant context file
 
 ### Telemetry (`apps/telemetry`) - Local Only
+
 Internal monitoring dashboard for deployments and CI.
 
 ```bash
@@ -89,6 +96,7 @@ bun test                        # Playwright E2E tests
 **Requires:** `gh` CLI authenticated (`gh auth login`)
 
 **Features:**
+
 - Service health monitoring (villa.cash, key.villa.cash, docs.villa.cash)
 - GitHub Actions status
 - Deployment pipeline visualization
@@ -97,26 +105,29 @@ bun test                        # Playwright E2E tests
 ## Packages
 
 ### SDK (`packages/sdk`)
+
 Core authentication library published to npm as `@rockfridrich/villa-sdk`.
 
 ```typescript
-import { villa } from '@rockfridrich/villa-sdk';
+import { villa } from "@rockfridrich/villa-sdk";
 
 const user = await villa.signIn();
 // { address: "0x...", nickname: "CosmicFox", avatar: "..." }
 ```
 
 **Key files:**
+
 - `src/simple.ts` - Zero-config `villa` singleton
 - `src/client.ts` - `Villa` class with full options
 - `src/iframe/bridge.ts` - `VillaBridge` for iframe communication
 - `src/iframe/validation.ts` - Origin validation (trusts Villa domains)
 
 ### SDK React (`packages/sdk-react`)
+
 React bindings published as `@rockfridrich/villa-sdk-react`.
 
 ```tsx
-import { useVilla, VillaButton } from '@rockfridrich/villa-sdk-react';
+import { useVilla, VillaButton } from "@rockfridrich/villa-sdk-react";
 
 function App() {
   const { user } = useVilla();
@@ -135,6 +146,7 @@ function App() {
 7. SDK stores session in localStorage (7-day TTL)
 
 **Security:**
+
 - SDK only trusts messages from Villa domains
 - Auth pages accept any HTTPS origin (SDK works on any domain)
 - postMessage always targeted to specific origin (never `*`)
@@ -143,11 +155,11 @@ function App() {
 
 **Railway:** https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115
 
-| Service | Domain | Source |
-|---------|--------|--------|
-| Hub | villa.cash, construction.villa.cash | Dockerfile (root) |
-| Key | key.villa.cash | apps/key/Dockerfile |
-| Developers | docs.villa.cash | apps/developers/Dockerfile |
+| Service    | Domain                              | Source                     |
+| ---------- | ----------------------------------- | -------------------------- |
+| Hub        | villa.cash, construction.villa.cash | Dockerfile (root)          |
+| Key        | key.villa.cash                      | apps/key/Dockerfile        |
+| Developers | docs.villa.cash                     | apps/developers/Dockerfile |
 
 **Auto-deploy:** Push to `main` triggers Railway deployment.
 
@@ -175,25 +187,37 @@ bun build                  # Build all packages
 ## Current Issues
 
 ### SDK Auth Flow (Fixed Today)
+
 **Problem:** SDK iframe auth wasn't working on external domains (e.g., Lovable apps).
 
 **Root Cause:** Auth pages only allowed hardcoded origins in allowlist.
 
 **Fix:** Changed origin validation to accept any valid HTTPS origin. The SDK is meant to work on ANY domain - security is maintained because:
+
 1. postMessage is targeted to specific origin (not wildcard)
 2. Parent initiated the auth flow
 3. Data returned is user's own identity
 
 **Files changed:**
+
 - `apps/hub/src/app/auth/page.tsx`
 - `apps/key/src/app/auth/page.tsx`
 - `apps/key/src/app/settings/page.tsx`
 
+## Git Protocol
+
+- Branch from `main` with prefix: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`, `hotfix/`
+- Never commit or push directly to `main` (hooks enforce this)
+- Squash-merge via PR, delete branch after merge
+- Run `bun verify` before every push
+- No auto-generated branch names — use descriptive prefixes
+- Cleanup: `./scripts/git-cleanup.sh --dry-run` to preview stale branches
+
 ## Contract Addresses (Base Sepolia)
 
-| Contract | Address |
-|----------|---------|
-| VillaNicknameResolverV3 | `0x180ddE044F1627156Cac6b2d068706508902AE9C` |
+| Contract                  | Address                                      |
+| ------------------------- | -------------------------------------------- |
+| VillaNicknameResolverV3   | `0x180ddE044F1627156Cac6b2d068706508902AE9C` |
 | BiometricRecoverySignerV2 | `0xdFb55a363bdF549EE5C2e77D0aAaC39068ED5836` |
 
 ## Related Docs

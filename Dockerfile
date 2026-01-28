@@ -8,7 +8,7 @@ COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
 COPY apps/developers/package.json ./apps/developers/
 COPY apps/api/package.json ./apps/api/
-COPY apps/relay/package.json ./apps/relay/
+
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
@@ -36,7 +36,7 @@ ARG NEXT_PUBLIC_PORTO_DIALOG_HOST=https://id.porto.sh
 ARG NEXT_PUBLIC_APP_URL=https://villa.cash
 ARG NEXT_PUBLIC_ENV=production
 ARG NEXT_PUBLIC_DOMAIN=villa.cash
-ARG NEXT_PUBLIC_GLIDE_PROJECT_ID=villa-dev
+
 ARG RAILWAY_GIT_COMMIT_SHA
 ARG NEXT_PUBLIC_VERSION=0.1.0
 
@@ -46,7 +46,7 @@ ENV NEXT_PUBLIC_PORTO_DIALOG_HOST=$NEXT_PUBLIC_PORTO_DIALOG_HOST
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
 ENV NEXT_PUBLIC_DOMAIN=$NEXT_PUBLIC_DOMAIN
-ENV NEXT_PUBLIC_GLIDE_PROJECT_ID=$NEXT_PUBLIC_GLIDE_PROJECT_ID
+
 ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME

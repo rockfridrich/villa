@@ -52,7 +52,7 @@ Required CSP frame-ancestors must allow parent app domains.
 ### 1. Verify Local HTTPS Works
 
 ```bash
-pnpm dev:local
+bun dev:local
 # Open https://local.villa.cash/auth
 # Should see VillaAuthScreen
 ```

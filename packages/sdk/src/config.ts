@@ -9,6 +9,11 @@ export const TARGETS = {
     key: "https://key.villa.cash",
     chain: 8453,
   },
+  local: {
+    hub: "http://localhost:3000",
+    key: "http://localhost:3001",
+    chain: 84532,
+  },
 } as const;
 
 export type Target = keyof typeof TARGETS;

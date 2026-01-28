@@ -120,7 +120,7 @@ cmd_sync() {
         "NEXT_PUBLIC_PORTO_ENV=stg"
         "NEXT_PUBLIC_PORTO_DIALOG_HOST=https://id.porto.sh"
         "NEXT_PUBLIC_CHAIN_ID=84532"
-        "NEXT_PUBLIC_GLIDE_PROJECT_ID=villa-dev"
+
         "NICKNAME_RESOLVER_V3_ADDRESS=0x180ddE044F1627156Cac6b2d068706508902AE9C"
     )
     
