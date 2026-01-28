@@ -15,9 +15,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 COPY contracts/package.json ./contracts/
 
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    --mount=type=cache,target=/app/node_modules/.cache/bun \
-    bun install
+RUN bun install
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
