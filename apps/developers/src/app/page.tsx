@@ -24,7 +24,7 @@ import {
   Laptop,
 } from "lucide-react";
 import { CodeBlock } from "../components/code";
-import { villa, type VillaUser } from "@rockfridrich/villa-sdk";
+import { villa, type Identity, type VillaUser } from "@rockfridrich/villa-sdk";
 
 function QuickCopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -103,7 +103,7 @@ export default function DevelopersPage() {
 
   useEffect(() => {
     const unsubscribe = villa.onAuthChange((u: VillaUser | null) => setUser(u));
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   const handleSignIn = async () => {

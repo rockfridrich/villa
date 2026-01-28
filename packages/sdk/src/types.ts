@@ -15,6 +15,11 @@ export interface Identity {
   avatar?: AvatarConfig;
 }
 
+// Preserve backwards compatibility with old type
+export type VillaUser = Identity & {
+  avatar?: string | AvatarConfig;
+};
+
 /** Supported avatar styles (DiceBear collection names) */
 export type AvatarStyle =
   | "lorelei"
