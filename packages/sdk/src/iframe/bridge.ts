@@ -40,8 +40,9 @@ import { deriveAppId } from "../config";
 /** Default timeout: 5 minutes */
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
-/** Default iframe detection timeout: 3 seconds */
+/** Default iframe detection timeout: 8 seconds for settings, 3 seconds for auth */
 const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
+const SETTINGS_IFRAME_DETECTION_TIMEOUT_MS = 8 * 1000;
 
 const AUTH_URLS = {
   base: "https://key.villa.cash/auth",
@@ -210,11 +211,16 @@ export class VillaBridge {
 
         // Set up iframe detection timeout - if we don't get VILLA_READY within X seconds,
         // assume iframe is blocked and fall back to popup
+        // Settings pages need longer timeout due to profile loading
+        const detectionTimeout = scopes.includes("settings")
+          ? SETTINGS_IFRAME_DETECTION_TIMEOUT_MS
+          : this.config.iframeDetectionTimeout;
+
         this.iframeDetectionTimeoutId = setTimeout(() => {
           this.log("Iframe appears to be blocked, falling back to popup...");
           this.cleanupIframe();
           this.openPopup(scopes, params).then(resolve).catch(reject);
-        }, this.config.iframeDetectionTimeout);
+        }, detectionTimeout);
 
         // Set up overall timeout
         this.timeoutId = setTimeout(() => {

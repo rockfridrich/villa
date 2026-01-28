@@ -1,7 +1,7 @@
 {
-  "last_failure": "2026-01-28T14:50:04.576322+07:00",
-  "failure_count": 32,
-  "backoff_until": "2026-01-28T15:20:04.576322+07:00",
-  "needs_manual_sync": true,
-  "failure_reason": "git pull failed: exit status 1\nfatal: unable to access 'https://github.com/rockfridrich/villa.git/': Could not resolve host: github.com\n"
+  "last_failure": "2026-01-28T16:36:20.134226+07:00",
+  "failure_count": 1,
+  "backoff_until": "2026-01-28T16:36:50.134226+07:00",
+  "needs_manual_sync": false,
+  "failure_reason": "git pull failed: exit status 128\nerror: Pulling is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm \u003cfile\u003e'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.\n"
 }

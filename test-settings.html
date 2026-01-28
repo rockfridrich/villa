@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test Villa Settings Popup</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h1>Villa SDK Settings Test</h1>
+    <div id="status"></div>
+    <button id="signin">Sign In</button>
+    <button id="settings" disabled>Settings</button>
+    <button id="signout" disabled>Sign Out</button>
+
+    <script type="module">
+      // Import from local SDK build
+      import { villa } from "./packages/sdk/dist/index.mjs";
+
+      const status = document.getElementById("status");
+      const signinBtn = document.getElementById("signin");
+      const settingsBtn = document.getElementById("settings");
+      const signoutBtn = document.getElementById("signout");
+
+      function updateUI() {
+        if (villa.user) {
+          status.textContent = `Signed in as: ${villa.user.nickname}`;
+          signinBtn.disabled = true;
+          settingsBtn.disabled = false;
+          signoutBtn.disabled = false;
+        } else {
+          status.textContent = "Not signed in";
+          signinBtn.disabled = false;
+          settingsBtn.disabled = true;
+          signoutBtn.disabled = true;
+        }
+      }
+
+      signinBtn.addEventListener("click", async () => {
+        try {
+          signinBtn.textContent = "Signing in...";
+          signinBtn.disabled = true;
+          const user = await villa.signIn();
+          console.log("Signed in:", user);
+          updateUI();
+        } catch (error) {
+          console.error("Sign in failed:", error);
+          status.textContent = `Sign in failed: ${error.message}`;
+        } finally {
+          signinBtn.textContent = "Sign In";
+          signinBtn.disabled = false;
+        }
+      });
+
+      settingsBtn.addEventListener("click", async () => {
+        try {
+          settingsBtn.textContent = "Opening Settings...";
+          settingsBtn.disabled = true;
+          console.log("Calling villa.settings()...");
+          const result = await villa.settings();
+          console.log("Settings result:", result);
+          if (result.loggedOut) {
+            updateUI();
+          } else {
+            status.textContent = `Settings updated: ${JSON.stringify(result)}`;
+            updateUI();
+          }
+        } catch (error) {
+          console.error("Settings failed:", error);
+          status.textContent = `Settings failed: ${error.message}`;
+        } finally {
+          settingsBtn.textContent = "Settings";
+          settingsBtn.disabled = false;
+        }
+      });
+
+      signoutBtn.addEventListener("click", () => {
+        villa.signOut();
+        updateUI();
+      });
+
+      // Initial UI update
+      updateUI();
+
+      // Listen for auth changes
+      villa.onAuthChange((user) => {
+        console.log("Auth changed:", user);
+        updateUI();
+      });
+    </script>
+  </body>
+</html>

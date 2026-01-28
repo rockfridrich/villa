@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 
-interface SpinnerProps {
+export interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -15,7 +15,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <div
       className={clsx(
-        'animate-spin rounded-full border-villa-500 border-t-transparent',
+        'animate-spin rounded-full border-yellow-500 border-t-transparent',
         sizeClasses[size],
         className
       )}
