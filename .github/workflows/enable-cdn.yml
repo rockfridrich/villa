@@ -30,39 +30,39 @@ jobs:
         run: |
           DOMAIN="docs.villa.cash"
           echo "🔍 Checking DNS record for $DOMAIN..."
-          
+
           EXISTING=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?name=${DOMAIN}" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json")
-          
+
           RECORD_ID=$(echo "$EXISTING" | jq -r '.result[0].id // empty')
           RECORD_TYPE=$(echo "$EXISTING" | jq -r '.result[0].type // empty')
           RECORD_CONTENT=$(echo "$EXISTING" | jq -r '.result[0].content // empty')
           RECORD_PROXIED=$(echo "$EXISTING" | jq -r '.result[0].proxied // false')
-          
+
           if [ -z "$RECORD_ID" ]; then
             echo "❌ DNS record not found for $DOMAIN"
             exit 1
           fi
-          
+
           echo "📋 Current record:"
           echo "   Type: $RECORD_TYPE"
           echo "   Content: $RECORD_CONTENT"
           echo "   Proxied: $RECORD_PROXIED"
-          
+
           if [ "$RECORD_PROXIED" = "true" ]; then
             echo "✅ $DOMAIN is already proxied through CloudFlare"
             exit 0
           fi
-          
+
           echo ""
           echo "🔄 Enabling CloudFlare proxy..."
-          
+
           RESULT=$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${RECORD_ID}" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${RECORD_TYPE}\",\"name\":\"${DOMAIN}\",\"content\":\"${RECORD_CONTENT}\",\"proxied\":true,\"ttl\":1}")
-          
+
           if echo "$RESULT" | jq -e '.success' > /dev/null; then
             echo "✅ CloudFlare proxy enabled for $DOMAIN"
             echo ""
@@ -81,12 +81,12 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           echo "🗑️ Purging CloudFlare cache..."
-          
+
           RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}')
-          
+
           if echo "$RESULT" | jq -e '.success' > /dev/null; then
             echo "✅ Cache purged successfully"
           else
@@ -97,8 +97,7 @@ jobs:
       - name: Verify CDN status
         run: |
           echo "🔍 Verifying CDN status..."
-          sleep 10
-          
+
           for domain in docs.villa.cash; do
             echo ""
             echo "Checking $domain..."

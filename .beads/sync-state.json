@@ -1,7 +1,7 @@
 {
-  "last_failure": "2026-01-28T14:50:04.576322+07:00",
-  "failure_count": 32,
-  "backoff_until": "2026-01-28T15:20:04.576322+07:00",
+  "last_failure": "2026-01-28T18:28:45.77595+07:00",
+  "failure_count": 34,
+  "backoff_until": "2026-01-28T18:58:45.775951+07:00",
   "needs_manual_sync": true,
-  "failure_reason": "git pull failed: exit status 1\nfatal: unable to access 'https://github.com/rockfridrich/villa.git/': Could not resolve host: github.com\n"
+  "failure_reason": "git pull failed: exit status 1\nfatal: couldn't find remote ref feat/railway-healthcheck-timeout-45s\n"
 }

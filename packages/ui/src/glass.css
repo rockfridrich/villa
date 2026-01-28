@@ -1,0 +1,388 @@
+/**
+ * Villa Glass Design System
+ * Apple-inspired frosted glass overlay effects for SDK modals and popups
+ */
+
+/* ============================================ */
+/* Glass Variables and Base Styles             */
+/* ============================================ */
+
+:root {
+  /* Glass opacity levels */
+  --glass-light: rgba(255, 255, 255, 0.1);
+  --glass-medium: rgba(255, 255, 255, 0.15);
+  --glass-heavy: rgba(255, 255, 255, 0.2);
+
+  /* Villa-specific glass backgrounds */
+  --glass-villa-light: rgba(255, 253, 248, 0.7); /* #FFFDF8 with 70% opacity */
+  --glass-villa-medium: rgba(255, 253, 248, 0.8); /* #FFFDF8 with 80% opacity */
+  --glass-villa-heavy: rgba(255, 253, 248, 0.9); /* #FFFDF8 with 90% opacity */
+
+  /* Glass borders */
+  --glass-border-light: rgba(255, 255, 255, 0.2);
+  --glass-border-medium: rgba(255, 255, 255, 0.3);
+  --glass-border-villa: rgba(255, 224, 71, 0.2); /* Villa yellow accent */
+
+  /* Glass shadows */
+  --glass-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --glass-shadow-heavy: 0 20px 50px rgba(0, 0, 0, 0.12);
+
+  /* Villa-specific shadows */
+  --glass-shadow-villa: 0 8px 32px rgba(13, 13, 23, 0.04);
+  --glass-shadow-villa-elevated: 0 20px 40px rgba(13, 13, 23, 0.06);
+}
+
+/* ============================================ */
+/* Core Glass Classes                           */
+/* ============================================ */
+
+/* Basic glass overlay - subtle backdrop blur */
+.glass-overlay {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--glass-light);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass with enhanced blur effect */
+.glass-overlay-heavy {
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  background: var(--glass-heavy);
+  border: 1px solid var(--glass-border-medium);
+  box-shadow: var(--glass-shadow-heavy);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Villa-branded glass overlay */
+.glass-overlay-villa {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: var(--glass-villa-medium);
+  border: 1px solid var(--glass-border-villa);
+  box-shadow: var(--glass-shadow-villa);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass modal container - for fullscreen overlays */
+.glass-modal {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 253, 248, 0.72);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* Glass card - for content within modals */
+.glass-card {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--glass-villa-heavy);
+  border: 1px solid var(--glass-border-villa);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow-villa-elevated);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================ */
+/* Size Variants                                */
+/* ============================================ */
+
+.glass-card-sm {
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 320px;
+}
+
+.glass-card-md {
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 420px;
+}
+
+.glass-card-lg {
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 520px;
+}
+
+/* Standard SDK modal size (matches Porto dimensions) */
+.glass-card-sdk {
+  border-radius: 20px;
+  padding: 24px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  min-height: 520px;
+  max-height: calc(100vh - 32px);
+}
+
+/* ============================================ */
+/* Interactive States                           */
+/* ============================================ */
+
+.glass-overlay:hover,
+.glass-card:hover {
+  background: var(--glass-villa-light);
+  border-color: rgba(255, 224, 71, 0.3);
+  transform: translateY(-1px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-overlay:active,
+.glass-card:active {
+  transform: translateY(0);
+  transition: all 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================ */
+/* Dropdown Glass Effects                       */
+/* ============================================ */
+
+.glass-dropdown {
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  background: var(--glass-villa-heavy);
+  border: 1px solid var(--glass-border-villa);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow-medium);
+  position: absolute;
+  z-index: 1000;
+  overflow: hidden;
+  animation: glass-dropdown-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-dropdown-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: calc(100% - 16px);
+  text-align: left;
+}
+
+.glass-dropdown-item:hover {
+  background: rgba(255, 224, 71, 0.1);
+}
+
+.glass-dropdown-item:active {
+  background: rgba(255, 224, 71, 0.2);
+}
+
+/* ============================================ */
+/* Popup and Modal Animations                  */
+/* ============================================ */
+
+@keyframes glass-modal-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+@keyframes glass-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes glass-card-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+@keyframes glass-dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes glass-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================ */
+/* Animation Classes                            */
+/* ============================================ */
+
+.glass-animate-in {
+  animation: glass-card-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-animate-out {
+  animation: glass-card-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-modal-animate-in {
+  animation: glass-modal-in 0.3s ease-out forwards;
+}
+
+.glass-slide-up {
+  animation: glass-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ============================================ */
+/* Browser Compatibility Fallbacks             */
+/* ============================================ */
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-overlay,
+  .glass-overlay-heavy,
+  .glass-overlay-villa,
+  .glass-card,
+  .glass-dropdown {
+    background: var(--glass-villa-heavy);
+    box-shadow: var(--glass-shadow-heavy);
+  }
+
+  .glass-modal {
+    background: rgba(255, 253, 248, 0.95);
+  }
+}
+
+/* Reduced motion fallbacks */
+@media (prefers-reduced-motion: reduce) {
+  .glass-overlay,
+  .glass-card,
+  .glass-dropdown {
+    animation: none;
+    transition: none;
+  }
+
+  .glass-overlay:hover,
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* ============================================ */
+/* Mobile Optimizations                         */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .glass-modal {
+    padding: 0;
+    background: rgba(255, 253, 248, 0.95);
+  }
+
+  .glass-card-sdk {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    animation: glass-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Slightly stronger glass effect on mobile for better readability */
+  .glass-overlay,
+  .glass-overlay-villa,
+  .glass-card {
+    background: var(--glass-villa-heavy);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+}
+
+/* ============================================ */
+/* High DPI Display Optimizations              */
+/* ============================================ */
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+  .glass-overlay,
+  .glass-card,
+  .glass-dropdown {
+    /* Slightly reduce blur on high-DPI displays for performance */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+}
+
+/* ============================================ */
+/* Dark Mode Support (for future use)          */
+/* ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-light: rgba(0, 0, 0, 0.2);
+    --glass-medium: rgba(0, 0, 0, 0.3);
+    --glass-heavy: rgba(0, 0, 0, 0.4);
+    --glass-villa-light: rgba(13, 13, 23, 0.7);
+    --glass-villa-medium: rgba(13, 13, 23, 0.8);
+    --glass-villa-heavy: rgba(13, 13, 23, 0.9);
+    --glass-border-light: rgba(255, 255, 255, 0.1);
+    --glass-border-medium: rgba(255, 255, 255, 0.15);
+    --glass-border-villa: rgba(255, 224, 71, 0.3);
+  }
+}
+
+/* ============================================ */
+/* Accessibility Enhancements                  */
+/* ============================================ */
+
+/* Ensure glass elements are focusable with keyboard */
+.glass-overlay:focus-visible,
+.glass-card:focus-visible,
+.glass-dropdown-item:focus-visible {
+  outline: 2px solid #ffe047;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-overlay,
+  .glass-card,
+  .glass-dropdown {
+    background: rgba(255, 253, 248, 0.95);
+    border: 2px solid #ffe047;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

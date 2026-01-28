@@ -146,23 +146,16 @@ jobs:
         env:
           URL: ${{ steps.deploy.outputs.url }}
         run: |
-          echo "Waiting for deployment at $URL..."
-          sleep 30
+          echo "Polling deployment health at $URL..."
+
+          source ./scripts/utils/poll-health.sh
 
           HEALTH_ENDPOINT="$URL/api/health"
           if [[ "$URL" == *"docs"* ]]; then
             HEALTH_ENDPOINT="$URL"
           fi
 
-          for i in {1..20}; do
-            if curl -sf "$HEALTH_ENDPOINT" > /dev/null; then
-              echo "Deployment healthy!"
-              exit 0
-            fi
-            echo "Waiting... ($i/20)"
-            sleep 15
-          done
-          echo "Warning: Deployment may still be in progress"
+          poll_health "$HEALTH_ENDPOINT" 300 "Sandbox Deployment" || echo "Warning: Deployment may still be in progress"
 
       - name: Comment on PR
         uses: actions/github-script@v7

@@ -1,0 +1,10 @@
+# App screenshot placeholders
+
+This directory will contain screenshots of apps in the showcase.
+For now, we're using Unsplash images as placeholders.
+
+To add a real screenshot:
+1. Take a screenshot of the app
+2. Optimize it (400x240px, WebP format recommended)  
+3. Add it here with filename: appname-screenshot.webp
+4. Update the screenshot URL in ecosystem/page.tsx

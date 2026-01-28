@@ -3,28 +3,39 @@ name: Publish SDK
 on:
   push:
     tags:
-      - 'sdk-v*'
+      - "sdk-v*"
+      - "sdk-react-v*"
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version bump type'
+      package:
+        description: "Package to release"
         required: true
-        default: 'patch'
+        default: "sdk"
+        type: choice
+        options:
+          - sdk
+          - sdk-react
+          - all
+      version:
+        description: "Version bump type"
+        required: true
+        default: "patch"
         type: choice
         options:
           - patch
           - minor
           - major
+          - prerelease
 
 permissions:
-  id-token: write    # Required for npm OIDC trusted publishing
-  contents: write    # Required for git operations
+  id-token: write # Required for npm OIDC trusted publishing
+  contents: write # Required for git operations
 
 jobs:
   publish:
     name: Build and Publish SDK
     runs-on: ubuntu-latest
-    environment: npm  # Optional: adds deployment protection rules
+    environment: npm # Optional: adds deployment protection rules
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,62 +49,167 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build SDK packages
+      - name: Determine packages to build
+        id: packages
         run: |
-          bun run --filter @rockfridrich/villa-sdk build
-          bun run --filter @rockfridrich/villa-sdk-react build
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PACKAGE="${{ inputs.package }}"
+          elif [[ "${{ github.ref }}" == refs/tags/sdk-v* ]]; then
+            PACKAGE="sdk"
+          elif [[ "${{ github.ref }}" == refs/tags/sdk-react-v* ]]; then
+            PACKAGE="sdk-react"
+          else
+            PACKAGE="all"
+          fi
+          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
 
-      - name: Verify build output
+          # Determine which packages to build and publish
+          case "$PACKAGE" in
+            "sdk")
+              echo "build_sdk=true" >> $GITHUB_OUTPUT
+              echo "build_react=false" >> $GITHUB_OUTPUT
+              echo "publish_sdk=true" >> $GITHUB_OUTPUT
+              echo "publish_react=false" >> $GITHUB_OUTPUT
+              ;;
+            "sdk-react")
+              echo "build_sdk=true" >> $GITHUB_OUTPUT
+              echo "build_react=true" >> $GITHUB_OUTPUT
+              echo "publish_sdk=false" >> $GITHUB_OUTPUT
+              echo "publish_react=true" >> $GITHUB_OUTPUT
+              ;;
+            "all")
+              echo "build_sdk=true" >> $GITHUB_OUTPUT
+              echo "build_react=true" >> $GITHUB_OUTPUT
+              echo "publish_sdk=true" >> $GITHUB_OUTPUT
+              echo "publish_react=true" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Build SDK core
+        if: steps.packages.outputs.build_sdk == 'true'
+        run: bun run --filter @rockfridrich/villa-sdk build
+
+      - name: Build SDK React
+        if: steps.packages.outputs.build_react == 'true'
+        run: bun run --filter @rockfridrich/villa-sdk-react build
+
+      - name: Verify SDK build output
+        if: steps.packages.outputs.build_sdk == 'true'
         run: |
           cd packages/sdk
           ls -la dist/
           test -f dist/index.js || exit 1
           test -f dist/index.mjs || exit 1
           test -f dist/index.d.ts || exit 1
-          cd ../sdk-react
+
+      - name: Verify SDK React build output
+        if: steps.packages.outputs.build_react == 'true'
+        run: |
+          cd packages/sdk-react
           ls -la dist/
           test -f dist/index.js || exit 1
+          test -f dist/index.mjs || exit 1
+          test -f dist/index.d.ts || exit 1
 
-      - name: Bump version (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          cd packages/sdk
-          npm version ${{ inputs.version }} --no-git-tag-version
-          echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-
-      - name: Get version from tag
+      - name: Get version from tag (SDK)
         if: startsWith(github.ref, 'refs/tags/sdk-v')
         run: |
           VERSION=${GITHUB_REF#refs/tags/sdk-v}
-          echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "SDK_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Get version from tag (SDK React)
+        if: startsWith(github.ref, 'refs/tags/sdk-react-v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/sdk-react-v}
+          echo "SDK_REACT_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Bump versions (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ inputs.package }}" == "sdk" ]] || [[ "${{ inputs.package }}" == "all" ]]; then
+            cd packages/sdk
+            npm version ${{ inputs.version }} --no-git-tag-version
+            echo "SDK_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+            cd ../..
+          fi
+
+          if [[ "${{ inputs.package }}" == "sdk-react" ]] || [[ "${{ inputs.package }}" == "all" ]]; then
+            cd packages/sdk-react
+            # Update peer dependency first if SDK was also bumped
+            if [[ "${{ inputs.package }}" == "all" ]]; then
+              SDK_VERSION=$(node -p "require('../sdk/package.json').version")
+              node -e "
+                const pkg = require('./package.json');
+                pkg.peerDependencies['@rockfridrich/villa-sdk'] = '^' + process.env.SDK_VERSION;
+                require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+              "
+            fi
+            npm version ${{ inputs.version }} --no-git-tag-version
+            echo "SDK_REACT_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+            cd ../..
+          fi
 
       # Trusted Publishing - no NPM_TOKEN needed!
       # Uses OIDC to authenticate with npm registry
       - name: Publish SDK to npm
+        if: steps.packages.outputs.publish_sdk == 'true'
         run: |
           cd packages/sdk
           npm publish --access public
 
       - name: Publish SDK React to npm
+        if: steps.packages.outputs.publish_react == 'true'
         run: |
           cd packages/sdk-react
           npm publish --access public
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          cd packages/sdk
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore(sdk): bump version to ${{ env.NEW_VERSION }}"
-          git tag "sdk-v${{ env.NEW_VERSION }}"
+
+          # Commit version changes
+          git add packages/*/package.json
+
+          COMMIT_MSG="chore(sdk): release"
+          RELEASE_NOTES=""
+
+          if [[ -n "${{ env.SDK_VERSION }}" ]]; then
+            COMMIT_MSG="$COMMIT_MSG @rockfridrich/villa-sdk@${{ env.SDK_VERSION }}"
+            RELEASE_NOTES="$RELEASE_NOTES\n- SDK Core: ${{ env.SDK_VERSION }}"
+            git tag "sdk-v${{ env.SDK_VERSION }}" -m "SDK release ${{ env.SDK_VERSION }}"
+          fi
+
+          if [[ -n "${{ env.SDK_REACT_VERSION }}" ]]; then
+            COMMIT_MSG="$COMMIT_MSG @rockfridrich/villa-sdk-react@${{ env.SDK_REACT_VERSION }}"
+            RELEASE_NOTES="$RELEASE_NOTES\n- SDK React: ${{ env.SDK_REACT_VERSION }}"
+            git tag "sdk-react-v${{ env.SDK_REACT_VERSION }}" -m "SDK React release ${{ env.SDK_REACT_VERSION }}"
+          fi
+
+          git commit -m "$COMMIT_MSG" -m "Released packages:$RELEASE_NOTES"
           git push origin main --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update compatibility matrix
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          # Update the compatibility documentation
+          CURRENT_DATE=$(date '+%Y-%m-%d')
+
+          # This could be enhanced to automatically update VERSION_COMPATIBILITY.md
+          # For now, we'll just output the information
+          echo "Released versions on $CURRENT_DATE:"
+          if [[ -n "${{ env.SDK_VERSION }}" ]]; then
+            echo "- @rockfridrich/villa-sdk@${{ env.SDK_VERSION }}"
+          fi
+          if [[ -n "${{ env.SDK_REACT_VERSION }}" ]]; then
+            echo "- @rockfridrich/villa-sdk-react@${{ env.SDK_REACT_VERSION }}"
+          fi

@@ -99,6 +99,22 @@ verify_service() {
   fi
 }
 
+verify_service_with_polling() {
+  local app=$1
+  local service_info=$(get_service_info "$app")
+  local domain=${service_info##*:}
+  
+  local health_path="/api/health"
+  if [ "$app" = "developers" ]; then
+    health_path="/"
+  fi
+  
+  local url="https://$domain$health_path"
+  local service_name="${app^}"
+  
+  poll_health "$url" 180 "$service_name" || true
+}
+
 if [ $# -lt 1 ]; then
   usage
 fi
@@ -123,18 +139,24 @@ if [ "$SERVICE" = "all" ]; then
   done
   
   echo "═══════════════════════════════════════════"
-  echo "Verifying deployments..."
+  echo "Verifying deployments with active polling..."
   echo "═══════════════════════════════════════════"
-  sleep 30
+  
+  SCRIPT_DIR="$(dirname "$0")"
+  source "$SCRIPT_DIR/utils/poll-health.sh"
+  
   for app in hub developers key; do
-    verify_service "$app" || true
+    verify_service_with_polling "$app"
   done
 else
   deploy_service "$SERVICE" "$WAIT"
   
   if [ "$WAIT" = "true" ]; then
-    echo "Verifying deployment..."
-    sleep 10
-    verify_service "$SERVICE"
+    echo "Verifying deployment with polling..."
+    
+    SCRIPT_DIR="$(dirname "$0")"
+    source "$SCRIPT_DIR/utils/poll-health.sh"
+    
+    verify_service_with_polling "$SERVICE"
   fi
 fi

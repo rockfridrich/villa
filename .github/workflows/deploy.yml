@@ -178,37 +178,22 @@ jobs:
         run: |
           echo "⏳ Railway deploys automatically on push to main"
           echo "   Project: https://railway.com/project/${{ env.RAILWAY_PROJECT_ID }}"
-          # Railway takes ~60-90s for first build, faster with cache
-          sleep 60
+          echo "   Will poll services until ready..."
 
-      # Parallel health checks for all services
+      # Parallel health checks for all services using active polling
       - name: Health check - All services
         run: |
-          check_health() {
-            local url=$1
-            local name=$2
-            for i in {1..20}; do
-              HEALTH=$(curl -sf "$url" 2>/dev/null || echo "")
-              if [ -n "$HEALTH" ]; then
-                echo "✅ $name healthy"
-                return 0
-              fi
-              echo "⏳ Waiting for $name... ($i/20)"
-              sleep 10
-            done
-            echo "⚠️ $name not responding yet"
-            return 1
-          }
-          
-          # Run health checks in parallel
-          check_health "https://construction.villa.cash/api/health" "Hub" &
+          source ./scripts/utils/poll-health.sh
+
+          # Run health checks in parallel with 240s timeout each (4 minutes)
+          poll_health "https://construction.villa.cash/api/health" 240 "Hub" &
           PID1=$!
-          check_health "https://docs.villa.cash/api/health" "Docs" &
+          poll_health "https://docs.villa.cash/api/health" 240 "Docs" &
           PID2=$!
-          
-          # Wait for all checks
-          wait $PID1 || true
-          wait $PID2 || true
+
+          # Wait for all checks to complete
+          wait $PID1 || echo "⚠️  Hub health check failed or timed out"
+          wait $PID2 || echo "⚠️  Docs health check failed or timed out"
 
       # Parallel CDN cache purge for all staging domains
       - name: Purge CloudFlare cache
@@ -264,36 +249,22 @@ jobs:
         run: |
           echo "⏳ Railway deploys automatically on tag push"
           echo "   Project: https://railway.com/project/${{ env.RAILWAY_PROJECT_ID }}"
-          sleep 90
+          echo "   Will poll services until ready..."
 
-      # Parallel health checks for all production services
+      # Parallel health checks for all production services using active polling
       - name: Health check - All services
         run: |
-          check_health() {
-            local url=$1
-            local name=$2
-            for i in {1..20}; do
-              HEALTH=$(curl -sf "$url" 2>/dev/null || echo "")
-              if [ -n "$HEALTH" ]; then
-                echo "✅ $name healthy"
-                return 0
-              fi
-              echo "⏳ Waiting for $name... ($i/20)"
-              sleep 10
-            done
-            echo "⚠️ $name not responding yet"
-            return 1
-          }
-          
-          # Run health checks in parallel
-          check_health "https://villa.cash/api/health" "Hub" &
+          source ./scripts/utils/poll-health.sh
+
+          # Run health checks in parallel with 300s timeout each (5 minutes for production)
+          poll_health "https://villa.cash/api/health" 300 "Hub" &
           PID1=$!
-          check_health "https://docs.villa.cash/api/health" "Docs" &
+          poll_health "https://docs.villa.cash/api/health" 300 "Docs" &
           PID2=$!
-          
-          # Wait for all checks
-          wait $PID1 || true
-          wait $PID2 || true
+
+          # Wait for all checks to complete
+          wait $PID1 || echo "⚠️  Hub health check failed or timed out"
+          wait $PID2 || echo "⚠️  Docs health check failed or timed out"
 
       # Purge all CDN caches in parallel
       - name: Purge CloudFlare cache

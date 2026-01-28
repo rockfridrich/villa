@@ -1,5 +1,6 @@
 "use client";
 
+import "@villa/ui";
 import { useSearchParams } from "next/navigation";
 import {
   useCallback,
@@ -267,12 +268,11 @@ function GlassLayout({
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFE047]/15 blur-[120px] pointer-events-none mix-blend-multiply" />
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#E3DACE]/20 blur-[100px] pointer-events-none mix-blend-multiply" />
 
-      {/* Glass Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative z-10 w-full max-w-[380px] bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_20px_40px_-10px_rgba(13,13,23,0.04)] rounded-[24px] p-6 flex flex-col items-center text-center ${className}`}
+        className={`glass-card glass-card-sdk glass-animate-in relative z-10 w-full max-w-[380px] p-6 flex flex-col items-center text-center ${className}`}
       >
         {children}
       </motion.div>

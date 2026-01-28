@@ -21,7 +21,7 @@
  * ```
  */
 
-import type { Identity, VillaConfig } from "./types";
+import type { Identity, VillaConfig, VillaSession } from "./types";
 import { VillaBridge } from "./iframe/bridge";
 import { createVillaConfigFromManifest } from "./config/runtime";
 import {
@@ -61,6 +61,15 @@ export interface SimpleProfile {
   nickname: string;
   avatar: string;
   address: `0x${string}`;
+  bio?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProfileUpdateData {
+  nickname?: string;
+  bio?: string;
+  avatar?: { style: string; seed: string };
 }
 
 interface VillaInstance {
@@ -84,6 +93,7 @@ let _config: VillaConfig = {
 let _user: VillaUser | null = null;
 let _listeners: Set<(user: VillaUser | null) => void> = new Set();
 let _initialized = false;
+let _currentSession: VillaSession | null = null;
 
 function identityToUser(identity: Identity): VillaUser {
   const avatarUrl = identity.avatar
@@ -316,6 +326,103 @@ async function uploadAvatar(file: File): Promise<string> {
   return avatarUrl;
 }
 
+async function updateProfile(data: ProfileUpdateData): Promise<SimpleProfile> {
+  init();
+
+  if (!_user) {
+    throw new Error("Must be signed in to update profile");
+  }
+
+  const updatePayload: any = { address: _user.address };
+
+  if (data.nickname) {
+    updatePayload.nickname = data.nickname;
+  }
+
+  if (data.bio) {
+    updatePayload.bio = data.bio;
+  }
+
+  if (data.avatar) {
+    updatePayload.avatar = data.avatar;
+  }
+
+  const response = await fetch(`${_config.apiUrl || API_URL}/api/profile`, {
+    method: "PATCH",
+    body: JSON.stringify(updatePayload),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update profile");
+  }
+
+  const responseData = await response.json();
+
+  if (data.nickname || data.avatar) {
+    const avatarUrl = responseData.avatar
+      ? `https://api.dicebear.com/7.x/${responseData.avatar.style}/svg?seed=${responseData.avatar.selection || responseData.avatar.seed}`
+      : _user.avatar;
+
+    _user = {
+      ..._user,
+      nickname: data.nickname || _user.nickname,
+      avatar: avatarUrl,
+    };
+
+    if (_currentSession) {
+      _currentSession.identity = {
+        ..._currentSession.identity,
+        nickname: _user.nickname,
+        avatar: data.avatar || _currentSession.identity.avatar,
+      };
+      saveSession(_currentSession);
+    }
+
+    notifyListeners();
+  }
+
+  return {
+    nickname: responseData.nickname || _user.nickname,
+    avatar: responseData.avatar
+      ? `https://api.dicebear.com/7.x/${responseData.avatar.style}/svg?seed=${responseData.avatar.selection || responseData.avatar.seed}`
+      : _user.avatar,
+    address: _user.address,
+    bio: responseData.bio,
+    createdAt: responseData.createdAt,
+    updatedAt: responseData.updatedAt,
+  };
+}
+
+const createInternalAPI = (): VillaInternalAPI => ({
+  getWallet: () => {
+    init();
+    return null;
+  },
+  getAddress: () => {
+    init();
+    return _user?.address || null;
+  },
+  getPrivateKey: () => {
+    init();
+    return null;
+  },
+  getSession: () => {
+    init();
+    return _currentSession;
+  },
+  getClient: () => {
+    init();
+    return null;
+  },
+  getRawIdentity: () => {
+    init();
+    return _currentSession?.identity || null;
+  },
+});
+
 export const villa: VillaInstance = {
   get user() {
     return getUser();
@@ -324,9 +431,11 @@ export const villa: VillaInstance = {
   signOut,
   settings: openSettings,
   getProfile,
+  updateProfile,
   uploadAvatar,
   onAuthChange,
   config: configure,
+  internal: createInternalAPI(),
 };
 
 export async function signInWithVilla(
