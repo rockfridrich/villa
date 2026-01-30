@@ -1,60 +1,74 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { ExternalLink, Circle, CheckCircle, Clock, AlertCircle, Layers } from 'lucide-react'
+import { useState, useEffect } from "react";
+import {
+  ExternalLink,
+  Circle,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Layers,
+} from "lucide-react";
+import { PageFooter } from "../../components/PageFooter";
 
 interface BeadsIssue {
-  id: string
-  title: string
-  status: 'open' | 'in_progress' | 'closed'
-  priority: number
-  type?: string
-  parent?: string
-  description?: string
-  labels?: string[]
+  id: string;
+  title: string;
+  status: "open" | "in_progress" | "closed";
+  priority: number;
+  type?: string;
+  parent?: string;
+  description?: string;
+  labels?: string[];
 }
 
 interface RoadmapData {
-  issues: BeadsIssue[]
-  epics: BeadsIssue[]
+  issues: BeadsIssue[];
+  epics: BeadsIssue[];
   stats: {
-    total: number
-    open: number
-    inProgress: number
-    closed: number
-  }
-  lastUpdated: string
+    total: number;
+    open: number;
+    inProgress: number;
+    closed: number;
+  };
+  lastUpdated: string;
 }
 
 const PRIORITY_DISPLAY: Record<number, { label: string; color: string }> = {
-  0: { label: 'P0', color: 'bg-red-500/10 text-red-600' },
-  1: { label: 'P1', color: 'bg-orange-500/10 text-orange-600' },
-  2: { label: 'P2', color: 'bg-accent-yellow/10 text-accent-yellow' },
-  3: { label: 'P3', color: 'bg-green-500/10 text-green-600' },
-  4: { label: 'P4', color: 'bg-ink/10 text-ink-muted' },
-}
+  0: { label: "P0", color: "bg-red-500/10 text-red-600" },
+  1: { label: "P1", color: "bg-orange-500/10 text-orange-600" },
+  2: { label: "P2", color: "bg-accent-yellow/10 text-accent-yellow" },
+  3: { label: "P3", color: "bg-green-500/10 text-green-600" },
+  4: { label: "P4", color: "bg-ink/10 text-ink-muted" },
+};
 
 const STATUS_CONFIG = {
-  open: { icon: Circle, label: 'To Do', color: 'border-ink/20' },
-  in_progress: { icon: Clock, label: 'In Progress', color: 'border-accent-yellow' },
-  closed: { icon: CheckCircle, label: 'Done', color: 'border-green-500' },
-}
+  open: { icon: Circle, label: "To Do", color: "border-ink/20" },
+  in_progress: {
+    icon: Clock,
+    label: "In Progress",
+    color: "border-accent-yellow",
+  },
+  closed: { icon: CheckCircle, label: "Done", color: "border-green-500" },
+};
 
 function PriorityBadge({ priority }: { priority: number }) {
-  const config = PRIORITY_DISPLAY[priority] || PRIORITY_DISPLAY[2]
+  const config = PRIORITY_DISPLAY[priority] || PRIORITY_DISPLAY[2];
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.color}`}>
       {config.label}
     </span>
-  )
+  );
 }
 
 function IssueCard({ issue }: { issue: BeadsIssue }) {
-  const statusConfig = STATUS_CONFIG[issue.status]
-  const StatusIcon = statusConfig.icon
+  const statusConfig = STATUS_CONFIG[issue.status];
+  const StatusIcon = statusConfig.icon;
 
   return (
-    <div className={`bg-cream-50 border-l-4 ${statusConfig.color} rounded-lg p-4 hover:shadow-md transition-shadow`}>
+    <div
+      className={`bg-cream-50 border-l-4 ${statusConfig.color} rounded-lg p-4 hover:shadow-md transition-shadow`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -63,7 +77,9 @@ function IssueCard({ issue }: { issue: BeadsIssue }) {
           </div>
           <h4 className="font-medium text-sm leading-tight">{issue.title}</h4>
           {issue.description && (
-            <p className="text-xs text-ink-muted mt-1 line-clamp-2">{issue.description}</p>
+            <p className="text-xs text-ink-muted mt-1 line-clamp-2">
+              {issue.description}
+            </p>
           )}
         </div>
         <PriorityBadge priority={issue.priority} />
@@ -71,25 +87,35 @@ function IssueCard({ issue }: { issue: BeadsIssue }) {
       {issue.labels && issue.labels.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {issue.labels.slice(0, 3).map((label) => (
-            <span key={label} className="px-1.5 py-0.5 bg-ink/5 rounded text-xs text-ink-muted">
+            <span
+              key={label}
+              className="px-1.5 py-0.5 bg-ink/5 rounded text-xs text-ink-muted"
+            >
               {label}
             </span>
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }
 
-function KanbanColumn({ title, issues, icon: Icon, accentColor }: {
-  title: string
-  issues: BeadsIssue[]
-  icon: typeof Circle
-  accentColor: string
+function KanbanColumn({
+  title,
+  issues,
+  icon: Icon,
+  accentColor,
+}: {
+  title: string;
+  issues: BeadsIssue[];
+  icon: typeof Circle;
+  accentColor: string;
 }) {
   return (
     <div className="flex-1 min-w-[280px]">
-      <div className={`flex items-center gap-2 mb-4 pb-2 border-b-2 ${accentColor}`}>
+      <div
+        className={`flex items-center gap-2 mb-4 pb-2 border-b-2 ${accentColor}`}
+      >
         <Icon className="w-5 h-5" />
         <h3 className="font-medium">{title}</h3>
         <span className="ml-auto text-sm text-ink-muted bg-ink/5 px-2 py-0.5 rounded-full">
@@ -102,19 +128,23 @@ function KanbanColumn({ title, issues, icon: Icon, accentColor }: {
             No tasks
           </div>
         ) : (
-          issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))
+          issues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
         )}
       </div>
     </div>
-  )
+  );
 }
 
-function EpicCard({ epic, childIssues }: { epic: BeadsIssue; childIssues: BeadsIssue[] }) {
-  const closed = childIssues.filter(i => i.status === 'closed').length
-  const total = childIssues.length
-  const progress = total > 0 ? Math.round((closed / total) * 100) : 0
+function EpicCard({
+  epic,
+  childIssues,
+}: {
+  epic: BeadsIssue;
+  childIssues: BeadsIssue[];
+}) {
+  const closed = childIssues.filter((i) => i.status === "closed").length;
+  const total = childIssues.length;
+  const progress = total > 0 ? Math.round((closed / total) * 100) : 0;
 
   return (
     <div className="bg-cream-50 border border-ink/5 rounded-xl p-6">
@@ -132,7 +162,9 @@ function EpicCard({ epic, childIssues }: { epic: BeadsIssue; childIssues: BeadsI
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold">{progress}%</div>
-          <div className="text-xs text-ink-muted">{closed}/{total} tasks</div>
+          <div className="text-xs text-ink-muted">
+            {closed}/{total} tasks
+          </div>
         </div>
       </div>
       <div className="mt-4">
@@ -144,47 +176,56 @@ function EpicCard({ epic, childIssues }: { epic: BeadsIssue; childIssues: BeadsI
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function StatCard({ value, label, icon: Icon }: { value: number; label: string; icon: typeof Circle }) {
+function StatCard({
+  value,
+  label,
+  icon: Icon,
+}: {
+  value: number;
+  label: string;
+  icon: typeof Circle;
+}) {
   return (
     <div className="bg-cream-50 border border-ink/5 rounded-xl p-4 text-center">
       <Icon className="w-6 h-6 mx-auto text-ink-muted mb-2" />
       <div className="text-2xl font-bold">{value}</div>
       <div className="text-xs text-ink-muted">{label}</div>
     </div>
-  )
+  );
 }
 
 export default function RoadmapPage() {
-  const [data, setData] = useState<RoadmapData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<RoadmapData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadRoadmap() {
       try {
-        const res = await fetch('/api/roadmap')
+        const res = await fetch("/api/roadmap");
         if (res.ok) {
-          const roadmapData = await res.json()
-          setData(roadmapData)
+          const roadmapData = await res.json();
+          setData(roadmapData);
         } else {
-          setError('Could not load roadmap')
+          setError("Could not load roadmap");
         }
       } catch {
-        setError('Could not load roadmap')
+        setError("Could not load roadmap");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadRoadmap()
-  }, [])
+    loadRoadmap();
+  }, []);
 
-  const openIssues = data?.issues.filter(i => i.status === 'open') || []
-  const inProgressIssues = data?.issues.filter(i => i.status === 'in_progress') || []
-  const closedIssues = data?.issues.filter(i => i.status === 'closed') || []
+  const openIssues = data?.issues.filter((i) => i.status === "open") || [];
+  const inProgressIssues =
+    data?.issues.filter((i) => i.status === "in_progress") || [];
+  const closedIssues = data?.issues.filter((i) => i.status === "closed") || [];
 
   return (
     <div className="min-h-screen py-20">
@@ -193,7 +234,7 @@ export default function RoadmapPage() {
         <div className="text-center space-y-4">
           <h1 className="font-serif text-5xl tracking-tight">Roadmap</h1>
           <p className="text-xl text-ink-muted max-w-xl mx-auto">
-            Real-time view of what we&apos;re building. Powered by{' '}
+            Real-time view of what we&apos;re building. Powered by{" "}
             <a
               href="https://github.com/steveyegge/beads"
               target="_blank"
@@ -233,24 +274,42 @@ export default function RoadmapPage() {
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={Layers} label="Total Tasks" value={data.stats.total} />
+              <StatCard
+                icon={Layers}
+                label="Total Tasks"
+                value={data.stats.total}
+              />
               <StatCard icon={Circle} label="To Do" value={data.stats.open} />
-              <StatCard icon={Clock} label="In Progress" value={data.stats.inProgress} />
-              <StatCard icon={CheckCircle} label="Done" value={data.stats.closed} />
+              <StatCard
+                icon={Clock}
+                label="In Progress"
+                value={data.stats.inProgress}
+              />
+              <StatCard
+                icon={CheckCircle}
+                label="Done"
+                value={data.stats.closed}
+              />
             </div>
 
             {/* Epics */}
             {data.epics.length > 0 && (
               <div className="space-y-6">
-                <h2 className="font-serif text-2xl text-center">Active Epics</h2>
+                <h2 className="font-serif text-2xl text-center">
+                  Active Epics
+                </h2>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {data.epics.filter(e => e.status !== 'closed').map((epic) => (
-                    <EpicCard
-                      key={epic.id}
-                      epic={epic}
-                      childIssues={data.issues.filter(i => i.parent === epic.id)}
-                    />
-                  ))}
+                  {data.epics
+                    .filter((e) => e.status !== "closed")
+                    .map((epic) => (
+                      <EpicCard
+                        key={epic.id}
+                        epic={epic}
+                        childIssues={data.issues.filter(
+                          (i) => i.parent === epic.id,
+                        )}
+                      />
+                    ))}
                 </div>
               </div>
             )}
@@ -306,6 +365,7 @@ export default function RoadmapPage() {
           </>
         )}
       </div>
+      <PageFooter />
     </div>
-  )
+  );
 }

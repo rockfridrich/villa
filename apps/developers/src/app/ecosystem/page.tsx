@@ -14,6 +14,7 @@ import {
   Zap,
   TrendingUp,
 } from "lucide-react";
+import { PageFooter } from "../../components/PageFooter";
 
 interface ShowcaseApp {
   name: string;
@@ -700,6 +701,7 @@ import { VillaAuth } from '@rockfridrich/villa-sdk-react'
           </div>
         </div>
       </div>
+      <PageFooter />
     </div>
   );
 }
