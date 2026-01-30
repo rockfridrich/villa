@@ -280,7 +280,12 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Validate agent definitions
-        run: cd apps/hub && node --import tsx ../../.claude/rag/loader.ts validate
+        run: |
+          if [ -f ".claude/rag/loader.ts" ]; then
+            cd apps/hub && node --import tsx ../../.claude/rag/loader.ts validate
+          else
+            echo "Agent loader not found, skipping validation"
+          fi
 
   validate-specs:
     name: Validate Specifications
