@@ -129,6 +129,7 @@ curl -s https://beta.villa.cash/api/health | jq .timestamp
 2. Validate all user input with Zod
 3. No secrets in code — use env vars
 4. Sanitize display names (XSS)
+5. Smart contracts: Use [Trail of Bits Claude Code skills](https://github.com/trailofbits/skills) for AI-assisted security analysis (see `contracts/CLAUDE.md`)
 
 ---
 

@@ -276,8 +276,8 @@ function CustomAuthButton() {
 **For standalone use:** Replace with NPM versions:
 ```json
 {
-  "@rockfridrich/villa-sdk": "^0.3.0-beta.1",
-  "@rockfridrich/villa-sdk-react": "^0.3.0-beta.1"
+  "@rockfridrich/villa-sdk": "^0.3.0-rc.1.1",
+  "@rockfridrich/villa-sdk-react": "^0.3.0-rc.1.1"
 }
 ```
 
