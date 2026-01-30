@@ -11,6 +11,7 @@ import {
   Database,
   ChevronRight,
 } from "lucide-react";
+import { PageFooter } from "../../components/PageFooter";
 
 export default function ArchitecturePage() {
   return (
@@ -217,6 +218,7 @@ export default function ArchitecturePage() {
           </div>
         </section>
       </div>
+      <PageFooter />
     </div>
   );
 }

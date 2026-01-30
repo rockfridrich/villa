@@ -2,6 +2,7 @@
 
 import { ExternalLink, Code2 } from "lucide-react";
 import { CodeBlock } from "../../components/code";
+import { PageFooter } from "../../components/PageFooter";
 
 interface ExampleCard {
   title: string;
@@ -397,6 +398,7 @@ export default function ExamplesPage() {
           </a>
         </div>
       </div>
+      <PageFooter />
     </div>
   );
 }
