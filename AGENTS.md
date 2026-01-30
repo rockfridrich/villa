@@ -1,16 +1,13 @@
 # Villa AI Agents
 
-> **TL;DR**: Multi-platform agent system - Claude Code orchestrates, OpenCode/Replit execute.
+> **TL;DR**: Multi-platform agent system. Claude Code orchestrates, OpenCode executes.
 
 ## Quick Reference
 
 | Platform | Role | When to Use |
 |----------|------|-------------|
 | **Claude Code** | Primary orchestrator | Architecture, cross-service, SDK, security |
-| **OpenCode (Sisyphus)** | Background workers | Search, research, large context (1M) |
-| **Replit Agents** | Service-specific | Hub/Key/Docs UI, hot reload, isolation |
-
-**Coordination doc:** `AGENT_COORDINATION.md`
+| **OpenCode** | Implementation workers | Search, build, test, review, fix |
 
 ---
 
@@ -18,50 +15,37 @@
 
 ```
 User Request
-     │
-     ├─ "find/search/where" ──────▶ OpenCode (@explore, Gemini)
-     │
-     ├─ "research/latest/docs" ───▶ OpenCode (Grok, real-time web)
-     │
-     ├─ Service-specific UI ──────▶ Replit (hub/key/docs agents)
-     │
-     ├─ Cross-service/SDK ────────▶ Claude Code (full context)
-     │
-     ├─ Architecture/Spec ────────▶ Claude Code (Opus)
-     │
-     └─ Security-critical ────────▶ Claude Code (review required)
+     |
+     +- "find/search/where" ----> OpenCode (@explore, Gemini Flash)
+     |
+     +- "quick fix/typo/type" --> OpenCode (@fix, Haiku)
+     |
+     +- "run tests" -----------> OpenCode (@test, Haiku)
+     |
+     +- "implement/build" -----> OpenCode (@build, Sonnet 4.5)
+     |
+     +- "review code" ---------> OpenCode (@review, Gemini Pro)
+     |
+     +- Cross-service/SDK -----> Claude Code (full context)
+     |
+     +- Architecture/Spec -----> Claude Code (Opus)
+     |
+     +- Security-critical -----> Claude Code (review required)
 ```
 
 ---
 
-## Multi-LLM Routing
+## OpenCode Agent Models
 
-See `.opencode/llm-router.json` for full config.
+| Agent | Model | Cost/1M tok | Use For |
+|-------|-------|-------------|---------|
+| @explore | Gemini 2.5 Flash | ~$0.08 | Search, read files (READ-ONLY) |
+| @fix | Claude Haiku 3.5 | ~$0.25 | Quick fixes, 1-3 files |
+| @test | Claude Haiku 3.5 | ~$0.25 | Run tests, report results |
+| @build | Claude Sonnet 4.5 | ~$3.00 | Implementation |
+| @review | Gemini 2.5 Pro | ~$3.00 | Code review, security |
 
-| Task | Primary LLM | Cost | Rationale |
-|------|-------------|------|-----------|
-| Search/Explore | Gemini Flash | $0.075/1M | 1M context, fastest |
-| Test/Git/Deploy | Haiku | $0.25/1M | Deterministic tasks |
-| Implementation | Sonnet | $3/1M | Best code quality |
-| Code Review | GPT-4o | $2.50/1M | Alternative perspective |
-| Research | Grok | $5/1M | Real-time web access |
-| Architecture | Opus | $15/1M | Deep reasoning |
-| Quick fixes | DeepSeek R1 | $0.55/1M | Fast, cheap |
-
-**Daily Budget:** $50 total ($30 Claude Code, $10 OpenCode, $10 Replit)
-
----
-
-## Replit Services
-
-Each service has dedicated Replit agent with `.replit` config:
-
-| Service | Domain | Branch Pattern | Focus |
-|---------|--------|----------------|-------|
-| Hub | villa.cash | `replit/hub-*` | Auth, API, profiles |
-| Key | key.villa.cash | `replit/key-*` | Passkeys, WebAuthn |
-| Docs | docs.villa.cash | `replit/docs-*` | SDK docs, playground |
-| SDK | npm package | `replit/sdk-*` | Core library (review-only) |
+**Routing rule:** Use cheapest capable agent. Search before building.
 
 ---
 
@@ -69,21 +53,16 @@ Each service has dedicated Replit agent with `.replit` config:
 
 ### Claude Code
 ```bash
-cat .claude/BOOT.md           # Load boot protocol
+# Boot protocol loaded automatically from .claude/BOOT.md
 ./scripts/doctor.sh           # Check environment
 bd ready                      # Find available work
 ```
 
 ### OpenCode
 ```bash
-cat .opencode/BOOT.md         # Load boot protocol
-cat .opencode/llm-router.json # Check LLM assignments
+# Boot protocol loaded automatically from .opencode/BOOT.md
 bd ready                      # Find available work
 ```
-
-### Replit
-- Each `.replit` file has `[agent].systemPrompt` with service-specific context
-- Check `bd ready` for assigned tasks
 
 ---
 
@@ -91,8 +70,7 @@ bd ready                      # Find available work
 
 ### Claim Task
 ```bash
-bd update beads-xxx --status=in_progress --assignee=<platform>
-# claude-code | opencode | replit-hub | replit-key | replit-docs | replit-sdk
+bd update beads-xxx --status=in_progress
 ```
 
 ### Complete Task
@@ -103,37 +81,35 @@ bd sync --flush-only
 
 ### Handoff Between Platforms
 ```bash
-bd update beads-xxx --assignee=<new-platform> --notes="Handoff: <reason>"
+bd update beads-xxx --notes="Handoff: <reason>"
 ```
 
 ---
 
-## Emergency Escalation
+## Escalation
 
 | Stuck On | Escalate To | Why |
 |----------|-------------|-----|
-| Haiku task | Sonnet | More capable |
-| Sonnet task | GPT-4o or Opus | Different perspective |
-| Replit stuck | Claude Code | Full monorepo context |
+| @fix task | @build | More capable |
+| @build task | Claude Code | Full context, architecture |
 | OpenCode stuck | Claude Code | Can debug agents |
-| Architecture unclear | Opus + o1-preview | Deep reasoning |
+| Architecture unclear | Claude Code (Opus) | Deep reasoning |
 
-**Two-Strike Rule:** Same failure 2x → STOP, switch platform or LLM.
+**Two-Strike Rule:** Same failure 2x -> STOP, escalate.
 
 ---
 
 ## Cost Optimization
 
-### DO
+### Do
 - Use Gemini Flash for search (not Haiku or Sonnet)
-- Use Grok for real-time research
-- Use GPT-4o for code review (catches different issues)
-- Reserve Opus for architecture only
+- Use @fix for 1-3 file changes (12x cheaper than @build)
+- Reserve Claude Code (Opus) for architecture only
 
-### DON'T
-- Use Opus for file searches (60x more expensive)
-- Use Sonnet for tests (12x more expensive than Haiku)
-- Push without `bun verify` (CI rejection costs tokens)
+### Don't
+- Use @build for file searches (40x more expensive than @explore)
+- Use @build for tests (12x more expensive than @test)
+- Push without `bun verify` (CI rejection wastes tokens)
 
 ---
 
@@ -141,6 +117,5 @@ bd update beads-xxx --assignee=<new-platform> --notes="Handoff: <reason>"
 
 - `.claude/BOOT.md` - Claude Code session boot
 - `.opencode/BOOT.md` - OpenCode session boot
-- `.opencode/llm-router.json` - LLM routing config
-- `AGENT_COORDINATION.md` - Full multi-platform docs
-- `.replit` files - Replit agent prompts
+- `.opencode/agents/` - Agent prompt files
+- `.opencode/OPENCODE.md` - Master protocol (all agents follow)

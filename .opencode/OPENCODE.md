@@ -350,20 +350,15 @@ sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
 
 ## AGENT ROUTING
 
-| Agent         | Model  | Cost     | Use For                   |
-| ------------- | ------ | -------- | ------------------------- |
-| @explore      | haiku  | $0.25/1M | Search, read files        |
-| @test         | haiku  | $0.25/1M | Run tests                 |
-| @ops          | haiku  | $0.25/1M | Git, deploy, CI           |
-| @build        | sonnet | $3/1M    | Implementation            |
-| @design       | sonnet | $3/1M    | UI/UX (delegate frontend) |
-| @review       | sonnet | $3/1M    | Code review               |
-| @quality-gate | sonnet | $3/1M    | Validation                |
-| @spec         | opus   | $15/1M   | Architecture              |
+| Agent | Model | Cost/1M tok | Use For |
+|-------|-------|-------------|---------|
+| @explore | Gemini 2.5 Flash | ~$0.08 | Search, read files (READ-ONLY) |
+| @fix | Claude Haiku 3.5 | ~$0.25 | Quick fixes, 1-3 files |
+| @test | Claude Haiku 3.5 | ~$0.25 | Run tests, report results |
+| @build | Claude Sonnet 4.5 | ~$3.00 | Implementation |
+| @review | Gemini 2.5 Pro | ~$3.00 | Code review, security |
 
-**⚠️ Oracle/Opus is 60x more expensive than explore/haiku!**
-
-**Cost tracking:** `./scripts/session-costs.sh full 60 medium`
+**Route cheap first:** @explore -> @fix -> @test -> @build -> @review
 
 **Rule:** Use scripts over repetitive AI code. If a task can be scripted, it should be.
 

@@ -165,15 +165,15 @@ curl -s https://beta.villa.cash/api/health | jq .timestamp
 
 Agent routing is managed by OpenCode (see `.opencode/BOOT.md`). Five agents:
 
-| Agent | Role |
-|-------|------|
-| @explore | Fast codebase search (read-only, cheapest) |
-| @fix | Quick fixes, 1-3 files |
-| @test | Run tests, report results |
-| @build | Full implementation |
-| @review | Code review, security audit |
+| Agent | Model | Cost/1M tok | Role |
+|-------|-------|-------------|------|
+| @explore | Gemini 2.5 Flash | ~$0.08 | Fast codebase search (READ-ONLY) |
+| @fix | Claude Haiku 3.5 | ~$0.25 | Quick fixes, 1-3 files |
+| @test | Claude Haiku 3.5 | ~$0.25 | Run tests, report results |
+| @build | Claude Sonnet 4.5 | ~$3.00 | Full implementation |
+| @review | Gemini 2.5 Pro | ~$3.00 | Code review, security audit |
 
-**Routing principle:** Use the cheapest agent that can handle the task. Search before building.
+**Routing:** Use cheapest capable agent. @explore -> @fix -> @test -> @build -> @review.
 
 ---
 
