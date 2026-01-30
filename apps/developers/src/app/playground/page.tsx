@@ -777,7 +777,7 @@ export default function PlaygroundPage() {
 
               <div
                 ref={outputRef}
-                className="h-[500px] overflow-y-auto bg-[#1e1e1e] text-white font-mono text-sm"
+                className="h-[500px] overflow-y-auto bg-ink text-cream-50 font-mono text-sm"
               >
                 {output.length === 0 ? (
                   <div className="p-4 text-white/40 text-center">

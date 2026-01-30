@@ -72,7 +72,7 @@ export function Search() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-500 bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink-muted bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
       >
         <svg
           className="w-4 h-4"
@@ -88,7 +88,7 @@ export function Search() {
           />
         </svg>
         <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden sm:inline px-1.5 py-0.5 text-xs bg-zinc-200 dark:bg-zinc-700 rounded">
+        <kbd className="hidden sm:inline px-1.5 py-0.5 text-xs bg-neutral-100 rounded">
           ⌘K
         </kbd>
       </button>
@@ -101,10 +101,10 @@ export function Search() {
           />
 
           <div className="relative min-h-screen flex items-start justify-center pt-[15vh] px-4">
-            <div className="relative w-full max-w-xl bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
+            <div className="relative w-full max-w-xl bg-cream-50 rounded-xl shadow-2xl border border-ink/10">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-ink/10">
                 <svg
-                  className="w-5 h-5 text-zinc-400"
+                  className="w-5 h-5 text-ink-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -122,9 +122,9 @@ export function Search() {
                   value={query}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search documentation..."
-                  className="flex-1 bg-transparent text-zinc-900 dark:text-white placeholder-zinc-400 outline-none"
+                  className="flex-1 bg-transparent text-ink placeholder-ink-muted outline-none"
                 />
-                <kbd className="px-2 py-1 text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded">
+                <kbd className="px-2 py-1 text-xs text-ink-muted bg-neutral-50 rounded">
                   ESC
                 </kbd>
               </div>
@@ -136,21 +136,17 @@ export function Search() {
                       <a
                         href={result.url}
                         onClick={() => setIsOpen(false)}
-                        className={`block px-4 py-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-                          i === selectedIndex
-                            ? "bg-zinc-100 dark:bg-zinc-800"
-                            : ""
+                        className={`block px-4 py-3 hover:bg-cream-100 ${
+                          i === selectedIndex ? "bg-cream-100" : ""
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                          <span className="text-xs font-medium text-accent-yellow">
                             {result.section}
                           </span>
                         </div>
-                        <h3 className="font-medium text-zinc-900 dark:text-white">
-                          {result.title}
-                        </h3>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                        <h3 className="font-medium text-ink">{result.title}</h3>
+                        <p className="text-sm text-ink-muted line-clamp-2">
                           {result.snippet}
                         </p>
                       </a>
@@ -160,7 +156,7 @@ export function Search() {
               )}
 
               {query && results.length === 0 && (
-                <div className="px-4 py-8 text-center text-zinc-500">
+                <div className="px-4 py-8 text-center text-ink-muted">
                   <p>No results found for &ldquo;{query}&rdquo;</p>
                   <p className="mt-2 text-sm">
                     Try searching for &ldquo;signIn&rdquo;, &ldquo;React&rdquo;,
@@ -170,22 +166,22 @@ export function Search() {
               )}
 
               {!query && (
-                <div className="px-4 py-6 text-center text-zinc-500">
+                <div className="px-4 py-6 text-center text-ink-muted">
                   <p className="text-sm">
                     Type to search documentation, API reference, and guides
                   </p>
                   <div className="mt-4 flex items-center justify-center gap-4 text-xs">
                     <span>
-                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded">
+                      <kbd className="px-1.5 py-0.5 bg-neutral-50 rounded">
                         ↑
                       </kbd>
-                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded ml-1">
+                      <kbd className="px-1.5 py-0.5 bg-neutral-50 rounded ml-1">
                         ↓
                       </kbd>{" "}
                       to navigate
                     </span>
                     <span>
-                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded">
+                      <kbd className="px-1.5 py-0.5 bg-neutral-50 rounded">
                         ↵
                       </kbd>{" "}
                       to select
