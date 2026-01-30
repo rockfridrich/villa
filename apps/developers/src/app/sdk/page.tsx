@@ -2,6 +2,7 @@
 
 import { ExternalLink, Package, BookOpen, Code2, Zap } from "lucide-react";
 import { CodeBlock, CopyButton } from "../../components/code";
+import { PropsTable, type PropRow } from "../../components/ui";
 
 interface TypeReference {
   name: string;
@@ -80,7 +81,7 @@ interface AvatarConfig {
 interface ComponentAPI {
   name: string;
   description: string;
-  props: Array<{ name: string; type: string; description: string }>;
+  props: PropRow[];
   example: string;
 }
 
@@ -203,8 +204,7 @@ export default function SDKPage() {
         </div>
       </section>
 
-      {/* Core Packages */}
-      <section className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
+      <section id="packages" className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Packages</h2>
@@ -265,8 +265,7 @@ export default function SDKPage() {
         </div>
       </section>
 
-      {/* Quick Start */}
-      <section className="mb-20">
+      <section id="quick-start" className="mb-20">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Quick Start</h2>
@@ -315,8 +314,7 @@ if (result.success) {
         </div>
       </section>
 
-      {/* Core API */}
-      <section className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
+      <section id="core-api" className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Core API</h2>
@@ -408,8 +406,7 @@ await villa.reverseEns(addr)  // address -> name`}
         </div>
       </section>
 
-      {/* Type Definitions */}
-      <section className="mb-20">
+      <section id="types" className="mb-20">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Type Definitions</h2>
@@ -434,8 +431,10 @@ await villa.reverseEns(addr)  // address -> name`}
         </div>
       </section>
 
-      {/* React Components */}
-      <section className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
+      <section
+        id="react-components"
+        className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6"
+      >
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">React Components</h2>
@@ -454,36 +453,7 @@ await villa.reverseEns(addr)  // address -> name`}
                   </p>
                 </div>
 
-                {/* Props Table */}
-                <div className="bg-cream-50 border border-ink/5 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-ink/5 bg-cream-100">
-                        <th className="text-left p-3 font-medium">Prop</th>
-                        <th className="text-left p-3 font-medium">Type</th>
-                        <th className="text-left p-3 font-medium">
-                          Description
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {component.props.map((prop) => (
-                        <tr
-                          key={prop.name}
-                          className="border-b border-ink/5 last:border-0"
-                        >
-                          <td className="p-3 font-mono text-accent-yellow">
-                            {prop.name}
-                          </td>
-                          <td className="p-3 font-mono text-xs">{prop.type}</td>
-                          <td className="p-3 text-ink-muted">
-                            {prop.description}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <PropsTable props={component.props} />
 
                 {/* Example */}
                 <div className="space-y-2">
@@ -496,8 +466,7 @@ await villa.reverseEns(addr)  // address -> name`}
         </div>
       </section>
 
-      {/* Advanced: VillaBridge */}
-      <section className="mb-20">
+      <section id="villa-bridge" className="mb-20">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-ink/5 rounded-full text-sm font-medium">
@@ -568,8 +537,7 @@ bridge.isOpen()    // boolean`}
         </div>
       </section>
 
-      {/* Contract Addresses */}
-      <section className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
+      <section id="contracts" className="mb-20 bg-ink/[0.02] py-16 -mx-6 px-6">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h2 className="font-serif text-3xl">Contract Addresses</h2>
