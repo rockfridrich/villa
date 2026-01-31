@@ -27,6 +27,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
+# Bun's node_modules layout breaks Next.js file tracer — copy runtime deps explicitly
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/next ./node_modules/next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react ./node_modules/react
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react-dom ./node_modules/react-dom
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
 
 RUN mkdir -p ./public

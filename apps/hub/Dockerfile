@@ -49,8 +49,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
-# Debug: verify standalone output structure
-RUN ls -la . && echo "--- node_modules ---" && ls node_modules/ 2>/dev/null || echo "NO node_modules" && echo "--- server.js ---" && ls -la server.js 2>/dev/null || echo "NO server.js at root" && echo "--- apps/hub ---" && ls apps/hub/ 2>/dev/null || echo "NO apps/hub dir"
+# Bun's node_modules layout breaks Next.js file tracer — copy runtime deps explicitly
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/next ./node_modules/next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react ./node_modules/react
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react-dom ./node_modules/react-dom
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
 
