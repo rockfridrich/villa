@@ -1,33 +1,13 @@
 # Villa Hub — villa.cash
 # GitHub sync: Railway auto-deploys on push to main
 
-FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Copy workspace root + all package.jsons for dependency resolution
-COPY package.json bun.lock turbo.json ./
-COPY apps/hub/package.json ./apps/hub/
-COPY apps/key/package.json ./apps/key/
-COPY apps/developers/package.json ./apps/developers/
-COPY apps/api/package.json ./apps/api/
-COPY packages/sdk/package.json ./packages/sdk/
-COPY packages/sdk-react/package.json ./packages/sdk-react/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/config/package.json ./packages/config/
-COPY contracts/package.json ./contracts/
-
-RUN bun install
-
 FROM oven/bun:1-alpine AS builder
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs npm libc6-compat
 WORKDIR /app
 
-# Copy all source first, then node_modules on top.
-# Bun workspaces use symlinks — Docker COPY dereferences them,
-# so we re-run bun install to recreate workspace links with full source.
+# Copy everything and install deps in one stage
+# Bun workspace symlinks don't survive Docker COPY between stages
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules/
 RUN bun install
 
 ENV NEXT_TELEMETRY_DISABLED=1
