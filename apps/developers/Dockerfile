@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.4
 # Villa Developers — docs.villa.cash
 # GitHub sync: Railway auto-deploys on push to main
 
@@ -17,8 +16,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 COPY contracts/package.json ./contracts/
 
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
