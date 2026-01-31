@@ -1,11 +1,16 @@
+# Villa Hub — villa.cash
+# Builder: Railpack (zero-config)
+# Fallback: rename Dockerfile.backup → Dockerfile, change builder → "dockerfile"
+
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+builder = "railpack"
+buildCommand = "bun turbo run build --filter=@villa/hub"
+watchPatterns = ["apps/hub/**", "packages/**", "turbo.json", "package.json", "bun.lock"]
 
 [deploy]
 healthcheckPath = "/api/health"
 healthcheckTimeout = 45
-startCommand = "node server.js"
+startCommand = "node apps/hub/.next/standalone/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 numReplicas = 1

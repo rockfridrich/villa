@@ -39,14 +39,25 @@ jobs:
       - name: Get service IDs
         id: services
         run: |
+          RAILWAY_API="https://backboard.railway.app/graphql/v2"
+
+          get_service_id() {
+            local name="$1"
+            curl -sf -X POST "$RAILWAY_API" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": \"query { project(id: \\\"$PROJECT_ID\\\") { services { edges { node { id name } } } } }\"}" \
+              | jq -r ".data.project.services.edges[] | select(.node.name == \"$name\") | .node.id"
+          }
+
           if [ "${{ inputs.service }}" = "villa-developers" ] || [ "${{ inputs.service }}" = "all" ]; then
-            echo "developers_id=afc99a53-eb94-45ff-b018-8fc29b8cc84a" >> $GITHUB_OUTPUT
+            echo "developers_id=$(get_service_id 'villa-developers')" >> $GITHUB_OUTPUT
           fi
           if [ "${{ inputs.service }}" = "villa-production" ] || [ "${{ inputs.service }}" = "all" ]; then
-            echo "production_id=<production-service-id>" >> $GITHUB_OUTPUT
+            echo "production_id=$(get_service_id 'villa-staging')" >> $GITHUB_OUTPUT
           fi
           if [ "${{ inputs.service }}" = "villa-key" ] || [ "${{ inputs.service }}" = "all" ]; then
-            echo "key_id=<key-service-id>" >> $GITHUB_OUTPUT
+            echo "key_id=$(get_service_id 'villa-key-staging')" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup CDN variables for villa-developers
@@ -55,16 +66,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
-          SERVICE_ID="afc99a53-eb94-45ff-b018-8fc29b8cc84a"
+          SERVICE_ID="${{ steps.services.outputs.developers_id }}"
           REVALIDATE_TOKEN="${{ steps.token.outputs.token }}"
-          
+
           echo "🔧 Setting up CDN environment variables for villa-developers..."
           
           set_var() {
             local name="$1"
             local value="$2"
             
-            RESULT=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+            RESULT=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
               -H "Authorization: Bearer $RAILWAY_TOKEN" \
               -H "Content-Type: application/json" \
               -d "{
@@ -94,11 +105,11 @@ jobs:
       - name: List variables
         if: inputs.action == 'list-vars'
         run: |
-          SERVICE_ID="afc99a53-eb94-45ff-b018-8fc29b8cc84a"
-          
+          SERVICE_ID="${{ steps.services.outputs.developers_id }}"
+
           echo "📋 Listing environment variables for ${{ inputs.service }}..."
           
-          RESULT=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+          RESULT=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{

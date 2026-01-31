@@ -42,15 +42,16 @@ This checks all services, CI status, and recent deployments. Use this output to 
 
 ### Service Architecture
 
-| Service | Railway Name | Production | Staging | Dockerfile |
-|---------|-------------|------------|---------|------------|
-| Hub | villa-production | villa.cash | construction.villa.cash | Dockerfile (root) |
-| Key | villa-key | key.villa.cash | fake-key.villa.cash | apps/key/Dockerfile |
-| Docs | villa-developers | docs.villa.cash | developers.villa.cash | apps/developers/Dockerfile |
-| API | api | api-production-2f42.up.railway.app | — | apps/api/Dockerfile |
+| Service | Railway Name | Production | Staging | Builder |
+|---------|-------------|------------|---------|---------|
+| Hub | villa-staging | villa.cash | construction.villa.cash | Railpack |
+| Key | villa-key-staging | key.villa.cash | fake-key.villa.cash | Railpack |
+| Docs | villa-developers | docs.villa.cash | developers.villa.cash | Railpack |
 | DB | Postgres | Internal only | Internal only | postgres:17-alpine |
 
-**Docs Service ID:** `afc99a53-eb94-45ff-b018-8fc29b8cc84a`
+**Builder:** Railpack (zero-config, successor to Nixpacks). Config in `apps/*/railway.toml`.
+**Fallback:** Each app has `Dockerfile.backup` — rename to `Dockerfile` and change `builder = "dockerfile"` in railway.toml.
+**Service IDs:** Discovered dynamically via Railway GraphQL API (no hardcoded IDs).
 
 ### Deployment Flow
 
@@ -203,9 +204,36 @@ bun verify
 }
 ```
 
-**Cause:** `BUILD_TIME` Docker ARG not passed by Railway.
+**Cause:** `NEXT_PUBLIC_BUILD_TIME` env var not set at build time.
 
-**Fix:** Check Railway service settings → Build Args → Ensure `BUILD_TIME` is set to `$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+**Fix:** Ensure `NEXT_PUBLIC_BUILD_TIME` is set in Railway service env vars. Railway makes all env vars available at build time by default.
+
+#### 6. Railpack Build Fails — Bun Not Detected
+
+**Error:**
+```
+Could not detect package manager
+```
+
+**Cause:** Railpack fails to detect Bun in monorepo setup (known issue with workspace resolution).
+
+**Fix:**
+1. Set env var: `RAILPACK_INSTALL_COMMAND=bun install --frozen-lockfile`
+2. If still failing, revert to Dockerfile: rename `Dockerfile.backup` → `Dockerfile`, set `builder = "dockerfile"` in `railway.toml`
+
+#### 7. Railpack Build Fails — Next.js Standalone Not Found
+
+**Error:**
+```
+Cannot find module 'server.js'
+```
+
+**Cause:** `output: "standalone"` missing from Next.js config, or wrong `startCommand` path.
+
+**Fix:**
+1. Verify `next.config.js` has `output: "standalone"`
+2. Check `startCommand` in `railway.toml` matches: `node apps/<app>/.next/standalone/server.js`
+3. Build locally with `bun turbo run build --filter=@villa/<app>` and verify the path exists
 
 ### Runtime Errors
 
@@ -520,15 +548,15 @@ When investigating issues, work through this checklist:
 
 ## Cost Optimization
 
-**Railway costs ~$30/month:**
-- 3 Next.js services (Hub, Key, Docs)
+**Railway costs ~$25/month:**
+- 3 Next.js services (Hub, Key, Docs) — Railpack builder
 - 1 Postgres database
-- 1 unused API service (consider removing)
 
 **Optimization tips:**
-- Remove unused `api` service (APIs moved to hub)
+- API service removed (APIs live in hub)
 - Use Railway's sleep feature for preview environments
 - Monitor build minutes (unlimited on Pro plan but watch for abuse)
+- Railpack builds are faster than Dockerfile builds (shared layer cache)
 
 ## Related Documentation
 
@@ -536,7 +564,7 @@ When investigating issues, work through this checklist:
 - `LEARNINGS.md` — Patterns and past mistakes
 - `ARCHITECTURE.md` — System design
 - `.github/workflows/` — CI/CD pipeline configs
-- `railway.json` — Railway service configuration
+- `apps/*/railway.toml` — Railway per-service configuration (Railpack)
 
 ## Quick Links
 
