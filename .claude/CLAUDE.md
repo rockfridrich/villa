@@ -151,8 +151,7 @@ curl -s https://beta.villa.cash/api/health | jq .timestamp
 | Port in use   | `pkill -f "next dev"`                                                  |
 | Passkeys fail | Use HTTPS: `bun docker:https && bun dev` then https://local.villa.cash |
 | Tests fail    | Run `bun verify` locally first                                         |
-| Railpack fail | Set `RAILPACK_INSTALL_COMMAND=bun install --frozen-lockfile` in Railway |
-| Deploy fail   | Check `railway.toml` builder + startCommand path                       |
+| Deploy fail   | Check `apps/*/Dockerfile` and `apps/*/railway.toml` config             |
 
 ---
 

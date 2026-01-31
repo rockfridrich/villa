@@ -155,14 +155,13 @@ function App() {
 
 **Railway:** https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115
 
-| Service    | Domain                              | Builder  | Config                      |
-| ---------- | ----------------------------------- | -------- | --------------------------- |
-| Hub        | villa.cash, construction.villa.cash | Railpack | apps/hub/railway.toml       |
-| Key        | key.villa.cash                      | Railpack | apps/key/railway.toml       |
-| Developers | docs.villa.cash                     | Railpack | apps/developers/railway.toml |
+| Service    | Domain                              | Dockerfile                   |
+| ---------- | ----------------------------------- | ---------------------------- |
+| Hub        | villa.cash, construction.villa.cash | apps/hub/Dockerfile          |
+| Key        | key.villa.cash                      | apps/key/Dockerfile          |
+| Developers | docs.villa.cash                     | apps/developers/Dockerfile   |
 
-**Builder:** Railpack (zero-config). Dockerfile.backup files kept as fallback.
-**Auto-deploy:** Push to `main` triggers Railway deployment.
+**Auto-deploy:** GitHub sync — push to `main` triggers Railway deployment.
 
 ## Commands
 

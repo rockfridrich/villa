@@ -1,9 +1,11 @@
 # syntax=docker/dockerfile:1.4
+# Villa Key — key.villa.cash
+# GitHub sync: Railway auto-deploys on push to main
+
 FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy workspace root + all package.jsons needed for turbo dependency graph
 COPY package.json bun.lock turbo.json ./
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
@@ -29,31 +31,8 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ARG BUILD_TIME
 
-ARG NEXT_PUBLIC_CHAIN_ID=84532
-ARG NEXT_PUBLIC_PORTO_ENV=stg
-ARG NEXT_PUBLIC_PORTO_DIALOG_HOST=https://id.porto.sh
-ARG NEXT_PUBLIC_APP_URL=https://villa.cash
-ARG NEXT_PUBLIC_ENV=production
-ARG NEXT_PUBLIC_DOMAIN=villa.cash
-
-ARG RAILWAY_GIT_COMMIT_SHA
-ARG NEXT_PUBLIC_VERSION=0.1.0
-
-ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
-ENV NEXT_PUBLIC_PORTO_ENV=$NEXT_PUBLIC_PORTO_ENV
-ENV NEXT_PUBLIC_PORTO_DIALOG_HOST=$NEXT_PUBLIC_PORTO_DIALOG_HOST
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
-ENV NEXT_PUBLIC_DOMAIN=$NEXT_PUBLIC_DOMAIN
-
-ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
-ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
-ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
-
-# Use turbo for workspace-aware builds (bun --filter doesn't work with bun workspaces)
-RUN bun turbo run build --filter=@villa/hub
+RUN bun turbo run build --filter=@villa/key
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -66,14 +45,14 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
+
+RUN mkdir -p ./public
 
 USER nextjs
 EXPOSE 3000
 
-# server.js is at root of standalone output (NOT in apps/hub/)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 

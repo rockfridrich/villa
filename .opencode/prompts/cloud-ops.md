@@ -42,15 +42,15 @@ This checks all services, CI status, and recent deployments. Use this output to 
 
 ### Service Architecture
 
-| Service | Railway Name | Production | Staging | Builder |
-|---------|-------------|------------|---------|---------|
-| Hub | villa-staging | villa.cash | construction.villa.cash | Railpack |
-| Key | villa-key-staging | key.villa.cash | fake-key.villa.cash | Railpack |
-| Docs | villa-developers | docs.villa.cash | developers.villa.cash | Railpack |
+| Service | Railway Name | Production | Staging | Dockerfile |
+|---------|-------------|------------|---------|------------|
+| Hub | villa-staging | villa.cash | construction.villa.cash | apps/hub/Dockerfile |
+| Key | villa-key-staging | key.villa.cash | fake-key.villa.cash | apps/key/Dockerfile |
+| Docs | villa-developers | docs.villa.cash | developers.villa.cash | apps/developers/Dockerfile |
 | DB | Postgres | Internal only | Internal only | postgres:17-alpine |
 
-**Builder:** Railpack (zero-config, successor to Nixpacks). Config in `apps/*/railway.toml`.
-**Fallback:** Each app has `Dockerfile.backup` — rename to `Dockerfile` and change `builder = "dockerfile"` in railway.toml.
+**Builder:** Dockerfile (per-app, multi-stage). Config in `apps/*/railway.toml`.
+**Deploy:** GitHub sync — Railway auto-deploys on push to `main`.
 **Service IDs:** Discovered dynamically via Railway GraphQL API (no hardcoded IDs).
 
 ### Deployment Flow
@@ -208,32 +208,33 @@ bun verify
 
 **Fix:** Ensure `NEXT_PUBLIC_BUILD_TIME` is set in Railway service env vars. Railway makes all env vars available at build time by default.
 
-#### 6. Railpack Build Fails — Bun Not Detected
+#### 6. Docker Build Fails — Workspace Packages Not Found
 
 **Error:**
 ```
-Could not detect package manager
+Module not found: Can't resolve '@villa/ui'
 ```
 
-**Cause:** Railpack fails to detect Bun in monorepo setup (known issue with workspace resolution).
+**Cause:** Bun workspace symlinks not created properly in Docker builder stage.
 
 **Fix:**
-1. Set env var: `RAILPACK_INSTALL_COMMAND=bun install --frozen-lockfile`
-2. If still failing, revert to Dockerfile: rename `Dockerfile.backup` → `Dockerfile`, set `builder = "dockerfile"` in `railway.toml`
+1. Ensure Dockerfile copies deps from `--from=deps` stage properly
+2. Check that all workspace `package.json` files are copied in the deps stage
+3. The builder stage should `COPY --from=deps /app/node_modules ./node_modules/` before `COPY . .`
 
-#### 7. Railpack Build Fails — Next.js Standalone Not Found
+#### 7. Docker Build Fails — Next.js Standalone Not Found
 
 **Error:**
 ```
 Cannot find module 'server.js'
 ```
 
-**Cause:** `output: "standalone"` missing from Next.js config, or wrong `startCommand` path.
+**Cause:** `output: "standalone"` missing from Next.js config.
 
 **Fix:**
 1. Verify `next.config.js` has `output: "standalone"`
-2. Check `startCommand` in `railway.toml` matches: `node apps/<app>/.next/standalone/server.js`
-3. Build locally with `bun turbo run build --filter=@villa/<app>` and verify the path exists
+2. Dockerfile should `COPY --from=builder /app/apps/<app>/.next/standalone ./`
+3. Build locally with `bun turbo run build --filter=@villa/<app>` and verify the standalone output exists
 
 ### Runtime Errors
 
@@ -549,14 +550,14 @@ When investigating issues, work through this checklist:
 ## Cost Optimization
 
 **Railway costs ~$25/month:**
-- 3 Next.js services (Hub, Key, Docs) — Railpack builder
+- 3 Next.js services (Hub, Key, Docs) — Dockerfile builder
 - 1 Postgres database
 
 **Optimization tips:**
 - API service removed (APIs live in hub)
 - Use Railway's sleep feature for preview environments
 - Monitor build minutes (unlimited on Pro plan but watch for abuse)
-- Railpack builds are faster than Dockerfile builds (shared layer cache)
+- Dockerfiles use BuildKit cache mounts for `bun install` layer caching
 
 ## Related Documentation
 
@@ -564,7 +565,8 @@ When investigating issues, work through this checklist:
 - `LEARNINGS.md` — Patterns and past mistakes
 - `ARCHITECTURE.md` — System design
 - `.github/workflows/` — CI/CD pipeline configs
-- `apps/*/railway.toml` — Railway per-service configuration (Railpack)
+- `apps/*/railway.toml` — Railway per-service configuration
+- `apps/*/Dockerfile` — Per-app multi-stage Docker builds
 
 ## Quick Links
 

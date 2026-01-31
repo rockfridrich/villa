@@ -1,23 +1,22 @@
 # syntax=docker/dockerfile:1.4
-# Production Dockerfile for Villa Developers Portal
+# Villa Hub — villa.cash
+# GitHub sync: Railway auto-deploys on push to main
 
-ARG CACHE_BUST=2
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat git
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy all workspace package.json files for bun install
+# Copy workspace root + all package.jsons for turbo dependency graph
 COPY package.json bun.lock turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/developers/package.json ./apps/developers/
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
-COPY apps/telemetry/package.json ./apps/telemetry/
-COPY contracts/package.json ./contracts/
-COPY packages/config/package.json ./packages/config/
+COPY apps/developers/package.json ./apps/developers/
+COPY apps/api/package.json ./apps/api/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/config/package.json ./packages/config/
+COPY contracts/package.json ./contracts/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
@@ -35,17 +34,28 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ARG BUILD_TIME
 
+ARG NEXT_PUBLIC_CHAIN_ID=84532
+ARG NEXT_PUBLIC_PORTO_ENV=stg
+ARG NEXT_PUBLIC_PORTO_DIALOG_HOST=https://id.porto.sh
+ARG NEXT_PUBLIC_APP_URL=https://villa.cash
 ARG NEXT_PUBLIC_ENV=production
+ARG NEXT_PUBLIC_DOMAIN=villa.cash
+
 ARG RAILWAY_GIT_COMMIT_SHA
 ARG NEXT_PUBLIC_VERSION=0.1.0
 
+ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
+ENV NEXT_PUBLIC_PORTO_ENV=$NEXT_PUBLIC_PORTO_ENV
+ENV NEXT_PUBLIC_PORTO_DIALOG_HOST=$NEXT_PUBLIC_PORTO_DIALOG_HOST
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
+ENV NEXT_PUBLIC_DOMAIN=$NEXT_PUBLIC_DOMAIN
+
 ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-# Build developers app using turbo
-RUN bun turbo run build --filter=@villa/developers
+RUN bun turbo run build --filter=@villa/hub
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -58,16 +68,14 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Standalone output puts everything at root, but public stays in original location
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
 
 USER nextjs
 EXPOSE 3000
 
-# server.js is at root of standalone output
-HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]

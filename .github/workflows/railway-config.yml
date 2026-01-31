@@ -56,9 +56,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Service | ID | Builder |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|----|----|" >> $GITHUB_STEP_SUMMARY
-          echo "| villa-staging | ${{ steps.services.outputs.staging_id }} | Railpack |" >> $GITHUB_STEP_SUMMARY
-          echo "| villa-developers | ${{ steps.services.outputs.developers_id }} | Railpack |" >> $GITHUB_STEP_SUMMARY
-          echo "| villa-key-staging | ${{ steps.services.outputs.key_id }} | Railpack |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-staging | ${{ steps.services.outputs.staging_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-developers | ${{ steps.services.outputs.developers_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-key-staging | ${{ steps.services.outputs.key_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
 
       - name: Fix villa-developers
         if: inputs.action == 'fix-developers' || inputs.action == 'fix-all'
@@ -72,7 +72,7 @@ jobs:
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: RAILPACK, healthcheckPath: \\\"/api/health\\\" }) { id } }\"
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/developers/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\" }) { id } }\"
             }")
 
           if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then
@@ -95,7 +95,7 @@ jobs:
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: RAILPACK, healthcheckPath: \\\"/api/health\\\" }) { id } }\"
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/key/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\" }) { id } }\"
             }")
 
           if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then

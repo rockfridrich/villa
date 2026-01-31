@@ -195,17 +195,17 @@ jobs:
           # Deploy Hub
           echo "Deploying hub..."
           railway service --service-name "villa-hub-pr-$PR_NUM"
-          railway up || echo "⚠️  Hub deployment queued"
+          railway up --dockerfile apps/hub/Dockerfile || echo "⚠️  Hub deployment queued"
 
           # Deploy Key
           echo "Deploying key..."
           railway service --service-name "villa-key-pr-$PR_NUM"
-          railway up || echo "⚠️  Key deployment queued"
+          railway up --dockerfile apps/key/Dockerfile || echo "⚠️  Key deployment queued"
 
           # Deploy Docs
           echo "Deploying docs..."
           railway service --service-name "villa-docs-pr-$PR_NUM"
-          railway up || echo "⚠️  Docs deployment queued"
+          railway up --dockerfile apps/developers/Dockerfile || echo "⚠️  Docs deployment queued"
 
           # Generate URLs (Railway will assign these automatically)
           HUB_URL="https://${{ steps.env-details.outputs.hub-domain }}"
