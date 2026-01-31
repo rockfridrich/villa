@@ -105,7 +105,9 @@
     "check:passkey": "./scripts/check-https.sh check",
     "docs:claude": "bun scripts/docs/generate-claude-txt.ts",
     "docs:api": "bun scripts/docs/generate-api-docs.ts",
-    "docs": "bun run docs:claude && bun run docs:api"
+    "docs": "bun run docs:claude && bun run docs:api",
+    "ops": "bash scripts/ops-check.sh",
+    "metrics": "bash scripts/metrics-report.sh"
   },
   "devDependencies": {
     "@types/node": "25.0.3",

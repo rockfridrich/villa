@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ git
+RUN apk add --no-cache libc6-compat git
 WORKDIR /app
 
 COPY package.json bun.lock turbo.json ./
@@ -16,8 +16,7 @@ COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    --mount=type=cache,target=/app/node_modules/.cache/bun \
-    bun install --frozen-lockfile --ignore-scripts || echo "Continuing"
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
@@ -25,6 +24,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules/
 COPY --from=deps /app/apps ./apps/
+COPY --from=deps /app/packages ./packages/
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ git
+RUN apk add --no-cache libc6-compat git
 WORKDIR /app
 
 # Copy package.json files for all workspaces
@@ -17,7 +17,8 @@ COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 
 # Install dependencies
-RUN bun install --frozen-lockfile --ignore-scripts || echo "Continuing"
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm

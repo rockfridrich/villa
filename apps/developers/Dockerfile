@@ -20,8 +20,7 @@ COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    --mount=type=cache,target=/app/node_modules/.cache/bun \
-    bun install --frozen-lockfile --ignore-scripts || echo "Continuing despite prepare script failure"
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
@@ -69,7 +68,6 @@ EXPOSE 3000
 
 # server.js is at root of standalone output
 HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]
-# Build 1769335445

@@ -3,19 +3,20 @@ FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy workspace root + all package.jsons needed for turbo dependency graph
 COPY package.json bun.lock turbo.json ./
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
 COPY apps/developers/package.json ./apps/developers/
 COPY apps/api/package.json ./apps/api/
-
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 COPY contracts/package.json ./contracts/
 
-RUN bun install
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
