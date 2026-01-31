@@ -17,7 +17,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 COPY contracts/package.json ./contracts/
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
@@ -28,7 +28,7 @@ WORKDIR /app
 # so we re-run bun install to recreate workspace links with full source.
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules/
-RUN bun install --frozen-lockfile
+RUN bun install
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
