@@ -155,13 +155,13 @@ function App() {
 
 **Railway:** https://railway.com/project/7c344004-cd63-4b10-8479-9991c3923115
 
-| Service    | Domain                              | Source                     |
-| ---------- | ----------------------------------- | -------------------------- |
-| Hub        | villa.cash, construction.villa.cash | Dockerfile (root)          |
-| Key        | key.villa.cash                      | apps/key/Dockerfile        |
-| Developers | docs.villa.cash                     | apps/developers/Dockerfile |
+| Service    | Domain                              | Dockerfile                   |
+| ---------- | ----------------------------------- | ---------------------------- |
+| Hub        | villa.cash, construction.villa.cash | apps/hub/Dockerfile          |
+| Key        | key.villa.cash                      | apps/key/Dockerfile          |
+| Developers | docs.villa.cash                     | apps/developers/Dockerfile   |
 
-**Auto-deploy:** Push to `main` triggers Railway deployment.
+**Auto-deploy:** GitHub sync — push to `main` triggers Railway deployment.
 
 ## Commands
 

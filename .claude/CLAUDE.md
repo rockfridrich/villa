@@ -147,10 +147,11 @@ curl -s https://beta.villa.cash/api/health | jq .timestamp
 
 | Problem       | Fix                                                                    |
 | ------------- | ---------------------------------------------------------------------- |
-| Blank page    | Clear `.next/` cache: `rm -rf apps/web/.next && bun dev`              |
+| Blank page    | Clear `.next/` cache: `rm -rf apps/hub/.next && bun dev`              |
 | Port in use   | `pkill -f "next dev"`                                                  |
 | Passkeys fail | Use HTTPS: `bun docker:https && bun dev` then https://local.villa.cash |
 | Tests fail    | Run `bun verify` locally first                                         |
+| Deploy fail   | Check `apps/*/Dockerfile` and `apps/*/railway.toml` config             |
 
 ---
 

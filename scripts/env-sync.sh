@@ -39,6 +39,7 @@ SYNC_SECRETS=(
     "BASESCAN_API_KEY"
     "ANTHROPIC_API_KEY"
     "MERCHANT_PRIVATE_KEY"
+    "RAILWAY_TOKEN"
 )
 
 # Required for local development

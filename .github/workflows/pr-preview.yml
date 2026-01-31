@@ -195,7 +195,7 @@ jobs:
           # Deploy Hub
           echo "Deploying hub..."
           railway service --service-name "villa-hub-pr-$PR_NUM"
-          railway up --dockerfile Dockerfile || echo "⚠️  Hub deployment queued"
+          railway up --dockerfile apps/hub/Dockerfile || echo "⚠️  Hub deployment queued"
 
           # Deploy Key
           echo "Deploying key..."

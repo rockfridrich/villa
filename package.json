@@ -105,7 +105,18 @@
     "check:passkey": "./scripts/check-https.sh check",
     "docs:claude": "bun scripts/docs/generate-claude-txt.ts",
     "docs:api": "bun scripts/docs/generate-api-docs.ts",
-    "docs": "bun run docs:claude && bun run docs:api"
+    "docs": "bun run docs:claude && bun run docs:api",
+    "ops": "bash scripts/ops-check.sh",
+    "metrics": "bash scripts/metrics-report.sh",
+    "railway": "bash scripts/railway.sh",
+    "railway:status": "bash scripts/railway.sh status",
+    "railway:setup": "bash scripts/railway.sh setup",
+    "railway:deploy": "bash scripts/railway.sh deploy",
+    "railway:health": "bash scripts/railway.sh health",
+    "railway:logs": "bash scripts/railway.sh logs",
+    "railway:vars": "bash scripts/railway.sh vars",
+    "railway:connect": "bash scripts/railway.sh connect",
+    "railway:whoami": "bash scripts/railway.sh whoami"
   },
   "devDependencies": {
     "@types/node": "25.0.3",

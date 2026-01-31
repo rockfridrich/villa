@@ -54,11 +54,11 @@ jobs:
         run: |
           echo "## Railway Services" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Service | ID | Expected Dockerfile |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|----|--------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | ID | Builder |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----|----|" >> $GITHUB_STEP_SUMMARY
           echo "| villa-staging | ${{ steps.services.outputs.staging_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
-          echo "| villa-developers | ${{ steps.services.outputs.developers_id }} | apps/developers/Dockerfile |" >> $GITHUB_STEP_SUMMARY
-          echo "| villa-key-staging | ${{ steps.services.outputs.key_id }} | apps/key/Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-developers | ${{ steps.services.outputs.developers_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
+          echo "| villa-key-staging | ${{ steps.services.outputs.key_id }} | Dockerfile |" >> $GITHUB_STEP_SUMMARY
 
       - name: Fix villa-developers
         if: inputs.action == 'fix-developers' || inputs.action == 'fix-all'
@@ -68,23 +68,14 @@ jobs:
         run: |
           echo "Configuring villa-developers..."
 
-          MUTATION=$(cat << 'EOF'
-          mutation($serviceId: String!, $input: ServiceInstanceUpdateInput!) {
-            serviceInstanceUpdate(serviceId: $serviceId, input: $input) {
-              id
-            }
-          }
-          EOF
-          )
-
           RESULT=$(curl -sf -X POST "$RAILWAY_API" \
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/developers/Dockerfile\\\", healthcheckPath: \\\"/\\\" }) { id } }\"
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { dockerfilePath: \\\"apps/developers/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\", railwayConfigFile: \\\"apps/developers/railway.toml\\\" }) }\"
             }")
 
-          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then
+          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate' > /dev/null 2>&1; then
             echo "✅ villa-developers configured" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Failed to configure villa-developers" >> $GITHUB_STEP_SUMMARY
@@ -104,10 +95,10 @@ jobs:
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { builder: DOCKERFILE, dockerfilePath: \\\"apps/key/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\" }) { id } }\"
+              \"query\": \"mutation { serviceInstanceUpdate(serviceId: \\\"$SERVICE_ID\\\", input: { dockerfilePath: \\\"apps/key/Dockerfile\\\", healthcheckPath: \\\"/api/health\\\", railwayConfigFile: \\\"apps/key/railway.toml\\\" }) }\"
             }")
 
-          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate.id' > /dev/null 2>&1; then
+          if echo "$RESULT" | jq -e '.data.serviceInstanceUpdate' > /dev/null 2>&1; then
             echo "✅ villa-key-staging configured" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Failed to configure villa-key-staging" >> $GITHUB_STEP_SUMMARY
@@ -129,9 +120,9 @@ jobs:
             RESULT=$(curl -sf -X POST "$RAILWAY_API" \
               -H "Authorization: Bearer $RAILWAY_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"query\": \"mutation { serviceInstanceRedeploy(serviceId: \\\"$service_id\\\") { id } }\"}")
-            
-            if echo "$RESULT" | jq -e '.data.serviceInstanceRedeploy.id' > /dev/null 2>&1; then
+              -d "{\"query\": \"mutation { serviceInstanceRedeploy(serviceId: \\\"$service_id\\\") }\"}")
+
+            if echo "$RESULT" | jq -e '.data.serviceInstanceRedeploy' > /dev/null 2>&1; then
               echo "✅ $name deployment triggered" >> $GITHUB_STEP_SUMMARY
             else
               echo "⚠️ Failed to deploy $name" >> $GITHUB_STEP_SUMMARY

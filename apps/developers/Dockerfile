@@ -1,36 +1,35 @@
 # syntax=docker/dockerfile:1.4
-# Production Dockerfile for Villa Developers Portal
+# Villa Developers — docs.villa.cash
+# GitHub sync: Railway auto-deploys on push to main
 
-ARG CACHE_BUST=2
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat git
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy all workspace package.json files for bun install
 COPY package.json bun.lock turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/developers/package.json ./apps/developers/
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
-COPY apps/telemetry/package.json ./apps/telemetry/
-COPY contracts/package.json ./contracts/
-COPY packages/config/package.json ./packages/config/
+COPY apps/developers/package.json ./apps/developers/
+COPY apps/api/package.json ./apps/api/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/config/package.json ./packages/config/
+COPY contracts/package.json ./contracts/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    --mount=type=cache,target=/app/node_modules/.cache/bun \
-    bun install --frozen-lockfile --ignore-scripts || echo "Continuing despite prepare script failure"
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules/
-COPY --from=deps /app/apps ./apps/
-COPY --from=deps /app/packages ./packages/
+# Copy all source first, then node_modules on top.
+# Bun workspaces use symlinks — Docker COPY dereferences them,
+# so we re-run bun install to recreate workspace links with full source.
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules/
+RUN bun install --frozen-lockfile
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -45,7 +44,6 @@ ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-# Build developers app using turbo
 RUN bun turbo run build --filter=@villa/developers
 
 FROM node:20-alpine AS runner
@@ -59,7 +57,6 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Standalone output puts everything at root, but public stays in original location
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public
@@ -67,9 +64,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public
 USER nextjs
 EXPOSE 3000
 
-# server.js is at root of standalone output
-HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]
-# Build 1769335445

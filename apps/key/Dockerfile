@@ -1,31 +1,35 @@
 # syntax=docker/dockerfile:1.4
+# Villa Key — key.villa.cash
+# GitHub sync: Railway auto-deploys on push to main
+
 FROM oven/bun:1-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ git
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json bun.lock turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/developers/package.json ./apps/developers/
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
-COPY apps/telemetry/package.json ./apps/telemetry/
-COPY contracts/package.json ./contracts/
-COPY packages/config/package.json ./packages/config/
+COPY apps/developers/package.json ./apps/developers/
+COPY apps/api/package.json ./apps/api/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/config/package.json ./packages/config/
+COPY contracts/package.json ./contracts/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    --mount=type=cache,target=/app/node_modules/.cache/bun \
-    bun install --frozen-lockfile --ignore-scripts || echo "Continuing"
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules/
-COPY --from=deps /app/apps ./apps/
+# Copy all source first, then node_modules on top.
+# Bun workspaces use symlinks — Docker COPY dereferences them,
+# so we re-run bun install to recreate workspace links with full source.
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules/
+RUN bun install --frozen-lockfile
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -37,7 +41,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3002
+ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 RUN addgroup --system --gid 1001 nodejs && \
@@ -49,9 +53,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/sta
 RUN mkdir -p ./public
 
 USER nextjs
-EXPOSE 3002
+EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3002/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]

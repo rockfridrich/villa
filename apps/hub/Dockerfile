@@ -1,30 +1,36 @@
 # syntax=docker/dockerfile:1.4
+# Villa Hub — villa.cash
+# GitHub sync: Railway auto-deploys on push to main
+
 FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy workspace root + all package.jsons for dependency resolution
 COPY package.json bun.lock turbo.json ./
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
 COPY apps/developers/package.json ./apps/developers/
 COPY apps/api/package.json ./apps/api/
-
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/sdk-react/package.json ./packages/sdk-react/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 COPY contracts/package.json ./contracts/
 
-RUN bun install
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules/
-COPY --from=deps /app/apps ./apps/
-COPY --from=deps /app/packages ./packages/
+# Copy all source first, then node_modules on top.
+# Bun workspaces use symlinks — Docker COPY dereferences them,
+# so we re-run bun install to recreate workspace links with full source.
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules/
+RUN bun install --frozen-lockfile
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -51,7 +57,6 @@ ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-# Use turbo for workspace-aware builds (bun --filter doesn't work with bun workspaces)
 RUN bun turbo run build --filter=@villa/hub
 
 FROM node:20-alpine AS runner
@@ -72,7 +77,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
 USER nextjs
 EXPOSE 3000
 
-# server.js is at root of standalone output (NOT in apps/hub/)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 

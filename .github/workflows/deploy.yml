@@ -152,7 +152,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run checks
-        run: bun turbo run typecheck lint --force
+        run: bun turbo run typecheck lint build --force
 
   # =============================================================================
   # DEPLOY STAGING - Parallel service deployment with health checks
