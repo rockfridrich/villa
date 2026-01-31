@@ -6,7 +6,7 @@ FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy workspace root + all package.jsons for turbo dependency graph
+# Copy workspace root + all package.jsons for dependency resolution
 COPY package.json bun.lock turbo.json ./
 COPY apps/hub/package.json ./apps/hub/
 COPY apps/key/package.json ./apps/key/
@@ -25,10 +25,12 @@ FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules/
-COPY --from=deps /app/apps ./apps/
-COPY --from=deps /app/packages ./packages/
+# Copy all source first, then node_modules on top.
+# Bun workspaces use symlinks — Docker COPY dereferences them,
+# so we re-run bun install to recreate workspace links with full source.
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules/
+RUN bun install --frozen-lockfile
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
