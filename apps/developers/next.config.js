@@ -1,7 +1,11 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // Required for monorepo: trace dependencies from workspace root
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   compress: true,
   swcMinify: true,
   generateEtags: true,

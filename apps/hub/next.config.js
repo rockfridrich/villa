@@ -49,6 +49,8 @@ const nextConfig = {
 
   // Enable standalone output for Docker deployment
   output: "standalone",
+  // Required for monorepo: trace dependencies from workspace root
+  outputFileTracingRoot: path.join(__dirname, "../../"),
 
   // Transpile SDK packages for hot reload in development
   transpilePackages: [
