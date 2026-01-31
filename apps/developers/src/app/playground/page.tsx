@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Editor from "@monaco-editor/react";
 import {
   Play,
+  Pause,
   RotateCcw,
-  Copy,
-  ChevronDown,
   Terminal,
+  Code2,
+  Palette,
+  Copy,
+  Check,
+  Sparkles,
+  CheckCircle2,
+  LogOut,
+  ChevronDown,
+  Fingerprint,
   User,
+  AlertCircle,
   Zap,
   Shield,
-  CheckCircle2,
-  AlertCircle,
-  Fingerprint,
-  LogOut,
-  Sparkles,
 } from "lucide-react";
+import { PageFooter } from "../../components/PageFooter";
 import { villa } from "@rockfridrich/villa-sdk";
+import { Editor } from "@monaco-editor/react";
 
 interface VillaUser {
   address: `0x${string}`;
@@ -777,7 +782,7 @@ export default function PlaygroundPage() {
 
               <div
                 ref={outputRef}
-                className="h-[500px] overflow-y-auto bg-[#1e1e1e] text-white font-mono text-sm"
+                className="h-[500px] overflow-y-auto bg-ink text-cream-50 font-mono text-sm"
               >
                 {output.length === 0 ? (
                   <div className="p-4 text-white/40 text-center">
@@ -868,6 +873,7 @@ export default function PlaygroundPage() {
           </div>
         </section>
       </main>
+      <PageFooter />
     </div>
   );
 }

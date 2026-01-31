@@ -16,7 +16,7 @@ export function EditOnGitHub({ filePath, className = "" }: EditOnGitHubProps) {
       href={editUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors ${className}`}
+      className={`inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors ${className}`}
     >
       <svg
         className="w-4 h-4"
@@ -45,9 +45,9 @@ export function DocFooter({ filePath, lastModified }: DocFooterProps) {
   const viewUrl = `${REPO_URL}/blob/main/${filePath}`;
 
   return (
-    <footer className="mt-12 pt-6 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-sm">
+    <footer className="mt-12 pt-6 border-t border-ink/10 flex items-center justify-between text-sm">
       <EditOnGitHub filePath={filePath} />
-      <div className="flex items-center gap-4 text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center gap-4 text-ink-muted">
         {lastModified && (
           <span>Updated {lastModified.toLocaleDateString()}</span>
         )}
@@ -55,7 +55,7 @@ export function DocFooter({ filePath, lastModified }: DocFooterProps) {
           href={viewUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+          className="hover:text-ink transition-colors"
         >
           View source
         </a>

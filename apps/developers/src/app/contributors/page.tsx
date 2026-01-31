@@ -1,63 +1,98 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { ExternalLink, GitPullRequest, GitCommit, Trophy, Star, Users } from 'lucide-react'
+import { useState, useEffect } from "react";
+import {
+  ExternalLink,
+  GitPullRequest,
+  GitCommit,
+  Trophy,
+  Star,
+  Users,
+} from "lucide-react";
+import { PageFooter } from "../../components/PageFooter";
 
 // Security: Sanitize usernames to prevent XSS
 // GitHub usernames can only contain alphanumeric characters and hyphens
 function sanitizeUsername(username: string): string {
-  if (!username) return 'unknown'
+  if (!username) return "unknown";
   // Only allow GitHub-valid username characters
-  return username.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 39)
+  return username.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 39);
 }
 
 interface Contributor {
-  username: string
-  commits: number
-  additions: number
-  deletions: number
-  prsOpened: number
-  prsMerged: number
-  firstContribution: string
-  latestContribution: string
-  achievements: string[]
+  username: string;
+  commits: number;
+  additions: number;
+  deletions: number;
+  prsOpened: number;
+  prsMerged: number;
+  firstContribution: string;
+  latestContribution: string;
+  achievements: string[];
 }
 
 interface Stats {
-  generated: string
+  generated: string;
   period: {
-    since: string
-    until: string
-  }
+    since: string;
+    until: string;
+  };
   totals: {
-    commits: number
-    contributors: number
-    additions: number
-    deletions: number
-  }
-  contributors: Contributor[]
-  newContributors: string[]
+    commits: number;
+    contributors: number;
+    additions: number;
+    deletions: number;
+  };
+  contributors: Contributor[];
+  newContributors: string[];
 }
 
-const ACHIEVEMENT_DISPLAY: Record<string, { emoji: string; name: string; description: string }> = {
-  'first-pr': { emoji: '🎯', name: 'First PR', description: 'Opened first pull request' },
-  'first-merge': { emoji: '🚀', name: 'Code Shipped', description: 'First PR merged' },
-  'contributor-level-2': { emoji: '⭐', name: 'Active Contributor', description: '10+ commits' },
-  'trusted-contributor': { emoji: '💎', name: 'Trusted', description: '50+ commits' },
-  'bug-squasher': { emoji: '🐛', name: 'Bug Squasher', description: 'Fixed multiple bugs' },
-  'feature-builder': { emoji: '✨', name: 'Feature Builder', description: 'Shipped major feature' },
-}
+const ACHIEVEMENT_DISPLAY: Record<
+  string,
+  { emoji: string; name: string; description: string }
+> = {
+  "first-pr": {
+    emoji: "🎯",
+    name: "First PR",
+    description: "Opened first pull request",
+  },
+  "first-merge": {
+    emoji: "🚀",
+    name: "Code Shipped",
+    description: "First PR merged",
+  },
+  "contributor-level-2": {
+    emoji: "⭐",
+    name: "Active Contributor",
+    description: "10+ commits",
+  },
+  "trusted-contributor": {
+    emoji: "💎",
+    name: "Trusted",
+    description: "50+ commits",
+  },
+  "bug-squasher": {
+    emoji: "🐛",
+    name: "Bug Squasher",
+    description: "Fixed multiple bugs",
+  },
+  "feature-builder": {
+    emoji: "✨",
+    name: "Feature Builder",
+    description: "Shipped major feature",
+  },
+};
 
 function getRankEmoji(rank: number): string {
-  if (rank === 1) return '🥇'
-  if (rank === 2) return '🥈'
-  if (rank === 3) return '🥉'
-  return `#${rank}`
+  if (rank === 1) return "🥇";
+  if (rank === 2) return "🥈";
+  if (rank === 3) return "🥉";
+  return `#${rank}`;
 }
 
 function AchievementBadge({ id }: { id: string }) {
-  const achievement = ACHIEVEMENT_DISPLAY[id]
-  if (!achievement) return null
+  const achievement = ACHIEVEMENT_DISPLAY[id];
+  if (!achievement) return null;
 
   return (
     <span
@@ -66,18 +101,26 @@ function AchievementBadge({ id }: { id: string }) {
     >
       {achievement.emoji} {achievement.name}
     </span>
-  )
+  );
 }
 
-function ContributorCard({ contributor, rank }: { contributor: Contributor; rank: number }) {
+function ContributorCard({
+  contributor,
+  rank,
+}: {
+  contributor: Contributor;
+  rank: number;
+}) {
   // Security: Sanitize username before display
-  const safeUsername = sanitizeUsername(contributor.username)
+  const safeUsername = sanitizeUsername(contributor.username);
 
   return (
     <div className="bg-cream-50 border border-ink/5 rounded-xl p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="text-2xl font-bold text-ink/60">{getRankEmoji(rank)}</div>
+          <div className="text-2xl font-bold text-ink/60">
+            {getRankEmoji(rank)}
+          </div>
           <div>
             <a
               href={`https://github.com/${encodeURIComponent(safeUsername)}`}
@@ -89,7 +132,8 @@ function ContributorCard({ contributor, rank }: { contributor: Contributor; rank
               <ExternalLink className="w-3 h-3 opacity-50" />
             </a>
             <div className="text-sm text-ink-muted mt-1">
-              Contributing since {new Date(contributor.firstContribution).toLocaleDateString()}
+              Contributing since{" "}
+              {new Date(contributor.firstContribution).toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -108,7 +152,9 @@ function ContributorCard({ contributor, rank }: { contributor: Contributor; rank
             <GitPullRequest className="w-4 h-4" />
             <span className="text-xs">PRs</span>
           </div>
-          <div className="text-xl font-bold">{contributor.prsMerged || '-'}</div>
+          <div className="text-xl font-bold">
+            {contributor.prsMerged || "-"}
+          </div>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 text-ink-muted mb-1">
@@ -130,45 +176,53 @@ function ContributorCard({ contributor, rank }: { contributor: Contributor; rank
         </div>
       )}
     </div>
-  )
+  );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: typeof GitCommit; label: string; value: string | number }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof GitCommit;
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="bg-cream-50 border border-ink/5 rounded-xl p-6 text-center">
       <Icon className="w-8 h-8 mx-auto text-ink-muted mb-2" />
       <div className="text-3xl font-bold">{value}</div>
       <div className="text-sm text-ink-muted">{label}</div>
     </div>
-  )
+  );
 }
 
 export default function ContributorsPage() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadStats() {
       try {
         // Try to fetch from generated stats file
-        const res = await fetch('/api/contributors')
+        const res = await fetch("/api/contributors");
         if (res.ok) {
-          const data = await res.json()
-          setStats(data)
+          const data = await res.json();
+          setStats(data);
         } else {
           // Fall back to static placeholder
-          setError('Stats not yet generated. Run: pnpm stats:generate')
+          setError("Stats not yet generated. Run: pnpm stats:generate");
         }
       } catch {
-        setError('Could not load contributor stats')
+        setError("Could not load contributor stats");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadStats()
-  }, [])
+    loadStats();
+  }, []);
 
   return (
     <div className="min-h-screen py-20">
@@ -177,7 +231,8 @@ export default function ContributorsPage() {
         <div className="text-center space-y-4">
           <h1 className="font-serif text-5xl tracking-tight">Contributors</h1>
           <p className="text-xl text-ink-muted max-w-xl mx-auto">
-            The people building Villa. Thank you for making privacy-first authentication a reality.
+            The people building Villa. Thank you for making privacy-first
+            authentication a reality.
           </p>
         </div>
 
@@ -186,7 +241,8 @@ export default function ContributorsPage() {
           <Trophy className="w-12 h-12 mx-auto text-accent-yellow" />
           <h2 className="font-serif text-2xl">Want to join?</h2>
           <p className="text-ink-muted max-w-md mx-auto">
-            We welcome contributors of all skill levels. Start with a good first issue and earn your achievements.
+            We welcome contributors of all skill levels. Start with a good first
+            issue and earn your achievements.
           </p>
           <div className="flex items-center justify-center gap-4">
             <a
@@ -236,10 +292,26 @@ export default function ContributorsPage() {
           <>
             {/* Summary stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={Users} label="Contributors" value={stats.totals.contributors} />
-              <StatCard icon={GitCommit} label="Commits" value={stats.totals.commits} />
-              <StatCard icon={Star} label="Lines Added" value={`+${stats.totals.additions.toLocaleString()}`} />
-              <StatCard icon={GitPullRequest} label="Lines Removed" value={`-${stats.totals.deletions.toLocaleString()}`} />
+              <StatCard
+                icon={Users}
+                label="Contributors"
+                value={stats.totals.contributors}
+              />
+              <StatCard
+                icon={GitCommit}
+                label="Commits"
+                value={stats.totals.commits}
+              />
+              <StatCard
+                icon={Star}
+                label="Lines Added"
+                value={`+${stats.totals.additions.toLocaleString()}`}
+              />
+              <StatCard
+                icon={GitPullRequest}
+                label="Lines Removed"
+                value={`-${stats.totals.deletions.toLocaleString()}`}
+              />
             </div>
 
             {/* Leaderboard */}
@@ -247,7 +319,11 @@ export default function ContributorsPage() {
               <h2 className="font-serif text-2xl text-center">Leaderboard</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {stats.contributors.slice(0, 10).map((contributor, i) => (
-                  <ContributorCard key={contributor.username} contributor={contributor} rank={i + 1} />
+                  <ContributorCard
+                    key={contributor.username}
+                    contributor={contributor}
+                    rank={i + 1}
+                  />
                 ))}
               </div>
             </div>
@@ -257,7 +333,11 @@ export default function ContributorsPage() {
               <div className="bg-cream-50 border border-ink/5 rounded-xl p-8 text-center">
                 <h3 className="font-serif text-xl mb-4">🆕 New Contributors</h3>
                 <p className="text-ink-muted">
-                  Welcome {stats.newContributors.map(name => `@${sanitizeUsername(name)}`).join(', ')}!
+                  Welcome{" "}
+                  {stats.newContributors
+                    .map((name) => `@${sanitizeUsername(name)}`)
+                    .join(", ")}
+                  !
                 </p>
               </div>
             )}
@@ -266,15 +346,22 @@ export default function ContributorsPage() {
             <div className="space-y-4">
               <h2 className="font-serif text-2xl text-center">Achievements</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {Object.entries(ACHIEVEMENT_DISPLAY).map(([id, achievement]) => (
-                  <div key={id} className="bg-cream-50 border border-ink/5 rounded-lg p-4 flex items-center gap-3">
-                    <span className="text-2xl">{achievement.emoji}</span>
-                    <div>
-                      <div className="font-medium">{achievement.name}</div>
-                      <div className="text-xs text-ink-muted">{achievement.description}</div>
+                {Object.entries(ACHIEVEMENT_DISPLAY).map(
+                  ([id, achievement]) => (
+                    <div
+                      key={id}
+                      className="bg-cream-50 border border-ink/5 rounded-lg p-4 flex items-center gap-3"
+                    >
+                      <span className="text-2xl">{achievement.emoji}</span>
+                      <div>
+                        <div className="font-medium">{achievement.name}</div>
+                        <div className="text-xs text-ink-muted">
+                          {achievement.description}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
 
@@ -285,6 +372,7 @@ export default function ContributorsPage() {
           </>
         )}
       </div>
+      <PageFooter />
     </div>
-  )
+  );
 }

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { CodeBlock } from "../components/code";
 import { villa, type Identity, type VillaUser } from "@rockfridrich/villa-sdk";
+import { PageFooter } from "../components/PageFooter";
 
 function QuickCopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -519,11 +520,7 @@ function App() {
         </div>
       </section>
 
-      <footer className="py-8 px-6 bg-ink/95 text-cream-50/60 text-center border-t border-cream-50/10">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-sm">© 2025 Villa. Built with ❤️ for developers.</p>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }
