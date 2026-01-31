@@ -54,6 +54,7 @@ const nextConfig = {
   transpilePackages: [
     "@rockfridrich/villa-sdk",
     "@rockfridrich/villa-sdk-react",
+    "@villa/ui",
   ],
 
   // Enable compression (gzip)
