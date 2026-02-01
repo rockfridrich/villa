@@ -15,15 +15,6 @@ ENV NODE_ENV=production
 
 RUN bun turbo run build --filter=@villa/key
 
-# Bun uses hardlinks to global store — dereference for Docker COPY
-# next/react may be hoisted to root or in app's node_modules
-RUN NEXT_DIR=$(find /app -path "*/node_modules/next" -maxdepth 4 -type d | head -1) && \
-    REACT_DIR=$(find /app -path "*/node_modules/react" -not -path "*/react-dom/*" -maxdepth 4 -type d | head -1) && \
-    REACTDOM_DIR=$(find /app -path "*/node_modules/react-dom" -maxdepth 4 -type d | head -1) && \
-    cp -rL "$NEXT_DIR" /tmp/next && \
-    cp -rL "$REACT_DIR" /tmp/react && \
-    cp -rL "$REACTDOM_DIR" /tmp/react-dom
-
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -36,9 +27,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /tmp/next ./node_modules/next
-COPY --from=builder --chown=nextjs:nodejs /tmp/react ./node_modules/react
-COPY --from=builder --chown=nextjs:nodejs /tmp/react-dom ./node_modules/react-dom
+# Bun's node_modules uses global store symlinks that break standalone tracing.
+# Install Next.js runtime deps directly with npm for reliable resolution.
+RUN npm install --no-save next@14.2.35 react react-dom 2>/dev/null && \
+    chown -R nextjs:nodejs node_modules && rm -rf /tmp/npm-*
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
 
 RUN mkdir -p ./public
