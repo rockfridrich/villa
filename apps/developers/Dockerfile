@@ -36,11 +36,12 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
 # Bun's node_modules uses global store symlinks that break standalone tracing.
-# Install Next.js runtime deps directly with npm for reliable resolution.
-RUN npm install --no-save next@14.2.35 react react-dom 2>/dev/null && \
-    chown -R nextjs:nodejs node_modules && rm -rf /tmp/npm-*
+# Install Next.js runtime deps with npm before copying standalone output.
+RUN echo '{}' > package.json && \
+    npm install --no-save --ignore-scripts next@14.2.35 react react-dom && \
+    chown -R nextjs:nodejs node_modules && rm -f package.json package-lock.json
+COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public
 
