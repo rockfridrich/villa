@@ -14,9 +14,22 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 ARG NEXT_PUBLIC_CHAIN_ID=84532
-ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
+ARG NEXT_PUBLIC_ENV=production
+ARG RAILWAY_GIT_COMMIT_SHA
+ARG NEXT_PUBLIC_VERSION
+ARG BUILD_TIME
 
-RUN bun turbo run build --filter=@villa/key
+ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
+ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
+
+# Extract version from package.json if not provided via build arg
+RUN export NEXT_PUBLIC_VERSION="${NEXT_PUBLIC_VERSION:-$(node -p "require('./apps/key/package.json').version")}" && \
+    export NEXT_PUBLIC_GIT_SHA="${RAILWAY_GIT_COMMIT_SHA:-unknown}" && \
+    export NEXT_PUBLIC_BUILD_TIME="${BUILD_TIME:-$(date -u +%FT%T.000Z)}" && \
+    echo "NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION" >> apps/key/.env.local && \
+    echo "NEXT_PUBLIC_GIT_SHA=$NEXT_PUBLIC_GIT_SHA" >> apps/key/.env.local && \
+    echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> apps/key/.env.local && \
+    bun turbo run build --filter=@villa/key
 
 FROM node:20-alpine AS runner
 WORKDIR /app
