@@ -25,6 +25,11 @@ ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
 RUN bun turbo run build --filter=@villa/developers
 
+# Bun uses hardlinks to global store — dereference for Docker COPY
+RUN cp -rL node_modules/next /tmp/next && \
+    cp -rL node_modules/react /tmp/react && \
+    cp -rL node_modules/react-dom /tmp/react-dom
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -37,10 +42,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/standalone ./
-# Bun's node_modules layout breaks Next.js file tracer — copy runtime deps explicitly
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/next ./node_modules/next
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react ./node_modules/react
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/react-dom ./node_modules/react-dom
+COPY --from=builder --chown=nextjs:nodejs /tmp/next ./node_modules/next
+COPY --from=builder --chown=nextjs:nodejs /tmp/react ./node_modules/react
+COPY --from=builder --chown=nextjs:nodejs /tmp/react-dom ./node_modules/react-dom
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/developers/public ./public
 
