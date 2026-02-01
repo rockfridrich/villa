@@ -24,7 +24,7 @@ function getKeyAuthUrl(): string {
     return 'https://local-key.villa.cash/auth'
   }
   if (hostname === 'construction.villa.cash') {
-    return 'https://fake-key.villa.cash/auth'
+    return 'https://key.villa.cash/auth'
   }
   
   return 'https://key.villa.cash/auth'

@@ -13,6 +13,9 @@ RUN bun install
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+ARG NEXT_PUBLIC_CHAIN_ID=84532
+ENV NEXT_PUBLIC_CHAIN_ID=$NEXT_PUBLIC_CHAIN_ID
+
 RUN bun turbo run build --filter=@villa/key
 
 FROM node:20-alpine AS runner

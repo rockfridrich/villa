@@ -93,7 +93,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://construction.villa.cash",
+              "connect-src 'self' https://construction.villa.cash https://rpc.porto.sh https://*.porto.sh wss://*.porto.sh",
               `frame-ancestors ${authFrameAncestors}`,
             ].join("; "),
           },
