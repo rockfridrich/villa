@@ -48,12 +48,12 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Bun's node_modules uses global store symlinks that break standalone tracing.
-# Install Next.js runtime deps with npm before copying standalone output.
-RUN echo '{}' > package.json && \
-    npm install --no-save --ignore-scripts next@14.2.35 react react-dom && \
-    chown -R nextjs:nodejs node_modules && rm -f package.json package-lock.json
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/standalone ./
+# Bun's standalone output has empty node_modules (global store symlinks).
+# Replace with npm-installed copies of the Next.js runtime deps.
+RUN rm -rf node_modules && \
+    npm install --no-save --ignore-scripts next@14.2.35 react react-dom && \
+    chown -R nextjs:nodejs node_modules && rm -f package-lock.json
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/hub/public ./public
 
