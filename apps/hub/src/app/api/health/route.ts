@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function getBuildInfo() {
-  const version = process.env.NEXT_PUBLIC_VERSION || "0.3.0-rc.1.1";
+  const version = process.env.NEXT_PUBLIC_VERSION || "unknown";
   const sha = process.env.NEXT_PUBLIC_GIT_SHA || "unknown";
   const buildHash =
     process.env.NEXT_PUBLIC_BUILD_HASH ||

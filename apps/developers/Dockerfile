@@ -16,14 +16,18 @@ ARG BUILD_TIME
 
 ARG NEXT_PUBLIC_ENV=production
 ARG RAILWAY_GIT_COMMIT_SHA
-ARG NEXT_PUBLIC_VERSION=0.1.0
+ARG NEXT_PUBLIC_VERSION
 
 ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
-ENV NEXT_PUBLIC_GIT_SHA=$RAILWAY_GIT_COMMIT_SHA
-ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
-ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-RUN bun turbo run build --filter=@villa/developers
+# Extract version from package.json if not provided via build arg
+RUN export NEXT_PUBLIC_VERSION="${NEXT_PUBLIC_VERSION:-$(node -p "require('./apps/developers/package.json').version")}" && \
+    export NEXT_PUBLIC_GIT_SHA="${RAILWAY_GIT_COMMIT_SHA:-unknown}" && \
+    export NEXT_PUBLIC_BUILD_TIME="${BUILD_TIME:-$(date -u +%FT%T.000Z)}" && \
+    echo "NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION" >> apps/developers/.env.local && \
+    echo "NEXT_PUBLIC_GIT_SHA=$NEXT_PUBLIC_GIT_SHA" >> apps/developers/.env.local && \
+    echo "NEXT_PUBLIC_BUILD_TIME=$NEXT_PUBLIC_BUILD_TIME" >> apps/developers/.env.local && \
+    bun turbo run build --filter=@villa/developers
 
 FROM node:20-alpine AS runner
 WORKDIR /app
