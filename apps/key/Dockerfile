@@ -28,8 +28,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/standalone ./
 # Bun's standalone output has empty node_modules (global store symlinks).
-# Replace with npm-installed copies of the Next.js runtime deps.
-RUN rm -rf node_modules && \
+# Standalone package.json has workspace: refs npm can't resolve — override it.
+RUN rm -rf node_modules && echo '{}' > package.json && \
     npm install --no-save --ignore-scripts next@14.2.35 react react-dom && \
     chown -R nextjs:nodejs node_modules && rm -f package-lock.json
 COPY --from=builder --chown=nextjs:nodejs /app/apps/key/.next/static ./.next/static
