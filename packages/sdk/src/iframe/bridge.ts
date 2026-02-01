@@ -45,7 +45,7 @@ const DEFAULT_IFRAME_DETECTION_TIMEOUT_MS = 3 * 1000;
 
 const AUTH_URLS = {
   base: "https://key.villa.cash/auth",
-  "base-sepolia": "https://fake-key.villa.cash/auth",
+  "base-sepolia": "https://key.villa.cash/auth",
 } as const;
 
 function getAuthUrl(network: "base" | "base-sepolia"): string {

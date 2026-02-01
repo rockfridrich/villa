@@ -103,7 +103,6 @@ async function fetchProfile(address: string): Promise<ProfileData | null> {
 
 const VILLA_ORIGINS = [
   "https://key.villa.cash",
-  "https://fake-key.villa.cash",
   "https://villa.cash",
   "https://www.villa.cash",
   "https://construction.villa.cash",

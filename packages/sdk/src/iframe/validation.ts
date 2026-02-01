@@ -14,7 +14,6 @@ import type { VillaMessage, ParentMessage, VillaErrorCode } from "./types";
  */
 export const ALLOWED_ORIGINS = [
   "https://key.villa.cash",
-  "https://fake-key.villa.cash",
   "https://villa.cash",
   "https://www.villa.cash",
   "https://construction.villa.cash",
