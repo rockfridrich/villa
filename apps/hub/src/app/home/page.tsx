@@ -202,13 +202,22 @@ export default function HomePage() {
     setIsSaving(true);
     setEditError(null);
 
-    // Update via store
-    const success = updateProfile(result.data);
+    try {
+      // Persist to backend
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: identity.address,
+          newNickname: result.data,
+        }),
+      });
 
-    if (success) {
+      // Update local store
+      updateProfile(result.data);
       setIsEditing(false);
       setEditValue("");
-    } else {
+    } catch {
       setEditError("Failed to update nickname");
     }
     setIsSaving(false);
