@@ -38,9 +38,13 @@ ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 RUN bun turbo run build --filter=@villa/hub
 
 # Bun uses hardlinks to global store — dereference for Docker COPY
-RUN cp -rL node_modules/next /tmp/next && \
-    cp -rL node_modules/react /tmp/react && \
-    cp -rL node_modules/react-dom /tmp/react-dom
+# next/react may be hoisted to root or in app's node_modules
+RUN NEXT_DIR=$(find /app -path "*/node_modules/next" -maxdepth 4 -type d | head -1) && \
+    REACT_DIR=$(find /app -path "*/node_modules/react" -not -path "*/react-dom/*" -maxdepth 4 -type d | head -1) && \
+    REACTDOM_DIR=$(find /app -path "*/node_modules/react-dom" -maxdepth 4 -type d | head -1) && \
+    cp -rL "$NEXT_DIR" /tmp/next && \
+    cp -rL "$REACT_DIR" /tmp/react && \
+    cp -rL "$REACTDOM_DIR" /tmp/react-dom
 
 FROM node:20-alpine AS runner
 WORKDIR /app
